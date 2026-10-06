@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="HotelTramonto.Datos/HotelTramonto.Datos.vbproj" />
+  <Project Path="HotelTramonto.Entidades/HotelTramonto.Entidades.vbproj" />
+  <Project Path="HotelTramonto.Negocios/HotelTramonto.Negocios.vbproj" />
+  <Project Path="HotelTramonto.Presentacion/HotelTramonto.Presentacion.vbproj" />
+</Solution>
