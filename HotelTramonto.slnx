@@ -1,6 +1,6 @@
 <Solution>
-  <Project Path="HotelTramonto.Datos/HotelTramonto.Datos.vbproj" />
-  <Project Path="HotelTramonto.Entidades/HotelTramonto.Entidades.vbproj" />
-  <Project Path="HotelTramonto.Negocios/HotelTramonto.Negocios.vbproj" />
-  <Project Path="HotelTramonto.Presentacion/HotelTramonto.Presentacion.vbproj" />
+  <Project Path="HotelTramonto.Datos/HotelTramonto.Datos.csproj" />
+  <Project Path="HotelTramonto.Entidades/HotelTramonto.Entidades.csproj" />
+  <Project Path="HotelTramonto.Negocios/HotelTramonto.Negocios.csproj" />
+  <Project Path="HotelTramonto.Presentacion/HotelTramonto.Presentacion.csproj" />
 </Solution>
