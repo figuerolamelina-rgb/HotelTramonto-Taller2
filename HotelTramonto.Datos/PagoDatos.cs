@@ -1,11 +1,14 @@
-﻿using System.Data;
+﻿
+using System;
+using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.Datos
 {
     public class PagoDatos
     {
-        public void Insertar(
+        // Insertar un pago y devolver su ID
+        public int Insertar(
             int? idReserva,
             int? idReservaTemporal,
             int idUsuario,
@@ -33,9 +36,19 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@tipo_pago", tipoPago);
 
             conexion.Open();
-            comando.ExecuteNonQuery();
+
+            object? resultado = comando.ExecuteScalar();
+
+            if (resultado == null || resultado == DBNull.Value)
+            {
+                throw new Exception(
+                    "No se pudo obtener el ID del pago registrado.");
+            }
+
+            return Convert.ToInt32(resultado);
         }
 
+        // Actualizar el estado de un pago
         public void ActualizarEstado(
             int idPago,
             string estado)
@@ -53,6 +66,7 @@ namespace HotelTramonto.Datos
             comando.ExecuteNonQuery();
         }
 
+        // Listar pagos de una reserva
         public DataTable ListarPorReserva(int idReserva)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
@@ -70,6 +84,7 @@ namespace HotelTramonto.Datos
             return tabla;
         }
 
+        // Registrar el saldo pendiente de alojamiento
         public DataTable RegistrarSaldoAlojamiento(
             int idReserva,
             int idUsuario,
@@ -93,6 +108,7 @@ namespace HotelTramonto.Datos
             return tabla;
         }
 
+        // Registrar el pago de servicios adicionales
         public DataTable RegistrarServicios(
             int idReserva,
             int idUsuario,

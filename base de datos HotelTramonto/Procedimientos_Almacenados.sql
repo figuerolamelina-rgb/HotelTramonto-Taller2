@@ -706,6 +706,7 @@ GO
 ---pagos 
 --registrar un pago
 
+
 CREATE OR ALTER PROCEDURE sp_Pago_Insertar
     @id_reserva INT = NULL,
     @id_reserva_temporal INT = NULL,
@@ -738,9 +739,11 @@ BEGIN
         @estado,
         @tipo_pago
     );
+
+    -- Devolver el ID del pago recién registrado
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS id_pago;
 END;
 GO
-
 
 
 
@@ -1056,6 +1059,10 @@ BEGIN
             @fecha_salida,
             DATEADD(MINUTE, 30, GETDATE())
         );
+  
+  SELECT CAST(SCOPE_IDENTITY() AS INT)
+    AS id_reserva_temporal;
+
 END;
 GO
 
@@ -1944,3 +1951,55 @@ BEGIN
 END;
 GO
 
+---obtiene los roles activos del hotel.
+SELECT
+    TABLE_SCHEMA,
+    TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_NAME = 'Roles';
+GO
+
+-- 3. Mostrar los roles registrados
+IF OBJECT_ID('dbo.Roles', 'U') IS NOT NULL
+BEGIN
+    SELECT *
+    FROM dbo.Roles;
+END
+ELSE
+BEGIN
+    PRINT 'No se encontró la tabla dbo.Roles.';
+END;
+GO
+
+
+
+
+
+-- ==========================================
+-- PROCEDIMIENTO: LISTAR ROLES ACTIVOS
+-- ==========================================
+
+IF OBJECT_ID('dbo.sp_Rol_Listar', 'P') IS NULL
+BEGIN
+    EXEC('CREATE PROCEDURE dbo.sp_Rol_Listar AS BEGIN SET NOCOUNT ON; END');
+END;
+GO
+
+ALTER PROCEDURE dbo.sp_Rol_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        id_rol,
+        nombre_rol,
+        descripcion
+    FROM dbo.Roles
+    WHERE activo = 1
+    ORDER BY nombre_rol;
+END;
+GO
+
+-- Comprobar que funciona
+EXEC dbo.sp_Rol_Listar;
+GO
