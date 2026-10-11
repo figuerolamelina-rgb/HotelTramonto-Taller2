@@ -1,0 +1,1946 @@
+USE HotelTramontoDB;
+GO
+
+CREATE OR ALTER PROCEDURE sp_Huesped_Insertar
+    @nombre VARCHAR(50),
+    @apellido VARCHAR(50),
+    @dni VARCHAR(15),
+    @telefono VARCHAR(20) = NULL,
+    @email VARCHAR(100) = NULL,
+    @nacionalidad VARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Huespedes
+        (nombre, apellido, dni, telefono, email, nacionalidad)
+    VALUES
+        (@nombre, @apellido, @dni, @telefono, @email, @nacionalidad);
+END;
+GO
+
+
+
+
+CREATE OR ALTER PROCEDURE sp_Huesped_Modificar  --modificamos la info del huesped 
+    @id_huesped INT,
+    @nombre VARCHAR(50),
+    @apellido VARCHAR(50),
+    @dni VARCHAR(15),
+    @telefono VARCHAR(20) = NULL,
+    @email VARCHAR(100) = NULL,
+    @nacionalidad VARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Huespedes
+    SET
+        nombre = @nombre,
+        apellido = @apellido,
+        dni = @dni,
+        telefono = @telefono,
+        email = @email,
+        nacionalidad = @nacionalidad
+    WHERE id_huesped = @id_huesped;
+END;
+GO
+
+
+
+
+
+CREATE OR ALTER PROCEDURE sp_Huesped_Desactivar
+    @id_huesped INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Huespedes
+    SET activo = 0
+    WHERE id_huesped = @id_huesped;
+END;
+GO
+
+
+
+
+
+
+CREATE OR ALTER PROCEDURE sp_Huesped_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        id_huesped,
+        nombre,
+        apellido,
+        dni,
+        telefono,
+        email,
+        nacionalidad,
+        activo,
+        fecha_alta
+    FROM Huespedes
+    WHERE activo = 1
+    ORDER BY apellido, nombre;
+END;
+GO
+
+
+
+CREATE OR ALTER PROCEDURE sp_Huesped_BuscarPorDNI --buscamos huesped por dni 
+    @dni VARCHAR(15)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        id_huesped,
+        nombre,
+        apellido,
+        dni,
+        telefono,
+        email,
+        nacionalidad,
+        activo,
+        fecha_alta
+    FROM Huespedes
+    WHERE dni = @dni;
+END;
+GO
+
+
+
+--insertamos usuario
+
+CREATE OR ALTER PROCEDURE sp_Usuario_Insertar 
+    @id_rol INT,
+    @nombre VARCHAR(50),
+    @apellido VARCHAR(50),
+    @dni VARCHAR(15),
+    @email VARCHAR(100) = NULL,
+    @contrasena VARCHAR(255),
+    @telefono VARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Usuarios
+        (id_rol, nombre, apellido, dni, email, contrasena, telefono)
+    VALUES
+        (@id_rol, @nombre, @apellido, @dni, @email, @contrasena, @telefono);
+END;
+GO
+
+
+
+
+
+--modificar usuario
+
+CREATE OR ALTER PROCEDURE sp_Usuario_Modificar
+    @id_usuario INT,
+    @id_rol INT,
+    @nombre VARCHAR(50),
+    @apellido VARCHAR(50),
+    @dni VARCHAR(15),
+    @email VARCHAR(100) = NULL,
+    @telefono VARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Usuarios
+    SET
+        id_rol = @id_rol,
+        nombre = @nombre,
+        apellido = @apellido,
+        dni = @dni,
+        email = @email,
+        telefono = @telefono
+    WHERE id_usuario = @id_usuario;
+END;
+GO
+
+
+--baja lógica de Usuario
+
+CREATE OR ALTER PROCEDURE sp_Usuario_Desactivar
+    @id_usuario INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Usuarios
+    SET activo = 0
+    WHERE id_usuario = @id_usuario;
+END;
+GO
+
+
+
+
+
+-- listar usuarios activos.
+
+CREATE OR ALTER PROCEDURE sp_Usuario_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        U.id_usuario,
+        U.id_rol,
+        R.nombre_rol,
+        U.nombre,
+        U.apellido,
+        U.dni,
+        U.email,
+        U.telefono,
+        U.activo,
+        U.fecha_alta
+    FROM Usuarios U
+    INNER JOIN Roles R
+        ON U.id_rol = R.id_rol
+    WHERE U.activo = 1
+    ORDER BY U.apellido, U.nombre;
+END;
+GO
+
+
+
+--buscar usuario por DNI.
+
+CREATE OR ALTER PROCEDURE sp_Usuario_BuscarPorDNI
+    @dni VARCHAR(15)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        U.id_usuario,
+        U.id_rol,
+        R.nombre_rol,
+        U.nombre,
+        U.apellido,
+        U.dni,
+        U.email,
+        U.telefono,
+        U.activo,
+        U.fecha_alta
+    FROM Usuarios U
+    INNER JOIN Roles R
+        ON U.id_rol = R.id_rol
+    WHERE U.dni = @dni;
+END;
+GO
+
+
+
+
+--contraseña de usuario
+
+CREATE OR ALTER PROCEDURE sp_Usuario_CambiarContrasena
+    @id_usuario INT,
+    @contrasena VARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Usuarios
+    SET contrasena = @contrasena
+    WHERE id_usuario = @id_usuario;
+END;
+GO
+
+
+
+
+--TiposHabitacion
+
+CREATE OR ALTER PROCEDURE sp_TipoHabitacion_Insertar
+    @nombre VARCHAR(50),
+    @descripcion VARCHAR(200) = NULL,
+    @precio_noche DECIMAL(10,2),
+    @capacidad INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO TiposHabitacion
+        (nombre, descripcion, precio_noche, capacidad)
+    VALUES
+        (@nombre, @descripcion, @precio_noche, @capacidad);
+END;
+GO
+
+
+--modificar tipo de habitación
+
+CREATE OR ALTER PROCEDURE sp_TipoHabitacion_Modificar
+    @id_tipoHabitacion INT,
+    @nombre VARCHAR(50),
+    @descripcion VARCHAR(200) = NULL,
+    @precio_noche DECIMAL(10,2),
+    @capacidad INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE TiposHabitacion
+    SET
+        nombre = @nombre,
+        descripcion = @descripcion,
+        precio_noche = @precio_noche,
+        capacidad = @capacidad
+    WHERE id_tipoHabitacion = @id_tipoHabitacion;
+END;
+GO
+
+
+-- desactivar tipo de habitación.
+
+CREATE OR ALTER PROCEDURE sp_TipoHabitacion_Desactivar
+    @id_tipoHabitacion INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE TiposHabitacion
+    SET activo = 0
+    WHERE id_tipoHabitacion = @id_tipoHabitacion;
+END;
+GO
+
+  
+
+
+-- listar tipos de habitación activos.
+
+CREATE OR ALTER PROCEDURE sp_TipoHabitacion_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        id_tipoHabitacion,
+        nombre,
+        descripcion,
+        precio_noche,
+        capacidad,
+        activo
+    FROM TiposHabitacion
+    WHERE activo = 1
+    ORDER BY nombre;
+END;
+GO
+
+
+
+
+--Habitaciones.
+--insertar una habitación
+
+CREATE OR ALTER PROCEDURE sp_Habitacion_Insertar
+    @tipo_habitacion INT,
+    @piso INT = NULL,
+    @numero VARCHAR(10),
+    @estado VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Habitaciones
+        (tipo_habitacion, piso, numero, estado)
+    VALUES
+        (@tipo_habitacion, @piso, @numero, @estado);
+END;
+GO
+
+
+--modificar habitación.
+CREATE OR ALTER PROCEDURE sp_Habitacion_Modificar
+    @id_habitacion INT,
+    @tipo_habitacion INT,
+    @piso INT = NULL,
+    @numero VARCHAR(10),
+    @estado VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Habitaciones
+    SET
+        tipo_habitacion = @tipo_habitacion,
+        piso = @piso,
+        numero = @numero,
+        estado = @estado
+    WHERE id_habitacion = @id_habitacion;
+END;
+GO
+
+
+--desactivar habitación.
+
+
+CREATE OR ALTER PROCEDURE sp_Habitacion_Desactivar
+    @id_habitacion INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Habitaciones
+    SET activo = 0
+    WHERE id_habitacion = @id_habitacion;
+END;
+GO
+
+
+
+
+--listar habitaciones activas.
+
+CREATE OR ALTER PROCEDURE sp_Habitacion_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        H.id_habitacion,
+        H.tipo_habitacion,
+        T.nombre AS tipo,
+        H.piso,
+        H.numero,
+        H.estado,
+        H.activo
+    FROM Habitaciones H
+    INNER JOIN TiposHabitacion T
+        ON H.tipo_habitacion = T.id_tipoHabitacion
+    WHERE H.activo = 1
+    ORDER BY H.numero;
+END;
+GO
+
+
+
+---Servicios.
+
+CREATE OR ALTER PROCEDURE sp_Servicio_Insertar
+    @nombre VARCHAR(50),
+    @descripcion VARCHAR(150) = NULL,
+    @precio DECIMAL(10,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Servicios
+        (nombre, descripcion, precio)
+    VALUES
+        (@nombre, @descripcion, @precio);
+END;
+GO
+
+
+
+---modificar servicio.
+
+CREATE OR ALTER PROCEDURE sp_Servicio_Modificar
+    @id_servicio INT,
+    @nombre VARCHAR(50),
+    @descripcion VARCHAR(150) = NULL,
+    @precio DECIMAL(10,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Servicios
+    SET
+        nombre = @nombre,
+        descripcion = @descripcion,
+        precio = @precio
+    WHERE id_servicio = @id_servicio;
+END;
+GO
+
+
+---desactivar servicio.
+
+
+CREATE OR ALTER PROCEDURE sp_Servicio_Desactivar
+    @id_servicio INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Servicios
+    SET activo = 0
+    WHERE id_servicio = @id_servicio;
+END;
+GO
+
+
+
+---listar servicios activos.
+
+CREATE OR ALTER PROCEDURE sp_Servicio_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        id_servicio,
+        nombre,
+        descripcion,
+        precio,
+        activo
+    FROM Servicios
+    WHERE activo = 1
+    ORDER BY nombre;
+END;
+GO
+
+
+
+
+
+--- reservas 
+
+CREATE OR ALTER PROCEDURE sp_Reserva_Insertar
+    @id_huesped INT,
+    @id_usuario INT = NULL,
+    @fecha_entrada DATE,
+    @fecha_salida DATE,
+    @estado VARCHAR(20),
+    @total DECIMAL(10,2),
+    @observaciones VARCHAR(250) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Reservas
+        (
+            id_huesped,
+            id_usuario,
+            fecha_entrada,
+            fecha_salida,
+            estado,
+            total,
+            observaciones
+        )
+    VALUES
+        (
+            @id_huesped,
+            @id_usuario,
+            @fecha_entrada,
+            @fecha_salida,
+            @estado,
+            @total,
+            @observaciones
+        );
+END;
+GO
+
+
+
+--modificar reserva.
+
+CREATE OR ALTER PROCEDURE sp_Reserva_Modificar
+    @id_reserva INT,
+    @id_huesped INT,
+    @id_usuario INT = NULL,
+    @fecha_entrada DATE,
+    @fecha_salida DATE,
+    @estado VARCHAR(20),
+    @total DECIMAL(10,2),
+    @observaciones VARCHAR(250) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Reservas
+    SET
+        id_huesped = @id_huesped,
+        id_usuario = @id_usuario,
+        fecha_entrada = @fecha_entrada,
+        fecha_salida = @fecha_salida,
+        estado = @estado,
+        total = @total,
+        observaciones = @observaciones
+    WHERE id_reserva = @id_reserva;
+END;
+GO
+
+
+--cancelar reserva
+
+CREATE OR ALTER PROCEDURE sp_Reserva_Cancelar
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Reservas
+    SET estado = 'CANCELADA'
+    WHERE id_reserva = @id_reserva;
+END;
+GO
+
+
+
+
+--listar reservas
+
+CREATE OR ALTER PROCEDURE sp_Reserva_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        R.id_reserva,
+        R.id_huesped,
+        H.nombre AS nombre_huesped,
+        H.apellido AS apellido_huesped,
+        R.id_usuario,
+        U.nombre AS nombre_usuario,
+        U.apellido AS apellido_usuario,
+        R.fecha_entrada,
+        R.fecha_salida,
+        R.estado,
+        R.total,
+        R.observaciones,
+        R.fecha_creacion,
+        R.fecha_checkin,
+        R.fecha_checkout
+    FROM Reservas R
+    INNER JOIN Huespedes H
+        ON R.id_huesped = H.id_huesped
+    LEFT JOIN Usuarios U
+        ON R.id_usuario = U.id_usuario
+    ORDER BY R.fecha_creacion DESC;
+END;
+GO
+
+
+
+
+---DetalleReservas
+
+CREATE OR ALTER PROCEDURE sp_DetalleReserva_Insertar
+    @id_reserva INT,
+    @id_habitacion INT,
+    @precio_noche DECIMAL(10,2),
+    @cantidad_personas INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO DetalleReservas
+        (
+            id_reserva,
+            id_habitacion,
+            precio_noche,
+            cantidad_personas
+        )
+    VALUES
+        (
+            @id_reserva,
+            @id_habitacion,
+            @precio_noche,
+            @cantidad_personas
+        );
+END;
+GO
+
+
+---modificar DetalleReserva
+
+
+CREATE OR ALTER PROCEDURE sp_DetalleReserva_Modificar
+    @id_detalle_reserva INT,
+    @id_habitacion INT,
+    @precio_noche DECIMAL(10,2),
+    @cantidad_personas INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE DetalleReservas
+    SET
+        id_habitacion = @id_habitacion,
+        precio_noche = @precio_noche,
+        cantidad_personas = @cantidad_personas
+    WHERE id_detalle_reserva = @id_detalle_reserva;
+END;
+GO
+
+--listar las habitaciones de una reserva
+
+CREATE OR ALTER PROCEDURE sp_DetalleReserva_ListarPorReserva
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        DR.id_detalle_reserva,
+        DR.id_reserva,
+        DR.id_habitacion,
+        H.numero AS numero_habitacion,
+        TH.nombre AS tipo_habitacion,
+        DR.precio_noche,
+        DR.cantidad_personas
+    FROM DetalleReservas DR
+    INNER JOIN Habitaciones H
+        ON DR.id_habitacion = H.id_habitacion
+    INNER JOIN TiposHabitacion TH
+        ON H.tipo_habitacion = TH.id_tipoHabitacion
+    WHERE DR.id_reserva = @id_reserva
+    ORDER BY H.numero;
+END;
+GO
+
+
+
+---pagos 
+--registrar un pago
+
+CREATE OR ALTER PROCEDURE sp_Pago_Insertar
+    @id_reserva INT = NULL,
+    @id_reserva_temporal INT = NULL,
+    @id_usuario INT,
+    @monto DECIMAL(10,2),
+    @metodo_pago VARCHAR(30),
+    @estado VARCHAR(20),
+    @tipo_pago VARCHAR(30)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Pagos
+    (
+        id_reserva,
+        id_reserva_temporal,
+        id_usuario,
+        monto,
+        metodo_pago,
+        estado,
+        tipo_pago
+    )
+    VALUES
+    (
+        @id_reserva,
+        @id_reserva_temporal,
+        @id_usuario,
+        @monto,
+        @metodo_pago,
+        @estado,
+        @tipo_pago
+    );
+END;
+GO
+
+
+
+
+
+CREATE OR ALTER PROCEDURE sp_ConfirmarReserva
+    @id_reserva_temporal INT,
+    @cantidad_personas INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE
+            @id_huesped INT,
+            @id_habitacion INT,
+            @fecha_entrada DATE,
+            @fecha_salida DATE,
+            @fecha_expiracion DATETIME,
+            @id_reserva_existente INT,
+            @id_usuario INT,
+            @id_pago INT,
+            @monto_pago DECIMAL(10,2),
+            @precio_noche DECIMAL(10,2),
+            @capacidad INT,
+            @cantidad_noches INT,
+            @total_alojamiento DECIMAL(10,2),
+            @mitad_alojamiento DECIMAL(10,2),
+            @id_reserva_nueva INT;
+
+        -- 1. Obtener y bloquear la reserva temporal
+        SELECT
+            @id_huesped = RT.id_huesped,
+            @id_habitacion = RT.id_habitacion,
+            @fecha_entrada = RT.fecha_entrada,
+            @fecha_salida = RT.fecha_salida,
+            @fecha_expiracion = RT.fecha_expiracion,
+            @id_reserva_existente = RT.id_reserva
+        FROM ReservasTemporales RT WITH (UPDLOCK, HOLDLOCK)
+        WHERE RT.id_reserva_temporal = @id_reserva_temporal;
+
+        IF @id_huesped IS NULL
+            THROW 50001, 'La reserva temporal no existe.', 1;
+
+        -- 2. Evitar confirmaciones duplicadas
+        IF @id_reserva_existente IS NOT NULL
+            THROW 50002, 'La reserva temporal ya fue confirmada.', 1;
+
+        -- 3. Verificar expiración
+        IF @fecha_expiracion <= GETDATE()
+            THROW 50003, 'La reserva temporal se encuentra expirada.', 1;
+
+    
+
+        -- 5. Obtener habitación, precio y capacidad
+        SELECT
+            @precio_noche = TH.precio_noche,
+            @capacidad = TH.capacidad
+        FROM Habitaciones H
+        INNER JOIN TiposHabitacion TH
+            ON H.tipo_habitacion = TH.id_tipoHabitacion
+        WHERE H.id_habitacion = @id_habitacion
+          AND H.activo = 1
+          AND TH.activo = 1
+          AND H.estado <> 'MANTENIMIENTO';
+
+        IF @precio_noche IS NULL
+            THROW 50005, 'La habitación no está disponible para reservas.', 1;
+
+        IF @cantidad_personas <= 0 OR @cantidad_personas > @capacidad
+            THROW 50006, 'La cantidad de personas supera la capacidad de la habitación.', 1;
+
+        -- 6. Volver a verificar disponibilidad
+        IF EXISTS
+        (
+            SELECT 1
+            FROM DetalleReservas DR
+            INNER JOIN Reservas R
+                ON DR.id_reserva = R.id_reserva
+            WHERE DR.id_habitacion = @id_habitacion
+              AND R.estado IN ('CONFIRMADA', 'CHECKIN')
+              AND R.fecha_entrada < @fecha_salida
+              AND R.fecha_salida > @fecha_entrada
+        )
+            THROW 50007, 'La habitación ya no está disponible para esas fechas.', 1;
+
+        -- 7. Buscar el pago inicial aprobado
+        SELECT TOP 1
+            @id_pago = P.id_pago,
+            @id_usuario = P.id_usuario,
+            @monto_pago = P.monto
+        FROM Pagos P
+        WHERE P.id_reserva_temporal = @id_reserva_temporal
+          AND P.id_reserva IS NULL
+          AND P.tipo_pago = 'PAGO_INICIAL'
+          AND P.estado = 'APROBADO'
+        ORDER BY P.fecha_pago DESC;
+
+        IF @id_pago IS NULL
+            THROW 50008, 'No existe un pago inicial aprobado para esta reserva temporal.', 1;
+
+        -- 8. Calcular importe del alojamiento
+        SET @cantidad_noches = DATEDIFF(DAY, @fecha_entrada, @fecha_salida);
+        SET @total_alojamiento = @cantidad_noches * @precio_noche;
+        SET @mitad_alojamiento = ROUND(@total_alojamiento * 0.50, 2);
+
+        -- Pago inicial permitido: 50% o 100%
+        IF @monto_pago <> @total_alojamiento
+           AND @monto_pago <> @mitad_alojamiento
+            THROW 50009, 'El pago inicial debe corresponder al 50% o al 100% del alojamiento.', 1;
+
+        -- 9. Crear reserva definitiva
+        INSERT INTO Reservas
+        (
+            id_huesped,
+            id_usuario,
+            fecha_entrada,
+            fecha_salida,
+            estado,
+            total,
+            observaciones
+        )
+        VALUES
+        (
+            @id_huesped,
+            @id_usuario,
+            @fecha_entrada,
+            @fecha_salida,
+            'CONFIRMADA',
+            @total_alojamiento,
+            'Reserva confirmada desde reserva temporal'
+        );
+
+        SET @id_reserva_nueva = SCOPE_IDENTITY();
+
+        -- 10. Guardar habitación y precio histórico
+        INSERT INTO DetalleReservas
+        (
+            id_reserva,
+            id_habitacion,
+            precio_noche,
+            cantidad_personas
+        )
+        VALUES
+        (
+            @id_reserva_nueva,
+            @id_habitacion,
+            @precio_noche,
+            @cantidad_personas
+        );
+
+        -- 11. Vincular el pago existente con la reserva definitiva
+        UPDATE Pagos
+        SET
+            id_reserva = @id_reserva_nueva,
+            id_reserva_temporal = NULL
+        WHERE id_pago = @id_pago;
+
+        -- 12. Vincular temporal con definitiva
+        UPDATE ReservasTemporales
+       SET
+       id_reserva = @id_reserva_nueva,
+       estadoPago = 'APROBADO'
+       WHERE id_reserva_temporal = @id_reserva_temporal;
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            @id_reserva_nueva AS id_reserva,
+            @total_alojamiento AS total_alojamiento,
+            @monto_pago AS pago_inicial,
+            (@total_alojamiento - @monto_pago) AS saldo_alojamiento;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
+END;
+GO
+
+
+--modificar el estado de un pago.
+
+CREATE OR ALTER PROCEDURE sp_Pago_ActualizarEstado
+    @id_pago INT,
+    @estado VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Pagos
+    SET estado = @estado
+    WHERE id_pago = @id_pago;
+END;
+GO
+
+
+---listar los pagos de una reserva.
+
+CREATE OR ALTER PROCEDURE sp_Pago_ListarPorReserva
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        P.id_pago,
+        P.id_reserva,
+        P.id_usuario,
+        U.nombre AS nombre_usuario,
+        U.apellido AS apellido_usuario,
+        P.monto,
+        P.metodo_pago,
+        P.estado,
+        P.tipo_pago,
+        P.fecha_pago
+    FROM Pagos P
+    INNER JOIN Usuarios U
+        ON P.id_usuario = U.id_usuario
+    WHERE P.id_reserva = @id_reserva
+    ORDER BY P.fecha_pago DESC;
+END;
+GO
+
+
+---DetalleServicios
+--agregar un servicio a una reserva
+
+CREATE OR ALTER PROCEDURE sp_DetalleServicio_Insertar
+    @id_servicios INT,
+    @id_reserva INT,
+    @cantidad INT,
+    @precio_unitario DECIMAL(10,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO DetalleServicios
+        (
+            id_servicios,
+            id_reserva,
+            cantidad,
+            precio_unitario
+        )
+    VALUES
+        (
+            @id_servicios,
+            @id_reserva,
+            @cantidad,
+            @precio_unitario
+        );
+END;
+GO
+
+
+---listar servicios por reserva.
+
+CREATE OR ALTER PROCEDURE sp_DetalleServicio_ListarPorReserva
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        DS.id_detalle_servicio,
+        DS.id_reserva,
+        DS.id_servicios,
+        S.nombre AS nombre_servicio,
+        DS.cantidad,
+        DS.precio_unitario,
+        (DS.cantidad * DS.precio_unitario) AS subtotal
+    FROM DetalleServicios DS
+    INNER JOIN Servicios S
+        ON DS.id_servicios = S.id_servicio
+    WHERE DS.id_reserva = @id_reserva
+    ORDER BY S.nombre;
+END;
+GO
+
+
+
+--ReservasTemporales
+
+CREATE OR ALTER PROCEDURE sp_ReservaTemporal_Insertar
+    @id_huesped INT,
+    @id_habitacion INT,
+    @fecha_entrada DATE,
+    @fecha_salida DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO ReservasTemporales
+        (
+            id_huesped,
+            id_habitacion,
+            estadoPago,
+            fecha_entrada,
+            fecha_salida,
+            fecha_expiracion
+        )
+    VALUES
+        (
+            @id_huesped,
+            @id_habitacion,
+            'PENDIENTE',
+            @fecha_entrada,
+            @fecha_salida,
+            DATEADD(MINUTE, 30, GETDATE())
+        );
+END;
+GO
+
+
+---actualizar el estado de la reserva temporal.
+
+CREATE OR ALTER PROCEDURE sp_ReservaTemporal_ActualizarEstado
+    @id_reserva_temporal INT,
+    @estadoPago VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE ReservasTemporales
+    SET estadoPago = @estadoPago
+    WHERE id_reserva_temporal = @id_reserva_temporal;
+END;
+GO
+
+--marcar automáticamente como expiradas las reservas temporales vencidas.
+
+CREATE OR ALTER PROCEDURE sp_ReservaTemporal_ExpirarVencidas
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE ReservasTemporales
+    SET estadoPago = 'EXPIRADO'
+    WHERE estadoPago = 'PENDIENTE'
+      AND fecha_expiracion <= GETDATE();
+END;
+GO
+
+
+
+--listar reservas temporales pendientes.
+
+CREATE OR ALTER PROCEDURE sp_ReservaTemporal_ListarPendientes
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        RT.id_reserva_temporal,
+        RT.id_huesped,
+        H.nombre AS nombre_huesped,
+        H.apellido AS apellido_huesped,
+        RT.id_habitacion,
+        HA.numero AS numero_habitacion,
+        RT.estadoPago,
+        RT.fecha_entrada,
+        RT.fecha_salida,
+        RT.fecha_creacion,
+        RT.fecha_expiracion
+    FROM ReservasTemporales RT
+    INNER JOIN Huespedes H
+        ON RT.id_huesped = H.id_huesped
+    INNER JOIN Habitaciones HA
+        ON RT.id_habitacion = HA.id_habitacion
+    WHERE RT.estadoPago = 'PENDIENTE'
+    ORDER BY RT.fecha_creacion DESC;
+END;
+GO
+
+
+
+
+
+
+---disponibilidad de habitaciones
+
+CREATE OR ALTER PROCEDURE sp_Habitacion_ConsultarDisponibilidad
+    @fecha_entrada DATE,
+    @fecha_salida DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        H.id_habitacion,
+        H.numero,
+        H.piso,
+        H.estado,
+        TH.id_tipoHabitacion,
+        TH.nombre AS tipo_habitacion,
+        TH.precio_noche,
+        TH.capacidad
+    FROM Habitaciones H
+    INNER JOIN TiposHabitacion TH
+        ON H.tipo_habitacion = TH.id_tipoHabitacion
+    WHERE H.activo = 1
+      AND TH.activo = 1
+      AND H.estado <> 'MANTENIMIENTO'
+      AND NOT EXISTS
+      (
+          SELECT 1
+          FROM DetalleReservas DR
+          INNER JOIN Reservas R
+              ON DR.id_reserva = R.id_reserva
+          WHERE DR.id_habitacion = H.id_habitacion
+            AND R.estado IN ('CONFIRMADA', 'CHECKIN')
+            AND R.fecha_entrada < @fecha_salida
+            AND R.fecha_salida > @fecha_entrada
+      )
+    ORDER BY H.numero;
+END;
+GO
+
+
+
+---check-in
+
+-- check-in: solo permite ingresar si el alojamiento está totalmente pagado
+
+CREATE OR ALTER PROCEDURE sp_Reserva_CheckIn
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+        @total_alojamiento DECIMAL(10,2),
+        @pagado_alojamiento DECIMAL(10,2),
+        @saldo_alojamiento DECIMAL(10,2),
+        @estado_reserva VARCHAR(20);
+
+    SELECT
+        @total_alojamiento = total,
+        @estado_reserva = estado
+    FROM Reservas
+    WHERE id_reserva = @id_reserva;
+
+    IF @total_alojamiento IS NULL
+        THROW 50026, 'La reserva no existe.', 1;
+
+    IF @estado_reserva <> 'CONFIRMADA'
+        THROW 50027, 'La reserva debe estar CONFIRMADA para realizar el check-in.', 1;
+
+    SELECT
+        @pagado_alojamiento = ISNULL(SUM(monto), 0)
+    FROM Pagos
+    WHERE id_reserva = @id_reserva
+      AND estado = 'APROBADO'
+      AND tipo_pago IN ('PAGO_INICIAL', 'SALDO_ALOJAMIENTO');
+
+    SET @saldo_alojamiento =
+        @total_alojamiento - @pagado_alojamiento;
+
+    IF @saldo_alojamiento > 0
+        THROW 50028, 'No se puede realizar el check-in porque existe saldo de alojamiento pendiente.', 1;
+
+    UPDATE Reservas
+    SET
+        estado = 'CHECKIN',
+        fecha_checkin = GETDATE()
+    WHERE id_reserva = @id_reserva;
+
+    SELECT
+        id_reserva,
+        estado,
+        fecha_checkin
+    FROM Reservas
+    WHERE id_reserva = @id_reserva;
+END;
+GO
+
+
+
+
+-- check-out: solo permite finalizar si no quedan saldos pendientes
+
+CREATE OR ALTER PROCEDURE sp_Reserva_CheckOut
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+        @estado_reserva VARCHAR(20),
+        @total_alojamiento DECIMAL(10,2),
+        @pagado_alojamiento DECIMAL(10,2),
+        @saldo_alojamiento DECIMAL(10,2),
+        @total_servicios DECIMAL(10,2),
+        @pagado_servicios DECIMAL(10,2),
+        @saldo_servicios DECIMAL(10,2);
+
+    SELECT
+        @estado_reserva = estado,
+        @total_alojamiento = total
+    FROM Reservas
+    WHERE id_reserva = @id_reserva;
+
+    IF @estado_reserva IS NULL
+        THROW 50029, 'La reserva no existe.', 1;
+
+    IF @estado_reserva <> 'CHECKIN'
+        THROW 50030, 'La reserva debe estar en CHECKIN para realizar el check-out.', 1;
+
+    -- saldo de alojamiento
+    SELECT
+        @pagado_alojamiento = ISNULL(SUM(monto), 0)
+    FROM Pagos
+    WHERE id_reserva = @id_reserva
+      AND estado = 'APROBADO'
+      AND tipo_pago IN ('PAGO_INICIAL', 'SALDO_ALOJAMIENTO');
+
+    SET @saldo_alojamiento =
+        @total_alojamiento - @pagado_alojamiento;
+
+    -- saldo de servicios
+    SELECT
+        @total_servicios = ISNULL(SUM(cantidad * precio_unitario), 0)
+    FROM DetalleServicios
+    WHERE id_reserva = @id_reserva;
+
+    SELECT
+        @pagado_servicios = ISNULL(SUM(monto), 0)
+    FROM Pagos
+    WHERE id_reserva = @id_reserva
+      AND estado = 'APROBADO'
+      AND tipo_pago = 'SERVICIOS_ADICIONALES';
+
+    SET @saldo_servicios =
+        @total_servicios - @pagado_servicios;
+
+    IF @saldo_alojamiento > 0
+        THROW 50031, 'No se puede realizar el check-out porque existe saldo de alojamiento pendiente.', 1;
+
+    IF @saldo_servicios > 0
+        THROW 50032, 'No se puede realizar el check-out porque existen servicios pendientes de pago.', 1;
+
+    UPDATE Reservas
+    SET
+        estado = 'FINALIZADA',
+        fecha_checkout = GETDATE()
+    WHERE id_reserva = @id_reserva;
+
+    SELECT
+        id_reserva,
+        estado,
+        fecha_checkout
+    FROM Reservas
+    WHERE id_reserva = @id_reserva;
+END;
+GO
+
+
+--consultas de reservas por huésped.
+
+CREATE OR ALTER PROCEDURE sp_Reserva_ListarPorHuesped
+    @id_huesped INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        R.id_reserva,
+        R.fecha_entrada,
+        R.fecha_salida,
+        R.estado,
+        R.total,
+        R.observaciones,
+        R.fecha_creacion,
+        R.fecha_checkin,
+        R.fecha_checkout
+    FROM Reservas R
+    WHERE R.id_huesped = @id_huesped
+    ORDER BY R.fecha_creacion DESC;
+END;
+GO
+
+
+---listar reservas por rango de fechas.
+
+CREATE OR ALTER PROCEDURE sp_Reserva_ListarPorFechas
+    @fecha_desde DATE,
+    @fecha_hasta DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        R.id_reserva,
+        R.id_huesped,
+        H.nombre AS nombre_huesped,
+        H.apellido AS apellido_huesped,
+        R.fecha_entrada,
+        R.fecha_salida,
+        R.estado,
+        R.total,
+        R.fecha_creacion
+    FROM Reservas R
+    INNER JOIN Huespedes H
+        ON R.id_huesped = H.id_huesped
+    WHERE R.fecha_entrada <= @fecha_hasta
+      AND R.fecha_salida >= @fecha_desde
+    ORDER BY R.fecha_entrada;
+END;
+GO
+
+
+
+
+--reservas por estado.
+
+CREATE OR ALTER PROCEDURE sp_Reserva_ListarPorEstado
+    @estado VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        R.id_reserva,
+        R.id_huesped,
+        H.nombre AS nombre_huesped,
+        H.apellido AS apellido_huesped,
+        R.fecha_entrada,
+        R.fecha_salida,
+        R.estado,
+        R.total,
+        R.fecha_creacion
+    FROM Reservas R
+    INNER JOIN Huespedes H
+        ON R.id_huesped = H.id_huesped
+    WHERE R.estado = @estado
+    ORDER BY R.fecha_entrada;
+END;
+GO
+
+--- Reserva_ConsultarSaldo
+
+-- consultar saldo de una reserva
+
+CREATE OR ALTER PROCEDURE sp_Reserva_ConsultarSaldo
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+        @total_alojamiento DECIMAL(10,2),
+        @pagado_alojamiento DECIMAL(10,2),
+        @saldo_alojamiento DECIMAL(10,2),
+        @total_servicios DECIMAL(10,2),
+        @pagado_servicios DECIMAL(10,2),
+        @saldo_servicios DECIMAL(10,2),
+        @total_pendiente DECIMAL(10,2);
+
+    -- total del alojamiento
+    SELECT
+        @total_alojamiento = total
+    FROM Reservas
+    WHERE id_reserva = @id_reserva;
+
+    IF @total_alojamiento IS NULL
+        THROW 50020, 'La reserva no existe.', 1;
+
+    -- pagos aprobados correspondientes al alojamiento
+    SELECT
+        @pagado_alojamiento =
+            ISNULL(SUM(monto), 0)
+    FROM Pagos
+    WHERE id_reserva = @id_reserva
+      AND estado = 'APROBADO'
+      AND tipo_pago IN ('PAGO_INICIAL', 'SALDO_ALOJAMIENTO');
+
+    SET @saldo_alojamiento =
+        @total_alojamiento - @pagado_alojamiento;
+
+    -- total de servicios consumidos
+    SELECT
+        @total_servicios =
+            ISNULL(SUM(cantidad * precio_unitario), 0)
+    FROM DetalleServicios
+    WHERE id_reserva = @id_reserva;
+
+    -- pagos aprobados de servicios
+    SELECT
+        @pagado_servicios =
+            ISNULL(SUM(monto), 0)
+    FROM Pagos
+    WHERE id_reserva = @id_reserva
+      AND estado = 'APROBADO'
+      AND tipo_pago = 'SERVICIOS_ADICIONALES';
+
+    SET @saldo_servicios =
+        @total_servicios - @pagado_servicios;
+
+    SET @total_pendiente =
+        @saldo_alojamiento + @saldo_servicios;
+
+    SELECT
+        @id_reserva AS id_reserva,
+        @total_alojamiento AS total_alojamiento,
+        @pagado_alojamiento AS pagado_alojamiento,
+        @saldo_alojamiento AS saldo_alojamiento,
+        @total_servicios AS total_servicios,
+        @pagado_servicios AS pagado_servicios,
+        @saldo_servicios AS saldo_servicios,
+        @total_pendiente AS total_pendiente;
+END;
+GO
+
+-- registrar saldo pendiente del alojamiento
+
+CREATE OR ALTER PROCEDURE sp_Pago_RegistrarSaldoAlojamiento
+    @id_reserva INT,
+    @id_usuario INT,
+    @metodo_pago VARCHAR(30)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+        @total_alojamiento DECIMAL(10,2),
+        @pagado_alojamiento DECIMAL(10,2),
+        @saldo_alojamiento DECIMAL(10,2),
+        @estado_reserva VARCHAR(20);
+
+    -- obtener datos de la reserva
+    SELECT
+        @total_alojamiento = total,
+        @estado_reserva = estado
+    FROM Reservas
+    WHERE id_reserva = @id_reserva;
+
+    IF @total_alojamiento IS NULL
+        THROW 50021, 'La reserva no existe.', 1;
+
+    -- el saldo se paga antes de realizar el check-in
+    IF @estado_reserva <> 'CONFIRMADA'
+        THROW 50022, 'La reserva debe estar CONFIRMADA para pagar el saldo del alojamiento.', 1;
+
+    -- calcular cuánto del alojamiento ya fue pagado
+    SELECT
+        @pagado_alojamiento = ISNULL(SUM(monto), 0)
+    FROM Pagos
+    WHERE id_reserva = @id_reserva
+      AND estado = 'APROBADO'
+      AND tipo_pago IN ('PAGO_INICIAL', 'SALDO_ALOJAMIENTO');
+
+    SET @saldo_alojamiento =
+        @total_alojamiento - @pagado_alojamiento;
+
+    IF @saldo_alojamiento <= 0
+        THROW 50023, 'La reserva no tiene saldo de alojamiento pendiente.', 1;
+
+    -- registrar exactamente el saldo restante
+    INSERT INTO Pagos
+    (
+        id_reserva,
+        id_reserva_temporal,
+        id_usuario,
+        monto,
+        metodo_pago,
+        estado,
+        tipo_pago
+    )
+    VALUES
+    (
+        @id_reserva,
+        NULL,
+        @id_usuario,
+        @saldo_alojamiento,
+        @metodo_pago,
+        'APROBADO',
+        'SALDO_ALOJAMIENTO'
+    );
+
+    SELECT
+        SCOPE_IDENTITY() AS id_pago,
+        @id_reserva AS id_reserva,
+        @saldo_alojamiento AS monto_pagado,
+        'SALDO_ALOJAMIENTO' AS tipo_pago;
+END;
+GO
+
+-- registrar pago de servicios adicionales
+
+CREATE OR ALTER PROCEDURE sp_Pago_RegistrarServicios
+    @id_reserva INT,
+    @id_usuario INT,
+    @metodo_pago VARCHAR(30)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+        @total_servicios DECIMAL(10,2),
+        @pagado_servicios DECIMAL(10,2),
+        @saldo_servicios DECIMAL(10,2);
+
+    -- calcular total consumido en servicios
+    SELECT
+        @total_servicios =
+            ISNULL(SUM(cantidad * precio_unitario), 0)
+    FROM DetalleServicios
+    WHERE id_reserva = @id_reserva;
+
+    IF @total_servicios <= 0
+        THROW 50024, 'La reserva no tiene servicios adicionales para pagar.', 1;
+
+    -- calcular lo ya pagado de servicios
+    SELECT
+        @pagado_servicios =
+            ISNULL(SUM(monto), 0)
+    FROM Pagos
+    WHERE id_reserva = @id_reserva
+      AND estado = 'APROBADO'
+      AND tipo_pago = 'SERVICIOS_ADICIONALES';
+
+    SET @saldo_servicios =
+        @total_servicios - @pagado_servicios;
+
+    IF @saldo_servicios <= 0
+        THROW 50025, 'Los servicios adicionales ya están pagados.', 1;
+
+    -- registrar exactamente el saldo pendiente
+    INSERT INTO Pagos
+    (
+        id_reserva,
+        id_reserva_temporal,
+        id_usuario,
+        monto,
+        metodo_pago,
+        estado,
+        tipo_pago
+    )
+    VALUES
+    (
+        @id_reserva,
+        NULL,
+        @id_usuario,
+        @saldo_servicios,
+        @metodo_pago,
+        'APROBADO',
+        'SERVICIOS_ADICIONALES'
+    );
+
+    SELECT
+        SCOPE_IDENTITY() AS id_pago,
+        @id_reserva AS id_reserva,
+        @saldo_servicios AS monto_pagado,
+        'SERVICIOS_ADICIONALES' AS tipo_pago;
+END;
+GO
+
+-- reporte de ocupación de habitaciones
+
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_Ocupacion;
+GO
+
+CREATE PROCEDURE dbo.sp_Reporte_Ocupacion
+    @fecha_desde DATE,
+    @fecha_hasta DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_hasta < @fecha_desde
+        THROW 50040, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
+
+    DECLARE
+        @dias_periodo INT,
+        @habitaciones_activas INT,
+        @noches_disponibles INT,
+        @noches_ocupadas INT,
+        @porcentaje_ocupacion DECIMAL(10,2);
+
+    SET @dias_periodo = DATEDIFF(DAY, @fecha_desde, @fecha_hasta);
+
+    IF @dias_periodo <= 0
+        THROW 50041, 'El rango debe incluir al menos una noche.', 1;
+
+    SELECT
+        @habitaciones_activas = COUNT(*)
+    FROM Habitaciones
+    WHERE activo = 1;
+
+    SET @noches_disponibles =
+        @habitaciones_activas * @dias_periodo;
+
+    SELECT
+        @noches_ocupadas =
+            ISNULL(
+                SUM(
+                    DATEDIFF(
+                        DAY,
+                        CASE
+                            WHEN R.fecha_entrada < @fecha_desde
+                                THEN @fecha_desde
+                            ELSE R.fecha_entrada
+                        END,
+                        CASE
+                            WHEN R.fecha_salida > @fecha_hasta
+                                THEN @fecha_hasta
+                            ELSE R.fecha_salida
+                        END
+                    )
+                ),
+                0
+            )
+    FROM Reservas R
+    INNER JOIN DetalleReservas DR
+        ON R.id_reserva = DR.id_reserva
+    WHERE R.estado IN ('CONFIRMADA', 'CHECKIN', 'FINALIZADA')
+      AND R.fecha_entrada < @fecha_hasta
+      AND R.fecha_salida > @fecha_desde;
+
+    IF @noches_disponibles > 0
+        SET @porcentaje_ocupacion =
+            ROUND(
+                (@noches_ocupadas * 100.0) / @noches_disponibles,
+                2
+            );
+    ELSE
+        SET @porcentaje_ocupacion = 0;
+
+    SELECT
+        @fecha_desde AS fecha_desde,
+        @fecha_hasta AS fecha_hasta,
+        @habitaciones_activas AS habitaciones_activas,
+        @noches_disponibles AS noches_disponibles,
+        @noches_ocupadas AS noches_ocupadas,
+        @porcentaje_ocupacion AS porcentaje_ocupacion;
+END;
+GO
+
+-- reporte de ingresos
+
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_Ingresos;   
+GO
+
+CREATE PROCEDURE dbo.sp_Reporte_Ingresos
+    @fecha_desde DATE,
+    @fecha_hasta DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_hasta < @fecha_desde
+        THROW 50042, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
+
+    SELECT
+        @fecha_desde AS fecha_desde,
+        @fecha_hasta AS fecha_hasta,
+        COUNT(*) AS cantidad_pagos,
+        ISNULL(SUM(P.monto), 0) AS total_ingresos,
+        ISNULL(AVG(P.monto), 0) AS promedio_pago,
+        COUNT(DISTINCT P.id_reserva) AS cantidad_reservas
+    FROM Pagos P
+    WHERE P.estado = 'APROBADO'
+      AND CAST(P.fecha_pago AS DATE) BETWEEN @fecha_desde AND @fecha_hasta;
+
+
+    -- ingresos agrupados por método de pago
+    SELECT
+        P.metodo_pago,
+        COUNT(*) AS cantidad_pagos,
+        SUM(P.monto) AS total_ingresos
+    FROM Pagos P
+    WHERE P.estado = 'APROBADO'
+      AND CAST(P.fecha_pago AS DATE) BETWEEN @fecha_desde AND @fecha_hasta
+    GROUP BY P.metodo_pago
+    ORDER BY total_ingresos DESC;
+
+
+    -- ingresos agrupados por tipo de pago
+    SELECT
+        P.tipo_pago,
+        COUNT(*) AS cantidad_pagos,
+        SUM(P.monto) AS total_ingresos
+    FROM Pagos P
+    WHERE P.estado = 'APROBADO'
+      AND CAST(P.fecha_pago AS DATE) BETWEEN @fecha_desde AND @fecha_hasta
+    GROUP BY P.tipo_pago
+    ORDER BY total_ingresos DESC;
+END;
+GO
+
+-- reporte de estadísticas de reservas
+
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_EstadisticasReservas;   
+GO
+
+CREATE PROCEDURE dbo.sp_Reporte_EstadisticasReservas
+   @fecha_desde DATE, 
+   @fecha_hasta DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_hasta < @fecha_desde
+        THROW 50043, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
+
+    -- resumen general
+    SELECT
+        COUNT(*) AS total_reservas,
+
+        SUM(CASE WHEN estado = 'CONFIRMADA' THEN 1 ELSE 0 END) AS confirmadas,
+
+        SUM(CASE WHEN estado = 'CHECKIN' THEN 1 ELSE 0 END) AS en_checkin,
+
+        SUM(CASE WHEN estado = 'FINALIZADA' THEN 1 ELSE 0 END) AS finalizadas,
+
+        SUM(CASE WHEN estado = 'CANCELADA' THEN 1 ELSE 0 END) AS canceladas,
+
+        CAST(
+            CASE
+                WHEN COUNT(*) = 0 THEN 0
+                ELSE
+                    SUM(CASE WHEN estado = 'CANCELADA' THEN 1 ELSE 0 END) * 100.0
+                    / COUNT(*)
+            END
+            AS DECIMAL(10,2)
+        ) AS porcentaje_cancelacion
+
+    FROM Reservas
+    WHERE fecha_entrada BETWEEN @fecha_desde AND @fecha_hasta;
+
+
+    -- reservas por tipo de habitación
+    SELECT
+        TH.nombre AS tipo_habitacion,
+        COUNT(DISTINCT R.id_reserva) AS cantidad_reservas,
+        SUM(DATEDIFF(DAY, R.fecha_entrada, R.fecha_salida)) AS noches_reservadas
+    FROM Reservas R
+    INNER JOIN DetalleReservas DR
+        ON R.id_reserva = DR.id_reserva
+    INNER JOIN Habitaciones H
+        ON DR.id_habitacion = H.id_habitacion
+    INNER JOIN TiposHabitacion TH
+        ON H.tipo_habitacion = TH.id_tipoHabitacion
+    WHERE R.fecha_entrada BETWEEN @fecha_desde AND @fecha_hasta
+      AND R.estado <> 'CANCELADA'
+    GROUP BY TH.nombre
+    ORDER BY cantidad_reservas DESC;
+
+
+    -- demanda por mes
+    SELECT
+        YEAR(fecha_entrada) AS anio,
+        MONTH(fecha_entrada) AS mes,
+        COUNT(*) AS cantidad_reservas
+    FROM Reservas
+    WHERE fecha_entrada BETWEEN @fecha_desde AND @fecha_hasta
+    GROUP BY
+        YEAR(fecha_entrada),
+        MONTH(fecha_entrada)
+    ORDER BY
+        anio,
+        mes;
+END;
+GO
+
+-- reporte de habitaciones más utilizadas
+
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_HabitacionesMasUtilizadas;   
+GO
+
+CREATE PROCEDURE dbo.sp_Reporte_HabitacionesMasUtilizadas
+    @fecha_desde DATE,
+   @fecha_hasta DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_hasta < @fecha_desde
+        THROW 50044, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
+
+    SELECT
+        H.id_habitacion,
+        H.numero AS numero_habitacion,
+        TH.nombre AS tipo_habitacion,
+
+        COUNT(DISTINCT R.id_reserva) AS cantidad_reservas,
+
+        SUM(
+            DATEDIFF(
+                DAY,
+                CASE
+                    WHEN R.fecha_entrada < @fecha_desde
+                        THEN @fecha_desde
+                    ELSE R.fecha_entrada
+                END,
+                CASE
+                    WHEN R.fecha_salida > @fecha_hasta
+                        THEN @fecha_hasta
+                    ELSE R.fecha_salida
+                END
+            )
+        ) AS noches_ocupadas,
+
+        SUM(
+            DATEDIFF(
+                DAY,
+                CASE
+                    WHEN R.fecha_entrada < @fecha_desde
+                        THEN @fecha_desde
+                    ELSE R.fecha_entrada
+                END,
+                CASE
+                    WHEN R.fecha_salida > @fecha_hasta
+                        THEN @fecha_hasta
+                    ELSE R.fecha_salida
+                END
+            ) * DR.precio_noche
+        ) AS ingresos_generados
+
+    FROM DetalleReservas DR
+
+    INNER JOIN Reservas R
+        ON DR.id_reserva = R.id_reserva
+
+    INNER JOIN Habitaciones H
+        ON DR.id_habitacion = H.id_habitacion
+
+    INNER JOIN TiposHabitacion TH
+        ON H.tipo_habitacion = TH.id_tipoHabitacion
+
+    WHERE R.estado IN ('CONFIRMADA', 'CHECKIN', 'FINALIZADA')
+      AND R.fecha_entrada < @fecha_hasta
+      AND R.fecha_salida > @fecha_desde
+
+    GROUP BY
+        H.id_habitacion,
+        H.numero,
+        TH.nombre
+
+    ORDER BY
+        noches_ocupadas DESC,
+        cantidad_reservas DESC;
+END;
+GO
+
+-- reporte de servicios más utilizados
+
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_ServiciosMasUtilizados;   
+GO
+
+CREATE PROCEDURE dbo.sp_Reporte_ServiciosMasUtilizados
+  @fecha_desde DATE,
+  @fecha_hasta DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_hasta < @fecha_desde
+        THROW 50045, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
+
+    SELECT
+        S.id_servicio,
+        S.nombre AS servicio,
+
+        SUM(DS.cantidad) AS cantidad_total_consumida,
+
+        COUNT(DISTINCT DS.id_reserva) AS cantidad_reservas,
+
+        CAST(
+            AVG(DS.precio_unitario)
+            AS DECIMAL(10,2)
+        ) AS precio_promedio_historico,
+
+        SUM(
+            DS.cantidad * DS.precio_unitario
+        ) AS ingresos_generados
+
+    FROM DetalleServicios DS
+
+    INNER JOIN Servicios S
+        ON DS.id_servicios = S.id_servicio
+
+    INNER JOIN Reservas R
+        ON DS.id_reserva = R.id_reserva
+
+    WHERE R.fecha_entrada BETWEEN @fecha_desde AND @fecha_hasta
+      AND R.estado <> 'CANCELADA'
+
+    GROUP BY
+        S.id_servicio,
+        S.nombre
+
+    ORDER BY
+        cantidad_total_consumida DESC,
+        ingresos_generados DESC;
+END;
+GO
+
