@@ -16,7 +16,7 @@ VALUES
 ('GERENTE', 'Consultas, estadísticas y reportes del hotel');
 GO
 
-SELECT * 
+SELECT *
 FROM Roles;
 
 CREATE TABLE Usuarios (
@@ -43,7 +43,7 @@ SELECT COUNT(*) AS CantidadUsuarios
 FROM Usuarios;
 
 
-SELECT 
+SELECT
     OBJECT_NAME(parent_object_id) AS TablaQueLaReferencia,
     name AS NombreFK
 FROM sys.foreign_keys
@@ -116,6 +116,7 @@ CREATE TABLE Reservas (
     fecha_salida DATE NOT NULL,
     estado VARCHAR(20) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
+    modalidad_pago VARCHAR(20) NULL,
     observaciones VARCHAR(250) NULL,
     fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),
     fecha_checkin DATETIME NULL,
@@ -134,6 +135,10 @@ CREATE TABLE Reservas (
 
     CONSTRAINT CK_Reservas_Total
         CHECK (total >= 0),
+
+
+    CONSTRAINT CK_Reservas_ModalidadPago
+        CHECK (modalidad_pago IN ('PAGO_TOTAL', 'SENA_50')),
 
     CONSTRAINT CK_Reservas_Estado
         CHECK (estado IN ('CONFIRMADA', 'CANCELADA', 'CHECKIN', 'FINALIZADA'))
@@ -241,17 +246,25 @@ CREATE TABLE DetalleServicios (
 );
 GO
 
+
 CREATE TABLE ReservasTemporales (
     id_reserva_temporal INT IDENTITY(1,1) PRIMARY KEY,
 
     id_huesped INT NOT NULL,
     id_habitacion INT NOT NULL,
 
-    -- Queda NULL hasta que la temporal se convierta
-    -- en una reserva definitiva
+    -- Se completa al confirmar la reserva
     id_reserva INT NULL,
 
-    estadoPago VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    -- Modalidad elegida por el huésped
+    modalidad_pago VARCHAR(20) NOT NULL,
+
+
+        -- Estado propio de la reserva temporal
+        estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+
+        -- Campo anterior conservado temporalmente
+        estadoPago VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
 
     fecha_entrada DATE NOT NULL,
     fecha_salida DATE NOT NULL,
@@ -282,9 +295,26 @@ CREATE TABLE ReservasTemporales (
                 'RECHAZADO',
                 'EXPIRADO'
             )
+        ),
+
+CONSTRAINT CK_ReservasTemporales_ModalidadPago
+    CHECK (
+        modalidad_pago IN ('PAGO_TOTAL', 'SENA_50')
+    ),
+
+CONSTRAINT CK_ReservasTemporales_Estado
+    CHECK (
+        estado IN (
+            'PENDIENTE',
+            'CONFIRMADA',
+            'CANCELADA',
+            'EXPIRADA'
         )
+    )
+
 );
 GO
+
 
 ALTER TABLE Pagos
 ADD CONSTRAINT FK_Pagos_ReservasTemporales
@@ -316,7 +346,7 @@ FROM sys.objects
 WHERE type IN ('C', 'UQ', 'D')
 ORDER BY Tabla, Tipo;
 
-SELECT --ver todas las reglas 
+SELECT --ver todas las reglas
     OBJECT_NAME(parent_object_id) AS Tabla,
     name AS Restriccion,
     definition AS Regla

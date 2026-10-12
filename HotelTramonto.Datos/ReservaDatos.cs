@@ -1,73 +1,12 @@
-﻿using System.Data;
+using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.Datos
 {
     public class ReservaDatos
     {
-        public void Insertar(
-            int idHuesped,
-            int? idUsuario,
-            DateTime fechaEntrada,
-            DateTime fechaSalida,
-            string estado,
-            decimal total,
-            string? observaciones)
-        {
-            using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando =
-                new SqlCommand("sp_Reserva_Insertar", conexion);
 
-            comando.CommandType = CommandType.StoredProcedure;
 
-            comando.Parameters.AddWithValue("@id_huesped", idHuesped);
-            comando.Parameters.AddWithValue("@id_usuario",
-                idUsuario.HasValue ? idUsuario.Value : DBNull.Value);
-            comando.Parameters.AddWithValue("@fecha_entrada", fechaEntrada.Date);
-            comando.Parameters.AddWithValue("@fecha_salida", fechaSalida.Date);
-            comando.Parameters.AddWithValue("@estado", estado);
-            comando.Parameters.AddWithValue("@total", total);
-            comando.Parameters.AddWithValue("@observaciones",
-                string.IsNullOrWhiteSpace(observaciones)
-                    ? DBNull.Value
-                    : observaciones);
-
-            conexion.Open();
-            comando.ExecuteNonQuery();
-        }
-
-        public void Modificar(
-            int idReserva,
-            int idHuesped,
-            int? idUsuario,
-            DateTime fechaEntrada,
-            DateTime fechaSalida,
-            string estado,
-            decimal total,
-            string? observaciones)
-        {
-            using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando =
-                new SqlCommand("sp_Reserva_Modificar", conexion);
-
-            comando.CommandType = CommandType.StoredProcedure;
-
-            comando.Parameters.AddWithValue("@id_reserva", idReserva);
-            comando.Parameters.AddWithValue("@id_huesped", idHuesped);
-            comando.Parameters.AddWithValue("@id_usuario",
-                idUsuario.HasValue ? idUsuario.Value : DBNull.Value);
-            comando.Parameters.AddWithValue("@fecha_entrada", fechaEntrada.Date);
-            comando.Parameters.AddWithValue("@fecha_salida", fechaSalida.Date);
-            comando.Parameters.AddWithValue("@estado", estado);
-            comando.Parameters.AddWithValue("@total", total);
-            comando.Parameters.AddWithValue("@observaciones",
-                string.IsNullOrWhiteSpace(observaciones)
-                    ? DBNull.Value
-                    : observaciones);
-
-            conexion.Open();
-            comando.ExecuteNonQuery();
-        }
 
         public void Cancelar(int idReserva)
         {
