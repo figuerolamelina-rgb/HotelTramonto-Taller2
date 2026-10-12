@@ -3,4 +3,5 @@
   <Project Path="HotelTramonto.Entidades/HotelTramonto.Entidades.csproj" />
   <Project Path="HotelTramonto.Negocios/HotelTramonto.Negocios.csproj" />
   <Project Path="HotelTramonto.Presentacion/HotelTramonto.Presentacion.csproj" />
+  <Project Path="HotelTramonto.Pruebas/HotelTramonto.Pruebas.csproj" />
 </Solution>
