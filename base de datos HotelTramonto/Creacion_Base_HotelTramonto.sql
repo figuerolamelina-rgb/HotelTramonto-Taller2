@@ -15,8 +15,8 @@ VALUES
 ('RECEPCIONISTA', 'Gestión de huéspedes, reservas, disponibilidad, pagos, check-in y check-out'),
 ('GERENTE', 'Consultas, estadísticas y reportes del hotel');
 GO
-
-SELECT * 
+ID_USUARIO CORREGIDO
+SELECT *
 FROM Roles;
 
 CREATE TABLE Usuarios (
@@ -25,7 +25,7 @@ CREATE TABLE Usuarios (
     nombre VARCHAR(50) NOT NULL,
     apellido VARCHAR(50) NOT NULL,
     dni VARCHAR(15) NOT NULL UNIQUE,
-    email VARCHAR(100) NULL,
+    email VARCHAR(100) NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     telefono VARCHAR(20) NULL,
     activo BIT NOT NULL DEFAULT 1,
@@ -33,9 +33,13 @@ CREATE TABLE Usuarios (
 
     CONSTRAINT FK_Usuarios_Roles
         FOREIGN KEY (id_rol)
-        REFERENCES Roles(id_rol)
+        REFERENCES Roles(id_rol),
+
+    CONSTRAINT UQ_Usuarios_Email
+        UNIQUE (email)
 );
 GO
+
 
 EXEC sp_help 'dbo.Usuarios';
 
@@ -43,7 +47,7 @@ SELECT COUNT(*) AS CantidadUsuarios
 FROM Usuarios;
 
 
-SELECT 
+SELECT
     OBJECT_NAME(parent_object_id) AS TablaQueLaReferencia,
     name AS NombreFK
 FROM sys.foreign_keys
@@ -111,11 +115,12 @@ GO
 CREATE TABLE Reservas (
     id_reserva INT IDENTITY(1,1) PRIMARY KEY,
     id_huesped INT NOT NULL,
-    id_usuario INT NULL,
+    id_usuario INT NOT NULL,
     fecha_entrada DATE NOT NULL,
     fecha_salida DATE NOT NULL,
     estado VARCHAR(20) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
+    modalidad_pago VARCHAR(20) NULL,
     observaciones VARCHAR(250) NULL,
     fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),
     fecha_checkin DATETIME NULL,
@@ -134,6 +139,10 @@ CREATE TABLE Reservas (
 
     CONSTRAINT CK_Reservas_Total
         CHECK (total >= 0),
+
+
+    CONSTRAINT CK_Reservas_ModalidadPago
+        CHECK (modalidad_pago IN ('PAGO_TOTAL', 'SENA_50')),
 
     CONSTRAINT CK_Reservas_Estado
         CHECK (estado IN ('CONFIRMADA', 'CANCELADA', 'CHECKIN', 'FINALIZADA'))
@@ -241,17 +250,22 @@ CREATE TABLE DetalleServicios (
 );
 GO
 
+
+
 CREATE TABLE ReservasTemporales (
     id_reserva_temporal INT IDENTITY(1,1) PRIMARY KEY,
 
     id_huesped INT NOT NULL,
     id_habitacion INT NOT NULL,
 
-    -- Queda NULL hasta que la temporal se convierta
-    -- en una reserva definitiva
+    -- Se completa al confirmar la reserva
     id_reserva INT NULL,
 
-    estadoPago VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    -- Modalidad de pago
+    modalidad_pago VARCHAR(20) NOT NULL,
+
+    -- Estado de la reserva temporal
+    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
 
     fecha_entrada DATE NOT NULL,
     fecha_salida DATE NOT NULL,
@@ -274,17 +288,21 @@ CREATE TABLE ReservasTemporales (
     CONSTRAINT CK_ReservasTemporales_Fechas
         CHECK (fecha_salida > fecha_entrada),
 
-    CONSTRAINT CK_ReservasTemporales_EstadoPago
+    CONSTRAINT CK_ReservasTemporales_ModalidadPago
+        CHECK (modalidad_pago IN ('PAGO_TOTAL', 'SENA_50')),
+
+    CONSTRAINT CK_ReservasTemporales_Estado
         CHECK (
-            estadoPago IN (
+            estado IN (
                 'PENDIENTE',
-                'APROBADO',
-                'RECHAZADO',
-                'EXPIRADO'
+                'CONFIRMADA',
+                'CANCELADA',
+                'EXPIRADA'
             )
         )
 );
 GO
+
 
 ALTER TABLE Pagos
 ADD CONSTRAINT FK_Pagos_ReservasTemporales
@@ -316,7 +334,7 @@ FROM sys.objects
 WHERE type IN ('C', 'UQ', 'D')
 ORDER BY Tabla, Tipo;
 
-SELECT --ver todas las reglas 
+SELECT --ver todas las reglas
     OBJECT_NAME(parent_object_id) AS Tabla,
     name AS Restriccion,
     definition AS Regla

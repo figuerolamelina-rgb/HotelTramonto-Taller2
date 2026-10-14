@@ -22,7 +22,7 @@ GO
 
 
 
-CREATE OR ALTER PROCEDURE sp_Huesped_Modificar  --modificamos la info del huesped 
+CREATE OR ALTER PROCEDURE sp_Huesped_Modificar  --modificamos la info del huesped
     @id_huesped INT,
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
@@ -90,7 +90,7 @@ GO
 
 
 
-CREATE OR ALTER PROCEDURE sp_Huesped_BuscarPorDNI --buscamos huesped por dni 
+CREATE OR ALTER PROCEDURE sp_Huesped_BuscarPorDNI --buscamos huesped por dni
     @dni VARCHAR(15)
 AS
 BEGIN
@@ -115,19 +115,36 @@ GO
 
 --insertamos usuario
 
-CREATE OR ALTER PROCEDURE sp_Usuario_Insertar 
+
+CREATE OR ALTER PROCEDURE sp_Usuario_Insertar
     @id_rol INT,
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
     @dni VARCHAR(15),
-    @email VARCHAR(100) = NULL,
+    @email VARCHAR(100),
     @contrasena VARCHAR(255),
     @telefono VARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO Usuarios
+    -- Validar que el email sea obligatorio
+    IF @email IS NULL OR LTRIM(RTRIM(@email)) = ''
+    BEGIN
+        THROW 50032, 'El email del usuario es obligatorio.', 1;
+    END;
+
+    -- Validar que el email no esté repetido
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.Usuarios
+        WHERE email = @email
+    )
+    BEGIN
+        THROW 50033, 'Ya existe un usuario con ese email.', 1;
+    END;
+
+    INSERT INTO dbo.Usuarios
         (id_rol, nombre, apellido, dni, email, contrasena, telefono)
     VALUES
         (@id_rol, @nombre, @apellido, @dni, @email, @contrasena, @telefono);
@@ -140,19 +157,37 @@ GO
 
 --modificar usuario
 
+
 CREATE OR ALTER PROCEDURE sp_Usuario_Modificar
     @id_usuario INT,
     @id_rol INT,
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
     @dni VARCHAR(15),
-    @email VARCHAR(100) = NULL,
+    @email VARCHAR(100),
     @telefono VARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE Usuarios
+    -- El email es obligatorio
+    IF @email IS NULL OR LTRIM(RTRIM(@email)) = ''
+    BEGIN
+        THROW 50032, 'El email del usuario es obligatorio.', 1;
+    END;
+
+    -- No permitir emails de otros usuarios
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.Usuarios
+        WHERE email = @email
+          AND id_usuario <> @id_usuario
+    )
+    BEGIN
+        THROW 50033, 'Ya existe otro usuario con ese email.', 1;
+    END;
+
+    UPDATE dbo.Usuarios
     SET
         id_rol = @id_rol,
         nombre = @nombre,
@@ -314,7 +349,7 @@ BEGIN
 END;
 GO
 
-  
+
 
 
 -- listar tipos de habitación activos.
@@ -505,7 +540,8 @@ GO
 
 
 
---- reservas 
+--- reservas
+
 
 CREATE OR ALTER PROCEDURE sp_Reserva_Insertar
     @id_huesped INT,
@@ -519,32 +555,14 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO Reservas
-        (
-            id_huesped,
-            id_usuario,
-            fecha_entrada,
-            fecha_salida,
-            estado,
-            total,
-            observaciones
-        )
-    VALUES
-        (
-            @id_huesped,
-            @id_usuario,
-            @fecha_entrada,
-            @fecha_salida,
-            @estado,
-            @total,
-            @observaciones
-        );
+    THROW 50020,
+        'La creacion directa de reservas esta deshabilitada. Utilice sp_ConfirmarReserva.',
+        1;
 END;
 GO
 
-
-
 --modificar reserva.
+
 
 CREATE OR ALTER PROCEDURE sp_Reserva_Modificar
     @id_reserva INT,
@@ -559,31 +577,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE Reservas
-    SET
-        id_huesped = @id_huesped,
-        id_usuario = @id_usuario,
-        fecha_entrada = @fecha_entrada,
-        fecha_salida = @fecha_salida,
-        estado = @estado,
-        total = @total,
-        observaciones = @observaciones
-    WHERE id_reserva = @id_reserva;
-END;
-GO
-
-
---cancelar reserva
-
-CREATE OR ALTER PROCEDURE sp_Reserva_Cancelar
-    @id_reserva INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    UPDATE Reservas
-    SET estado = 'CANCELADA'
-    WHERE id_reserva = @id_reserva;
+    THROW 50021,
+        'La modificacion directa de reservas esta deshabilitada hasta implementar las validaciones correspondientes.',
+        1;
 END;
 GO
 
@@ -703,8 +699,9 @@ GO
 
 
 
----pagos 
+---pagos
 --registrar un pago
+
 
 CREATE OR ALTER PROCEDURE sp_Pago_Insertar
     @id_reserva INT = NULL,
@@ -738,9 +735,11 @@ BEGIN
         @estado,
         @tipo_pago
     );
+
+    -- Devolver el ID del pago recién registrado
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS id_pago;
 END;
 GO
-
 
 
 
@@ -756,9 +755,12 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+
         DECLARE
             @id_huesped INT,
             @id_habitacion INT,
+            @estado_temporal VARCHAR(20),
+            @modalidad_pago VARCHAR(20),
             @fecha_entrada DATE,
             @fecha_salida DATE,
             @fecha_expiracion DATETIME,
@@ -773,15 +775,19 @@ BEGIN
             @mitad_alojamiento DECIMAL(10,2),
             @id_reserva_nueva INT;
 
+
         -- 1. Obtener y bloquear la reserva temporal
+
         SELECT
             @id_huesped = RT.id_huesped,
             @id_habitacion = RT.id_habitacion,
+            @estado_temporal = RT.estado,
+            @modalidad_pago = RT.modalidad_pago,
             @fecha_entrada = RT.fecha_entrada,
             @fecha_salida = RT.fecha_salida,
             @fecha_expiracion = RT.fecha_expiracion,
             @id_reserva_existente = RT.id_reserva
-        FROM ReservasTemporales RT WITH (UPDLOCK, HOLDLOCK)
+        FROM dbo.ReservasTemporales RT WITH (UPDLOCK, HOLDLOCK)
         WHERE RT.id_reserva_temporal = @id_reserva_temporal;
 
         IF @id_huesped IS NULL
@@ -791,17 +797,28 @@ BEGIN
         IF @id_reserva_existente IS NOT NULL
             THROW 50002, 'La reserva temporal ya fue confirmada.', 1;
 
+
+        -- Verificar que la reserva temporal siga pendiente
+        IF @estado_temporal IS NULL
+           OR @estado_temporal <> 'PENDIENTE'
+        BEGIN
+            THROW 50012,
+                'Solo se pueden confirmar reservas temporales pendientes.',
+                1;
+        END;
+
         -- 3. Verificar expiración
         IF @fecha_expiracion <= GETDATE()
             THROW 50003, 'La reserva temporal se encuentra expirada.', 1;
 
-    
+
 
         -- 5. Obtener habitación, precio y capacidad
         SELECT
             @precio_noche = TH.precio_noche,
             @capacidad = TH.capacidad
-        FROM Habitaciones H
+
+     FROM Habitaciones H WITH (UPDLOCK, HOLDLOCK)
         INNER JOIN TiposHabitacion TH
             ON H.tipo_habitacion = TH.id_tipoHabitacion
         WHERE H.id_habitacion = @id_habitacion
@@ -844,17 +861,59 @@ BEGIN
         IF @id_pago IS NULL
             THROW 50008, 'No existe un pago inicial aprobado para esta reserva temporal.', 1;
 
+            -- Verificar que el usuario responsable exista y esté activo
+            IF @id_usuario IS NULL
+               OR NOT EXISTS (
+                   SELECT 1
+                   FROM dbo.Usuarios
+                   WHERE id_usuario = @id_usuario
+                     AND activo = 1
+               )
+            BEGIN
+                THROW 50041,
+                    'La reserva debe tener un usuario responsable activo.',
+                    1;
+            END;
+
         -- 8. Calcular importe del alojamiento
         SET @cantidad_noches = DATEDIFF(DAY, @fecha_entrada, @fecha_salida);
         SET @total_alojamiento = @cantidad_noches * @precio_noche;
         SET @mitad_alojamiento = ROUND(@total_alojamiento * 0.50, 2);
 
         -- Pago inicial permitido: 50% o 100%
-        IF @monto_pago <> @total_alojamiento
+
+        -- 8. Validar la modalidad de pago elegida
+
+        IF @modalidad_pago IS NULL
+           OR @modalidad_pago NOT IN ('PAGO_TOTAL', 'SENA_50')
+        BEGIN
+            THROW 50009,
+                'La reserva temporal no tiene una modalidad de pago valida.',
+                1;
+        END;
+
+        -- Si eligio pago total, debe abonar el 100%
+        IF @modalidad_pago = 'PAGO_TOTAL'
+           AND @monto_pago <> @total_alojamiento
+        BEGIN
+            THROW 50010,
+                'La modalidad PAGO_TOTAL requiere pagar el 100% del alojamiento.',
+                1;
+        END;
+
+        -- Si eligio sena, debe abonar el 50%
+        IF @modalidad_pago = 'SENA_50'
            AND @monto_pago <> @mitad_alojamiento
-            THROW 50009, 'El pago inicial debe corresponder al 50% o al 100% del alojamiento.', 1;
+        BEGIN
+            THROW 50011,
+                'La modalidad SENA_50 requiere pagar el 50% del alojamiento.',
+                1;
+        END;
+
 
         -- 9. Crear reserva definitiva
+        -- Conservando la modalidad de pago elegida
+
         INSERT INTO Reservas
         (
             id_huesped,
@@ -863,6 +922,7 @@ BEGIN
             fecha_salida,
             estado,
             total,
+            modalidad_pago,
             observaciones
         )
         VALUES
@@ -873,8 +933,10 @@ BEGIN
             @fecha_salida,
             'CONFIRMADA',
             @total_alojamiento,
+            @modalidad_pago,
             'Reserva confirmada desde reserva temporal'
         );
+
 
         SET @id_reserva_nueva = SCOPE_IDENTITY();
 
@@ -901,12 +963,13 @@ BEGIN
             id_reserva_temporal = NULL
         WHERE id_pago = @id_pago;
 
+
         -- 12. Vincular temporal con definitiva
-        UPDATE ReservasTemporales
-       SET
-       id_reserva = @id_reserva_nueva,
-       estadoPago = 'APROBADO'
-       WHERE id_reserva_temporal = @id_reserva_temporal;
+        UPDATE dbo.ReservasTemporales
+        SET
+            id_reserva = @id_reserva_nueva,
+            estado = 'CONFIRMADA'
+        WHERE id_reserva_temporal = @id_reserva_temporal;
 
         COMMIT TRANSACTION;
 
@@ -1029,48 +1092,74 @@ GO
 
 --ReservasTemporales
 
+
 CREATE OR ALTER PROCEDURE sp_ReservaTemporal_Insertar
     @id_huesped INT,
     @id_habitacion INT,
     @fecha_entrada DATE,
-    @fecha_salida DATE
+    @fecha_salida DATE,
+    @modalidad_pago VARCHAR(20)
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    IF @modalidad_pago NOT IN ('PAGO_TOTAL', 'SENA_50')
+       OR @modalidad_pago IS NULL
+    BEGIN
+        THROW 50050, 'La modalidad de pago debe ser PAGO_TOTAL o SENA_50.', 1;
+    END;
+
     INSERT INTO ReservasTemporales
-        (
-            id_huesped,
-            id_habitacion,
-            estadoPago,
-            fecha_entrada,
-            fecha_salida,
-            fecha_expiracion
-        )
+    (
+        id_huesped,
+        id_habitacion,
+        estado,
+        fecha_entrada,
+        fecha_salida,
+        fecha_expiracion,
+        modalidad_pago
+    )
     VALUES
-        (
-            @id_huesped,
-            @id_habitacion,
-            'PENDIENTE',
-            @fecha_entrada,
-            @fecha_salida,
-            DATEADD(MINUTE, 30, GETDATE())
-        );
+    (
+        @id_huesped,
+        @id_habitacion,
+        'PENDIENTE',
+        @fecha_entrada,
+        @fecha_salida,
+        DATEADD(MINUTE, 30, GETDATE()),
+        @modalidad_pago
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT)
+        AS id_reserva_temporal;
 END;
 GO
 
 
+
 ---actualizar el estado de la reserva temporal.
+
 
 CREATE OR ALTER PROCEDURE sp_ReservaTemporal_ActualizarEstado
     @id_reserva_temporal INT,
-    @estadoPago VARCHAR(20)
+    @estado VARCHAR(20)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE ReservasTemporales
-    SET estadoPago = @estadoPago
+    IF @estado IS NULL
+       OR @estado NOT IN (
+           'PENDIENTE',
+           'CONFIRMADA',
+           'CANCELADA',
+           'EXPIRADA'
+       )
+    BEGIN
+        THROW 50051, 'Estado de reserva temporal no valido.', 1;
+    END;
+
+    UPDATE dbo.ReservasTemporales
+    SET estado = @estado
     WHERE id_reserva_temporal = @id_reserva_temporal;
 END;
 GO
@@ -1082,10 +1171,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE ReservasTemporales
-    SET estadoPago = 'EXPIRADO'
-    WHERE estadoPago = 'PENDIENTE'
-      AND fecha_expiracion <= GETDATE();
+
+UPDATE ReservasTemporales
+SET estado = 'EXPIRADA'
+WHERE estado = 'PENDIENTE'
+  AND id_reserva IS NULL
+  AND fecha_expiracion <= GETDATE();
+
 END;
 GO
 
@@ -1105,7 +1197,7 @@ BEGIN
         H.apellido AS apellido_huesped,
         RT.id_habitacion,
         HA.numero AS numero_habitacion,
-        RT.estadoPago,
+        RT.estado,
         RT.fecha_entrada,
         RT.fecha_salida,
         RT.fecha_creacion,
@@ -1115,8 +1207,12 @@ BEGIN
         ON RT.id_huesped = H.id_huesped
     INNER JOIN Habitaciones HA
         ON RT.id_habitacion = HA.id_habitacion
-    WHERE RT.estadoPago = 'PENDIENTE'
-    ORDER BY RT.fecha_creacion DESC;
+
+WHERE RT.estado = 'PENDIENTE'
+  AND RT.fecha_expiracion > GETDATE()
+  AND RT.id_reserva IS NULL
+ORDER BY RT.fecha_creacion DESC;
+
 END;
 GO
 
@@ -1686,7 +1782,7 @@ GO
 
 -- reporte de ingresos
 
-DROP PROCEDURE IF EXISTS dbo.sp_Reporte_Ingresos;   
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_Ingresos;
 GO
 
 CREATE PROCEDURE dbo.sp_Reporte_Ingresos
@@ -1738,11 +1834,11 @@ GO
 
 -- reporte de estadísticas de reservas
 
-DROP PROCEDURE IF EXISTS dbo.sp_Reporte_EstadisticasReservas;   
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_EstadisticasReservas;
 GO
 
 CREATE PROCEDURE dbo.sp_Reporte_EstadisticasReservas
-   @fecha_desde DATE, 
+   @fecha_desde DATE,
    @fecha_hasta DATE
 AS
 BEGIN
@@ -1813,7 +1909,7 @@ GO
 
 -- reporte de habitaciones más utilizadas
 
-DROP PROCEDURE IF EXISTS dbo.sp_Reporte_HabitacionesMasUtilizadas;   
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_HabitacionesMasUtilizadas;
 GO
 
 CREATE PROCEDURE dbo.sp_Reporte_HabitacionesMasUtilizadas
@@ -1893,7 +1989,7 @@ GO
 
 -- reporte de servicios más utilizados
 
-DROP PROCEDURE IF EXISTS dbo.sp_Reporte_ServiciosMasUtilizados;   
+DROP PROCEDURE IF EXISTS dbo.sp_Reporte_ServiciosMasUtilizados;
 GO
 
 CREATE PROCEDURE dbo.sp_Reporte_ServiciosMasUtilizados
@@ -1944,3 +2040,55 @@ BEGIN
 END;
 GO
 
+---obtiene los roles activos del hotel.
+SELECT
+    TABLE_SCHEMA,
+    TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_NAME = 'Roles';
+GO
+
+-- 3. Mostrar los roles registrados
+IF OBJECT_ID('dbo.Roles', 'U') IS NOT NULL
+BEGIN
+    SELECT *
+    FROM dbo.Roles;
+END
+ELSE
+BEGIN
+    PRINT 'No se encontró la tabla dbo.Roles.';
+END;
+GO
+
+
+
+
+
+-- ==========================================
+-- PROCEDIMIENTO: LISTAR ROLES ACTIVOS
+-- ==========================================
+
+IF OBJECT_ID('dbo.sp_Rol_Listar', 'P') IS NULL
+BEGIN
+    EXEC('CREATE PROCEDURE dbo.sp_Rol_Listar AS BEGIN SET NOCOUNT ON; END');
+END;
+GO
+
+ALTER PROCEDURE dbo.sp_Rol_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        id_rol,
+        nombre_rol,
+        descripcion
+    FROM dbo.Roles
+    WHERE activo = 1
+    ORDER BY nombre_rol;
+END;
+GO
+
+-- Comprobar que funciona
+EXEC dbo.sp_Rol_Listar;
+GO
