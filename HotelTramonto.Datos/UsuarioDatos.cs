@@ -1,4 +1,6 @@
-﻿using System.Data;
+﻿
+using System;
+using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.Datos
@@ -10,12 +12,20 @@ namespace HotelTramonto.Datos
             string nombre,
             string apellido,
             string dni,
-            string? email,
+            string email,
             string contrasena,
             string? telefono)
         {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ArgumentException(
+                    "El email del usuario es obligatorio.",
+                    nameof(email));
+            }
+
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando = new SqlCommand("sp_Usuario_Insertar", conexion);
+            using SqlCommand comando =
+                new SqlCommand("sp_Usuario_Insertar", conexion);
 
             comando.CommandType = CommandType.StoredProcedure;
 
@@ -23,11 +33,12 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@nombre", nombre);
             comando.Parameters.AddWithValue("@apellido", apellido);
             comando.Parameters.AddWithValue("@dni", dni);
-            comando.Parameters.AddWithValue("@email",
-                string.IsNullOrWhiteSpace(email) ? DBNull.Value : email);
+            comando.Parameters.AddWithValue("@email", email.Trim());
             comando.Parameters.AddWithValue("@contrasena", contrasena);
             comando.Parameters.AddWithValue("@telefono",
-                string.IsNullOrWhiteSpace(telefono) ? DBNull.Value : telefono);
+                string.IsNullOrWhiteSpace(telefono)
+                    ? DBNull.Value
+                    : telefono);
 
             conexion.Open();
             comando.ExecuteNonQuery();
@@ -39,11 +50,19 @@ namespace HotelTramonto.Datos
             string nombre,
             string apellido,
             string dni,
-            string? email,
+            string email,
             string? telefono)
         {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ArgumentException(
+                    "El email del usuario es obligatorio.",
+                    nameof(email));
+            }
+
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando = new SqlCommand("sp_Usuario_Modificar", conexion);
+            using SqlCommand comando =
+                new SqlCommand("sp_Usuario_Modificar", conexion);
 
             comando.CommandType = CommandType.StoredProcedure;
 
@@ -52,10 +71,11 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@nombre", nombre);
             comando.Parameters.AddWithValue("@apellido", apellido);
             comando.Parameters.AddWithValue("@dni", dni);
-            comando.Parameters.AddWithValue("@email",
-                string.IsNullOrWhiteSpace(email) ? DBNull.Value : email);
+            comando.Parameters.AddWithValue("@email", email.Trim());
             comando.Parameters.AddWithValue("@telefono",
-                string.IsNullOrWhiteSpace(telefono) ? DBNull.Value : telefono);
+                string.IsNullOrWhiteSpace(telefono)
+                    ? DBNull.Value
+                    : telefono);
 
             conexion.Open();
             comando.ExecuteNonQuery();
@@ -64,7 +84,8 @@ namespace HotelTramonto.Datos
         public void Desactivar(int idUsuario)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando = new SqlCommand("sp_Usuario_Desactivar", conexion);
+            using SqlCommand comando =
+                new SqlCommand("sp_Usuario_Desactivar", conexion);
 
             comando.CommandType = CommandType.StoredProcedure;
             comando.Parameters.AddWithValue("@id_usuario", idUsuario);
@@ -76,11 +97,13 @@ namespace HotelTramonto.Datos
         public DataTable Listar()
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando = new SqlCommand("sp_Usuario_Listar", conexion);
+            using SqlCommand comando =
+                new SqlCommand("sp_Usuario_Listar", conexion);
 
             comando.CommandType = CommandType.StoredProcedure;
 
-            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+            using SqlDataAdapter adaptador =
+                new SqlDataAdapter(comando);
 
             DataTable tabla = new DataTable();
             adaptador.Fill(tabla);
@@ -91,12 +114,14 @@ namespace HotelTramonto.Datos
         public DataTable BuscarPorDNI(string dni)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando = new SqlCommand("sp_Usuario_BuscarPorDNI", conexion);
+            using SqlCommand comando =
+                new SqlCommand("sp_Usuario_BuscarPorDNI", conexion);
 
             comando.CommandType = CommandType.StoredProcedure;
             comando.Parameters.AddWithValue("@dni", dni);
 
-            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+            using SqlDataAdapter adaptador =
+                new SqlDataAdapter(comando);
 
             DataTable tabla = new DataTable();
             adaptador.Fill(tabla);
@@ -104,10 +129,13 @@ namespace HotelTramonto.Datos
             return tabla;
         }
 
-        public void CambiarContrasena(int idUsuario, string contrasena)
+        public void CambiarContrasena(
+            int idUsuario,
+            string contrasena)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
-            using SqlCommand comando = new SqlCommand("sp_Usuario_CambiarContrasena", conexion);
+            using SqlCommand comando =
+                new SqlCommand("sp_Usuario_CambiarContrasena", conexion);
 
             comando.CommandType = CommandType.StoredProcedure;
 

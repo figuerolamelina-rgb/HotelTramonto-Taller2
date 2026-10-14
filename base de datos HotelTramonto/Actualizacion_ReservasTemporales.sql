@@ -185,3 +185,65 @@ FROM sys.check_constraints
 WHERE parent_object_id = OBJECT_ID('dbo.ReservasTemporales')
   AND name = 'CK_ReservasTemporales_Estado';
 GO
+
+
+
+-- Hacer obligatorio el estado de las reservas temporales
+-- y establecer su valor predeterminado.
+
+ALTER TABLE dbo.ReservasTemporales
+ALTER COLUMN estado VARCHAR(20) NOT NULL;
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.default_constraints
+    WHERE parent_object_id = OBJECT_ID('dbo.ReservasTemporales')
+      AND parent_column_id = COLUMNPROPERTY(
+          OBJECT_ID('dbo.ReservasTemporales'),
+          'estado',
+          'ColumnId'
+      )
+)
+BEGIN
+    ALTER TABLE dbo.ReservasTemporales
+    ADD CONSTRAINT DF_ReservasTemporales_Estado
+    DEFAULT 'PENDIENTE' FOR estado;
+END;
+GO
+
+-- Eliminar el antiguo estadoPago.
+-- La reserva temporal ahora utiliza el campo estado.
+
+IF COL_LENGTH('dbo.ReservasTemporales', 'estadoPago') IS NOT NULL
+BEGIN
+    DECLARE @nombreDefault SYSNAME;
+
+    SELECT @nombreDefault = dc.name
+    FROM sys.default_constraints dc
+    WHERE dc.parent_object_id = OBJECT_ID('dbo.ReservasTemporales')
+      AND COL_NAME(dc.parent_object_id, dc.parent_column_id) = 'estadoPago';
+
+    IF EXISTS (
+        SELECT 1
+        FROM sys.check_constraints
+        WHERE parent_object_id = OBJECT_ID('dbo.ReservasTemporales')
+          AND name = 'CK_ReservasTemporales_EstadoPago'
+    )
+    BEGIN
+        ALTER TABLE dbo.ReservasTemporales
+        DROP CONSTRAINT CK_ReservasTemporales_EstadoPago;
+    END;
+
+    IF @nombreDefault IS NOT NULL
+    BEGIN
+        EXEC(
+            'ALTER TABLE dbo.ReservasTemporales DROP CONSTRAINT '
+            + QUOTENAME(@nombreDefault)
+        );
+    END;
+
+    ALTER TABLE dbo.ReservasTemporales
+    DROP COLUMN estadoPago;
+END;
+GO

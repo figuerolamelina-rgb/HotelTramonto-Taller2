@@ -115,19 +115,36 @@ GO
 
 --insertamos usuario
 
+
 CREATE OR ALTER PROCEDURE sp_Usuario_Insertar
     @id_rol INT,
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
     @dni VARCHAR(15),
-    @email VARCHAR(100) = NULL,
+    @email VARCHAR(100),
     @contrasena VARCHAR(255),
     @telefono VARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO Usuarios
+    -- Validar que el email sea obligatorio
+    IF @email IS NULL OR LTRIM(RTRIM(@email)) = ''
+    BEGIN
+        THROW 50032, 'El email del usuario es obligatorio.', 1;
+    END;
+
+    -- Validar que el email no esté repetido
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.Usuarios
+        WHERE email = @email
+    )
+    BEGIN
+        THROW 50033, 'Ya existe un usuario con ese email.', 1;
+    END;
+
+    INSERT INTO dbo.Usuarios
         (id_rol, nombre, apellido, dni, email, contrasena, telefono)
     VALUES
         (@id_rol, @nombre, @apellido, @dni, @email, @contrasena, @telefono);
@@ -140,19 +157,37 @@ GO
 
 --modificar usuario
 
+
 CREATE OR ALTER PROCEDURE sp_Usuario_Modificar
     @id_usuario INT,
     @id_rol INT,
     @nombre VARCHAR(50),
     @apellido VARCHAR(50),
     @dni VARCHAR(15),
-    @email VARCHAR(100) = NULL,
+    @email VARCHAR(100),
     @telefono VARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE Usuarios
+    -- El email es obligatorio
+    IF @email IS NULL OR LTRIM(RTRIM(@email)) = ''
+    BEGIN
+        THROW 50032, 'El email del usuario es obligatorio.', 1;
+    END;
+
+    -- No permitir emails de otros usuarios
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.Usuarios
+        WHERE email = @email
+          AND id_usuario <> @id_usuario
+    )
+    BEGIN
+        THROW 50033, 'Ya existe otro usuario con ese email.', 1;
+    END;
+
+    UPDATE dbo.Usuarios
     SET
         id_rol = @id_rol,
         nombre = @nombre,
@@ -825,6 +860,20 @@ BEGIN
 
         IF @id_pago IS NULL
             THROW 50008, 'No existe un pago inicial aprobado para esta reserva temporal.', 1;
+
+            -- Verificar que el usuario responsable exista y esté activo
+            IF @id_usuario IS NULL
+               OR NOT EXISTS (
+                   SELECT 1
+                   FROM dbo.Usuarios
+                   WHERE id_usuario = @id_usuario
+                     AND activo = 1
+               )
+            BEGIN
+                THROW 50041,
+                    'La reserva debe tener un usuario responsable activo.',
+                    1;
+            END;
 
         -- 8. Calcular importe del alojamiento
         SET @cantidad_noches = DATEDIFF(DAY, @fecha_entrada, @fecha_salida);

@@ -15,7 +15,7 @@ VALUES
 ('RECEPCIONISTA', 'Gestión de huéspedes, reservas, disponibilidad, pagos, check-in y check-out'),
 ('GERENTE', 'Consultas, estadísticas y reportes del hotel');
 GO
-
+ID_USUARIO CORREGIDO
 SELECT *
 FROM Roles;
 
@@ -25,7 +25,7 @@ CREATE TABLE Usuarios (
     nombre VARCHAR(50) NOT NULL,
     apellido VARCHAR(50) NOT NULL,
     dni VARCHAR(15) NOT NULL UNIQUE,
-    email VARCHAR(100) NULL,
+    email VARCHAR(100) NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     telefono VARCHAR(20) NULL,
     activo BIT NOT NULL DEFAULT 1,
@@ -33,9 +33,13 @@ CREATE TABLE Usuarios (
 
     CONSTRAINT FK_Usuarios_Roles
         FOREIGN KEY (id_rol)
-        REFERENCES Roles(id_rol)
+        REFERENCES Roles(id_rol),
+
+    CONSTRAINT UQ_Usuarios_Email
+        UNIQUE (email)
 );
 GO
+
 
 EXEC sp_help 'dbo.Usuarios';
 
@@ -111,7 +115,7 @@ GO
 CREATE TABLE Reservas (
     id_reserva INT IDENTITY(1,1) PRIMARY KEY,
     id_huesped INT NOT NULL,
-    id_usuario INT NULL,
+    id_usuario INT NOT NULL,
     fecha_entrada DATE NOT NULL,
     fecha_salida DATE NOT NULL,
     estado VARCHAR(20) NOT NULL,
@@ -247,6 +251,7 @@ CREATE TABLE DetalleServicios (
 GO
 
 
+
 CREATE TABLE ReservasTemporales (
     id_reserva_temporal INT IDENTITY(1,1) PRIMARY KEY,
 
@@ -256,15 +261,11 @@ CREATE TABLE ReservasTemporales (
     -- Se completa al confirmar la reserva
     id_reserva INT NULL,
 
-    -- Modalidad elegida por el huésped
+    -- Modalidad de pago
     modalidad_pago VARCHAR(20) NOT NULL,
 
-
-        -- Estado propio de la reserva temporal
-        estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
-
-        -- Campo anterior conservado temporalmente
-        estadoPago VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    -- Estado de la reserva temporal
+    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
 
     fecha_entrada DATE NOT NULL,
     fecha_salida DATE NOT NULL,
@@ -287,31 +288,18 @@ CREATE TABLE ReservasTemporales (
     CONSTRAINT CK_ReservasTemporales_Fechas
         CHECK (fecha_salida > fecha_entrada),
 
-    CONSTRAINT CK_ReservasTemporales_EstadoPago
+    CONSTRAINT CK_ReservasTemporales_ModalidadPago
+        CHECK (modalidad_pago IN ('PAGO_TOTAL', 'SENA_50')),
+
+    CONSTRAINT CK_ReservasTemporales_Estado
         CHECK (
-            estadoPago IN (
+            estado IN (
                 'PENDIENTE',
-                'APROBADO',
-                'RECHAZADO',
-                'EXPIRADO'
+                'CONFIRMADA',
+                'CANCELADA',
+                'EXPIRADA'
             )
-        ),
-
-CONSTRAINT CK_ReservasTemporales_ModalidadPago
-    CHECK (
-        modalidad_pago IN ('PAGO_TOTAL', 'SENA_50')
-    ),
-
-CONSTRAINT CK_ReservasTemporales_Estado
-    CHECK (
-        estado IN (
-            'PENDIENTE',
-            'CONFIRMADA',
-            'CANCELADA',
-            'EXPIRADA'
         )
-    )
-
 );
 GO
 
