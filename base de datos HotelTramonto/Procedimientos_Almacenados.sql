@@ -1704,6 +1704,7 @@ GO
 DROP PROCEDURE IF EXISTS dbo.sp_Reporte_Ocupacion;
 GO
 
+
 CREATE PROCEDURE dbo.sp_Reporte_Ocupacion
     @fecha_desde DATE,
     @fecha_hasta DATE
@@ -1711,62 +1712,71 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    IF @fecha_desde IS NULL OR @fecha_hasta IS NULL
+        THROW 50040, 'Debe indicar ambas fechas.', 1;
+
     IF @fecha_hasta < @fecha_desde
         THROW 50040, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
 
+    IF @fecha_hasta = '9999-12-31'
+        THROW 50041, 'La fecha hasta excede el rango permitido.', 1;
+
     DECLARE
+        @fecha_fin_exclusiva DATE,
         @dias_periodo INT,
         @habitaciones_activas INT,
         @noches_disponibles INT,
         @noches_ocupadas INT,
         @porcentaje_ocupacion DECIMAL(10,2);
 
-    SET @dias_periodo = DATEDIFF(DAY, @fecha_desde, @fecha_hasta);
+    SET @fecha_fin_exclusiva = DATEADD(DAY, 1, @fecha_hasta);
 
-    IF @dias_periodo <= 0
-        THROW 50041, 'El rango debe incluir al menos una noche.', 1;
+    SET @dias_periodo = DATEDIFF(
+        DAY, @fecha_desde, @fecha_fin_exclusiva
+    );
 
     SELECT
         @habitaciones_activas = COUNT(*)
-    FROM Habitaciones
+    FROM dbo.Habitaciones
     WHERE activo = 1;
 
     SET @noches_disponibles =
         @habitaciones_activas * @dias_periodo;
 
     SELECT
-        @noches_ocupadas =
-            ISNULL(
-                SUM(
-                    DATEDIFF(
-                        DAY,
-                        CASE
-                            WHEN R.fecha_entrada < @fecha_desde
-                                THEN @fecha_desde
-                            ELSE R.fecha_entrada
-                        END,
-                        CASE
-                            WHEN R.fecha_salida > @fecha_hasta
-                                THEN @fecha_hasta
-                            ELSE R.fecha_salida
-                        END
-                    )
-                ),
-                0
-            )
-    FROM Reservas R
-    INNER JOIN DetalleReservas DR
+        @noches_ocupadas = ISNULL(
+            SUM(
+                DATEDIFF(
+                    DAY,
+                    CASE
+                        WHEN R.fecha_entrada < @fecha_desde
+                            THEN @fecha_desde
+                        ELSE R.fecha_entrada
+                    END,
+                    CASE
+                        WHEN R.fecha_salida > @fecha_fin_exclusiva
+                            THEN @fecha_fin_exclusiva
+                        ELSE R.fecha_salida
+                    END
+                )
+            ),
+            0
+        )
+    FROM dbo.Reservas R
+    INNER JOIN dbo.DetalleReservas DR
         ON R.id_reserva = DR.id_reserva
-    WHERE R.estado IN ('CONFIRMADA', 'CHECKIN', 'FINALIZADA')
-      AND R.fecha_entrada < @fecha_hasta
+    INNER JOIN dbo.Habitaciones H
+        ON DR.id_habitacion = H.id_habitacion
+    WHERE H.activo = 1
+      AND R.estado IN ('CONFIRMADA', 'CHECKIN', 'FINALIZADA')
+      AND R.fecha_entrada < @fecha_fin_exclusiva
       AND R.fecha_salida > @fecha_desde;
 
     IF @noches_disponibles > 0
-        SET @porcentaje_ocupacion =
-            ROUND(
-                (@noches_ocupadas * 100.0) / @noches_disponibles,
-                2
-            );
+        SET @porcentaje_ocupacion = ROUND(
+            (@noches_ocupadas * 100.0) / @noches_disponibles,
+            2
+        );
     ELSE
         SET @porcentaje_ocupacion = 0;
 
@@ -1785,6 +1795,7 @@ GO
 DROP PROCEDURE IF EXISTS dbo.sp_Reporte_Ingresos;
 GO
 
+
 CREATE PROCEDURE dbo.sp_Reporte_Ingresos
     @fecha_desde DATE,
     @fecha_hasta DATE
@@ -1792,9 +1803,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    IF @fecha_desde IS NULL OR @fecha_hasta IS NULL
+        THROW 50042, 'Debe indicar ambas fechas.', 1;
+
     IF @fecha_hasta < @fecha_desde
         THROW 50042, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
 
+    -- 1. Resumen de pagos aprobados
     SELECT
         @fecha_desde AS fecha_desde,
         @fecha_hasta AS fecha_hasta,
@@ -1802,35 +1817,52 @@ BEGIN
         ISNULL(SUM(P.monto), 0) AS total_ingresos,
         ISNULL(AVG(P.monto), 0) AS promedio_pago,
         COUNT(DISTINCT P.id_reserva) AS cantidad_reservas
-    FROM Pagos P
+    FROM dbo.Pagos P
     WHERE P.estado = 'APROBADO'
-      AND CAST(P.fecha_pago AS DATE) BETWEEN @fecha_desde AND @fecha_hasta;
+      AND P.fecha_pago >= @fecha_desde
+      AND P.fecha_pago < DATEADD(DAY, 1, CAST(@fecha_hasta AS DATETIME));
 
-
-    -- ingresos agrupados por método de pago
+    -- 2. Ingresos por método de pago
     SELECT
         P.metodo_pago,
         COUNT(*) AS cantidad_pagos,
         SUM(P.monto) AS total_ingresos
-    FROM Pagos P
+    FROM dbo.Pagos P
     WHERE P.estado = 'APROBADO'
-      AND CAST(P.fecha_pago AS DATE) BETWEEN @fecha_desde AND @fecha_hasta
+      AND P.fecha_pago >= @fecha_desde
+      AND P.fecha_pago < DATEADD(DAY, 1, CAST(@fecha_hasta AS DATETIME))
     GROUP BY P.metodo_pago
     ORDER BY total_ingresos DESC;
 
-
-    -- ingresos agrupados por tipo de pago
+    -- 3. Ingresos por tipo de pago
     SELECT
         P.tipo_pago,
         COUNT(*) AS cantidad_pagos,
         SUM(P.monto) AS total_ingresos
-    FROM Pagos P
+    FROM dbo.Pagos P
     WHERE P.estado = 'APROBADO'
-      AND CAST(P.fecha_pago AS DATE) BETWEEN @fecha_desde AND @fecha_hasta
+      AND P.fecha_pago >= @fecha_desde
+      AND P.fecha_pago < DATEADD(DAY, 1, CAST(@fecha_hasta AS DATETIME))
     GROUP BY P.tipo_pago
     ORDER BY total_ingresos DESC;
+
+    -- 4. Pagos aprobados de reservas temporales
+    SELECT
+        RT.estado AS estado_reserva_temporal,
+        COUNT(*) AS cantidad_pagos,
+        ISNULL(SUM(P.monto), 0) AS importe_total
+    FROM dbo.Pagos P
+    INNER JOIN dbo.ReservasTemporales RT
+        ON P.id_reserva_temporal = RT.id_reserva_temporal
+    WHERE P.estado = 'APROBADO'
+      AND P.id_reserva IS NULL
+      AND P.fecha_pago >= @fecha_desde
+      AND P.fecha_pago < DATEADD(DAY, 1, CAST(@fecha_hasta AS DATETIME))
+    GROUP BY RT.estado
+    ORDER BY RT.estado;
 END;
 GO
+
 
 -- reporte de estadísticas de reservas
 
@@ -1912,15 +1944,23 @@ GO
 DROP PROCEDURE IF EXISTS dbo.sp_Reporte_HabitacionesMasUtilizadas;
 GO
 
+
 CREATE PROCEDURE dbo.sp_Reporte_HabitacionesMasUtilizadas
     @fecha_desde DATE,
-   @fecha_hasta DATE
+    @fecha_hasta DATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    IF @fecha_desde IS NULL OR @fecha_hasta IS NULL
+        THROW 50044, 'Debe indicar ambas fechas.', 1;
+
     IF @fecha_hasta < @fecha_desde
         THROW 50044, 'La fecha hasta no puede ser anterior a la fecha desde.', 1;
+
+    DECLARE @fecha_fin_exclusiva DATE;
+
+    SET @fecha_fin_exclusiva = DATEADD(DAY, 1, @fecha_hasta);
 
     SELECT
         H.id_habitacion,
@@ -1938,8 +1978,8 @@ BEGIN
                     ELSE R.fecha_entrada
                 END,
                 CASE
-                    WHEN R.fecha_salida > @fecha_hasta
-                        THEN @fecha_hasta
+                    WHEN R.fecha_salida > @fecha_fin_exclusiva
+                        THEN @fecha_fin_exclusiva
                     ELSE R.fecha_salida
                 END
             )
@@ -1954,26 +1994,26 @@ BEGIN
                     ELSE R.fecha_entrada
                 END,
                 CASE
-                    WHEN R.fecha_salida > @fecha_hasta
-                        THEN @fecha_hasta
+                    WHEN R.fecha_salida > @fecha_fin_exclusiva
+                        THEN @fecha_fin_exclusiva
                     ELSE R.fecha_salida
                 END
             ) * DR.precio_noche
         ) AS ingresos_generados
 
-    FROM DetalleReservas DR
+    FROM dbo.DetalleReservas DR
 
-    INNER JOIN Reservas R
+    INNER JOIN dbo.Reservas R
         ON DR.id_reserva = R.id_reserva
 
-    INNER JOIN Habitaciones H
+    INNER JOIN dbo.Habitaciones H
         ON DR.id_habitacion = H.id_habitacion
 
-    INNER JOIN TiposHabitacion TH
+    INNER JOIN dbo.TiposHabitacion TH
         ON H.tipo_habitacion = TH.id_tipoHabitacion
 
     WHERE R.estado IN ('CONFIRMADA', 'CHECKIN', 'FINALIZADA')
-      AND R.fecha_entrada < @fecha_hasta
+      AND R.fecha_entrada < @fecha_fin_exclusiva
       AND R.fecha_salida > @fecha_desde
 
     GROUP BY
@@ -1986,6 +2026,7 @@ BEGIN
         cantidad_reservas DESC;
 END;
 GO
+
 
 -- reporte de servicios más utilizados
 
