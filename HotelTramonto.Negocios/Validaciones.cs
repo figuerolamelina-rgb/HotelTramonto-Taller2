@@ -1,4 +1,6 @@
 ﻿
+using System;
+using System.Linq;
 using System.Net.Mail;
 
 namespace HotelTramonto.Negocios
@@ -52,6 +54,21 @@ namespace HotelTramonto.Negocios
         public static bool MontoValido(decimal monto)
         {
             return monto > 0;
+        }
+
+        public static bool HuespedValido(
+            string? nombre,
+            string? apellido,
+            string? dni,
+            string? email,
+            string? nacionalidad)
+        {
+            return TextoObligatorio(nombre)
+                && TextoObligatorio(apellido)
+                && DNIValido(dni)
+                && (string.IsNullOrWhiteSpace(email)
+                    || EmailValido(email))
+                && TextoObligatorio(nacionalidad);
         }
     }
 }

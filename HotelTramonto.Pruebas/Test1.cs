@@ -141,5 +141,45 @@ namespace HotelTramonto.Pruebas
             bool resultado = Validaciones.TextoObligatorio(null);
             Assert.IsFalse(resultado);
         }
+
+        // 17. Huésped con todos los datos correctos
+        [TestMethod]
+        public void HuespedValido_ConDatosCorrectos_RetornaTrue()
+        {
+            bool resultado = Validaciones.HuespedValido(
+                "Ana", "Gómez", "12345678", "ana@gmail.com", "Argentina");
+
+            Assert.IsTrue(resultado);
+        }
+
+        // 18. Huésped sin nombre
+        [TestMethod]
+        public void HuespedValido_SinNombre_RetornaFalse()
+        {
+            bool resultado = Validaciones.HuespedValido(
+                "", "Gómez", "12345678", "ana@gmail.com", "Argentina");
+
+            Assert.IsFalse(resultado);
+        }
+
+        // 19. Huésped con DNI inválido
+        [TestMethod]
+        public void HuespedValido_ConDNIInvalido_RetornaFalse()
+        {
+            bool resultado = Validaciones.HuespedValido(
+                "Ana", "Gómez", "1234AB78", "ana@gmail.com", "Argentina");
+
+            Assert.IsFalse(resultado);
+        }
+        // 20. Huésped sin email
+        [TestMethod]
+        public void HuespedValido_SinEmail_RetornaTrue()
+        {
+            bool resultado = Validaciones.HuespedValido(
+                "Ana", "Gómez", "12345678", null, "Argentina");
+
+            Assert.IsTrue(resultado);
+        }
+
     }
 }
