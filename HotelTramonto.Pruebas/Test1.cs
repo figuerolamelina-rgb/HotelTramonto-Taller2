@@ -181,5 +181,17 @@ namespace HotelTramonto.Pruebas
             Assert.IsTrue(resultado);
         }
 
-    }
-}
+   
+    
+[TestMethod]
+        public void ConexionBD_ConectaConHotelTramontoDB()
+        {
+            using var conexion = HotelTramonto.Datos.ConexionBD.ObtenerConexion();
+
+            conexion.Open();
+
+            Assert.AreEqual("HotelTramontoDB", conexion.Database);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(conexion.DataSource));
+        }
+
+    } }

@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HotelTramonto.Datos\HotelTramonto.Datos.csproj" />
     <ProjectReference Include="..\HotelTramonto.Negocios\HotelTramonto.Negocios.csproj" />
   </ItemGroup>
 
