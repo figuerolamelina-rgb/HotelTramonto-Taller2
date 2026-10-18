@@ -181,9 +181,8 @@ namespace HotelTramonto.Pruebas
             Assert.IsTrue(resultado);
         }
 
-   
-    
-[TestMethod]
+
+        [TestMethod]
         public void ConexionBD_ConectaConHotelTramontoDB()
         {
             using var conexion = HotelTramonto.Datos.ConexionBD.ObtenerConexion();
@@ -194,4 +193,200 @@ namespace HotelTramonto.Pruebas
             Assert.IsFalse(string.IsNullOrWhiteSpace(conexion.DataSource));
         }
 
-    } }
+        // 21. Buscar usuario con DNI inválido
+        [TestMethod]
+        public void UsuarioNegocios_BuscarPorDNIInvalido_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.BuscarPorDNI("12AB");
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // La excepción esperada fue lanzada correctamente.
+            }
+        }
+        // 22. Registrar usuario con email inválido
+        [TestMethod]
+        public void UsuarioNegocios_InsertarConEmailInvalido_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.Insertar(
+                    1,
+                    "Ana",
+                    "Gómez",
+                    "12345678",
+                    "correo-invalido",
+                    "Clave123",
+                    null);
+
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // El email inválido fue rechazado correctamente.
+            }
+        }
+        // 23. Modificar usuario con identificador inválido
+        [TestMethod]
+        public void UsuarioNegocios_ModificarConIdInvalido_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.Modificar(
+                    0,
+                    1,
+                    "Ana",
+                    "Gómez",
+                    "12345678",
+                    "ana@gmail.com",
+                    null);
+
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // El identificador inválido fue rechazado correctamente.
+            }
+        }
+        // 24. Desactivar usuario con identificador inválido
+        [TestMethod]
+        public void UsuarioNegocios_DesactivarConIdInvalido_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.Desactivar(0);
+
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // El identificador inválido fue rechazado correctamente.
+            }
+        }
+        // 25. Cambiar contraseña por una vacía
+        [TestMethod]
+        public void UsuarioNegocios_CambiarContrasenaVacia_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.CambiarContrasena(1, "   ");
+
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // La contraseña vacía fue rechazada correctamente.
+            }
+        }
+        // 26. Insertar usuario con DNI inválido
+        [TestMethod]
+        public void UsuarioNegocios_InsertarConDNIInvalido_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.Insertar(
+                    1,
+                    "Ana",
+                    "Gómez",
+                    "12AB",
+                    "ana@gmail.com",
+                    "Clave123",
+                    null);
+
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // El DNI inválido fue rechazado correctamente.
+            }
+        }
+        // 27. Insertar usuario sin nombre
+        [TestMethod]
+        public void UsuarioNegocios_InsertarSinNombre_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.Insertar(
+                    1,
+                    "   ",
+                    "Gómez",
+                    "12345678",
+                    "ana@gmail.com",
+                    "Clave123",
+                    null);
+
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // El nombre vacío fue rechazado correctamente.
+            }
+        }
+        // 28. Insertar usuario sin apellido
+        [TestMethod]
+        public void UsuarioNegocios_InsertarSinApellido_LanzaExcepcion()
+        {
+            var negocio = new UsuarioNegocios();
+
+            try
+            {
+                negocio.Insertar(
+                    1,
+                    "Ana",
+                    "",
+                    "12345678",
+                    "ana@gmail.com",
+                    "Clave123",
+                    null);
+
+                Assert.Fail("Se esperaba una ArgumentException.");
+            }
+            catch (ArgumentException)
+            {
+                // El apellido vacío fue rechazado correctamente.
+            }
+        }
+        // 29. Generar hash de contraseña
+        [TestMethod]
+        public void PasswordService_Hash_GeneraHashDiferente()
+        {
+            string contrasena = "ClavePrueba123";
+
+            string hash = PasswordService.Hash(contrasena);
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(hash));
+            Assert.AreNotEqual(contrasena, hash);
+        }
+
+        // 30. Verificar contraseña correcta e incorrecta
+        [TestMethod]
+        public void PasswordService_Verificar_ValidaContrasena()
+        {
+            string contrasena = "ClavePrueba123";
+            string hash = PasswordService.Hash(contrasena);
+
+            Assert.IsTrue(
+                PasswordService.Verificar(hash, contrasena));
+
+            Assert.IsFalse(
+                PasswordService.Verificar(hash, "ClaveIncorrecta"));
+        }
+    }
+}
