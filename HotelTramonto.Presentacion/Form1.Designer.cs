@@ -29,24 +29,38 @@
         private void InitializeComponent()
         {
             btnProbarConexion = new Button();
+            btnListarRoles = new Button();
             SuspendLayout();
             // 
             // btnProbarConexion
             // 
-            btnProbarConexion.Location = new Point(62, 36);
+            btnProbarConexion.Location = new Point(54, 27);
+            btnProbarConexion.Margin = new Padding(3, 2, 3, 2);
             btnProbarConexion.Name = "btnProbarConexion";
-            btnProbarConexion.Size = new Size(94, 29);
+            btnProbarConexion.Size = new Size(82, 22);
             btnProbarConexion.TabIndex = 0;
             btnProbarConexion.Text = "Probar conexión";
             btnProbarConexion.UseVisualStyleBackColor = true;
             btnProbarConexion.Click += button1_Click;
             // 
+            // btnListarRoles
+            // 
+            btnListarRoles.Location = new Point(142, 27);
+            btnListarRoles.Name = "btnListarRoles";
+            btnListarRoles.Size = new Size(75, 23);
+            btnListarRoles.TabIndex = 1;
+            btnListarRoles.Text = "Listar roles";
+            btnListarRoles.UseVisualStyleBackColor = true;
+            btnListarRoles.Click += button1_Click_1;
+            // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(700, 338);
+            Controls.Add(btnListarRoles);
             Controls.Add(btnProbarConexion);
+            Margin = new Padding(3, 2, 3, 2);
             Name = "Form1";
             Text = "Form1";
             ResumeLayout(false);
@@ -55,5 +69,6 @@
         #endregion
 
         private Button btnProbarConexion;
+        private Button btnListarRoles;
     }
 }
