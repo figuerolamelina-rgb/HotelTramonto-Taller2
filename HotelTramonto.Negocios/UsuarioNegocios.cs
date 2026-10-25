@@ -19,6 +19,13 @@ namespace HotelTramonto.Negocios
             return usuarioDatos.Listar();
         }
 
+        public DataTable Listar(string rol)
+        {
+            Permisos.ExigirAdministrador(rol);
+
+            return usuarioDatos.Listar();
+        }
+
         public DataTable BuscarPorDNI(string dni)
         {
             if (!Validaciones.DNIValido(dni))
@@ -31,14 +38,17 @@ namespace HotelTramonto.Negocios
         }
 
         public void Insertar(
-            int idRol,
-            string nombre,
-            string apellido,
-            string dni,
-            string email,
-            string contrasena,
-            string? telefono)
+    int idRol,
+    string nombre,
+    string apellido,
+    string dni,
+    string email,
+    string contrasena,
+    string? telefono,
+    string rolUsuario)
         {
+            Permisos.ExigirAdministrador(rolUsuario);
+
             ValidarDatos(
                 idRol, nombre, apellido, dni, email, contrasena);
 
@@ -61,8 +71,11 @@ namespace HotelTramonto.Negocios
             string apellido,
             string dni,
             string email,
-            string? telefono)
+            string? telefono,
+            string rolUsuario)
         {
+            Permisos.ExigirAdministrador(rolUsuario);
+
             if (idUsuario <= 0)
                 throw new ArgumentException("El usuario no es válido.");
 
@@ -79,17 +92,33 @@ namespace HotelTramonto.Negocios
                 telefono);
         }
 
-        public void Desactivar(int idUsuario)
+
+        public void Desactivar(int idUsuario, string rolUsuario)
         {
+            Permisos.ExigirAdministrador(rolUsuario);
+
             if (idUsuario <= 0)
                 throw new ArgumentException("El usuario no es válido.");
 
             usuarioDatos.Desactivar(idUsuario);
         }
 
+
+        public void Reactivar(int idUsuario, string rolUsuario)
+        {
+            Permisos.ExigirAdministrador(rolUsuario);
+
+            if (idUsuario <= 0)
+                throw new ArgumentException("El usuario no es válido.");
+
+            usuarioDatos.Reactivar(idUsuario);
+        }
+
+
+
         public void CambiarContrasena(
-    int idUsuario,
-    string contrasena)
+     int idUsuario,
+     string contrasena)
         {
             if (idUsuario <= 0)
                 throw new ArgumentException("El usuario no es válido.");
@@ -135,6 +164,31 @@ namespace HotelTramonto.Negocios
                 throw new ArgumentException(
                     "La contraseña es obligatoria.");
             }
+        }
+        public DataRow? Autenticar(string email, string contrasena)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("El email es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(contrasena))
+                throw new ArgumentException("La contraseña es obligatoria.");
+
+            DataTable usuarios = usuarioDatos.BuscarPorEmail(email.Trim());
+
+            if (usuarios.Rows.Count == 0)
+                return null;
+
+            DataRow usuario = usuarios.Rows[0];
+
+            if (!Convert.ToBoolean(usuario["activo"]))
+                return null;
+
+            string hash = Convert.ToString(usuario["contrasena"]) ?? string.Empty;
+
+            if (!PasswordService.Verificar(hash, contrasena))
+                return null;
+
+            return usuario;
         }
     }
 }

@@ -12,12 +12,14 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormUsuario : Form
     {
-        public FormUsuario()
+        private readonly string rolUsuario;
+
+        public FormUsuario(string rol)
         {
             InitializeComponent();
+            rolUsuario = rol;
             CargarRoles();
         }
-
         private void label1_Click(object sender, EventArgs e)
         {
 
@@ -74,7 +76,8 @@ namespace HotelTramonto.Presentacion
                     txtDni.Text,
                     txtEmail.Text,
                     txtContrasena.Text,
-                    txtTelefono.Text);
+                    txtTelefono.Text,
+                    rolUsuario);
 
                 MessageBox.Show(
                     "Usuario registrado correctamente.",

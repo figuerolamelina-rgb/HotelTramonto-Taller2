@@ -94,6 +94,22 @@ namespace HotelTramonto.Datos
             comando.ExecuteNonQuery();
         }
 
+
+        public void Reactivar(int idUsuario)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando = new SqlCommand(
+                "dbo.sp_Usuario_Reactivar", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@id_usuario", idUsuario);
+
+            conexion.Open();
+            comando.ExecuteNonQuery();
+        }
+
+
         public DataTable Listar()
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
@@ -144,6 +160,23 @@ namespace HotelTramonto.Datos
 
             conexion.Open();
             comando.ExecuteNonQuery();
+        }
+        public DataTable BuscarPorEmail(string email)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando =
+                new SqlCommand("dbo.sp_Usuario_BuscarPorEmail", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@email", email.Trim());
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
         }
     }
 }

@@ -13,10 +13,13 @@ namespace HotelTramonto.Presentacion
     public partial class FormModificarUsuario : Form
     {
         private readonly int idUsuario;
-        public FormModificarUsuario(int idUsuario)
+        private readonly string rolUsuario;
+
+        public FormModificarUsuario(int idUsuario, string rol)
         {
             InitializeComponent();
             this.idUsuario = idUsuario;
+            rolUsuario = rol;
             CargarRoles();
             CargarDatosUsuario();
         }
@@ -48,7 +51,7 @@ namespace HotelTramonto.Presentacion
             try
             {
                 UsuarioNegocios negocio = new UsuarioNegocios();
-                DataTable usuarios = negocio.Listar();
+                DataTable usuarios = negocio.Listar(rolUsuario);
 
                 DataRow[] filas = usuarios.Select(
                     $"id_usuario = {idUsuario}");
@@ -106,7 +109,8 @@ namespace HotelTramonto.Presentacion
                     txtApellido.Text,
                     txtDni.Text,
                     txtEmail.Text,
-                    txtTelefono.Text);
+                    txtTelefono.Text,
+                    rolUsuario);
 
                 MessageBox.Show(
                     "Usuario modificado correctamente.",

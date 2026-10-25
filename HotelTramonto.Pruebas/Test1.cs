@@ -1,8 +1,6 @@
-﻿
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using HotelTramonto.Negocios;
+﻿using HotelTramonto.Negocios;
 using System;
-
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace HotelTramonto.Pruebas
 {
     [TestClass]
@@ -224,7 +222,8 @@ namespace HotelTramonto.Pruebas
                     "12345678",
                     "correo-invalido",
                     "Clave123",
-                    null);
+                    null,
+                    "ADMINISTRADOR");
 
                 Assert.Fail("Se esperaba una ArgumentException.");
             }
@@ -248,7 +247,8 @@ namespace HotelTramonto.Pruebas
                     "Gómez",
                     "12345678",
                     "ana@gmail.com",
-                    null);
+                    null,
+                    "ADMINISTRADOR");
 
                 Assert.Fail("Se esperaba una ArgumentException.");
             }
@@ -265,7 +265,7 @@ namespace HotelTramonto.Pruebas
 
             try
             {
-                negocio.Desactivar(0);
+                negocio.Desactivar(0, "ADMINISTRADOR");
 
                 Assert.Fail("Se esperaba una ArgumentException.");
             }
@@ -306,7 +306,8 @@ namespace HotelTramonto.Pruebas
                     "12AB",
                     "ana@gmail.com",
                     "Clave123",
-                    null);
+                    null,
+                    "ADMINISTRADOR");
 
                 Assert.Fail("Se esperaba una ArgumentException.");
             }
@@ -330,7 +331,8 @@ namespace HotelTramonto.Pruebas
                     "12345678",
                     "ana@gmail.com",
                     "Clave123",
-                    null);
+                    null,
+                    "ADMINISTRADOR");
 
                 Assert.Fail("Se esperaba una ArgumentException.");
             }
@@ -354,7 +356,8 @@ namespace HotelTramonto.Pruebas
                     "12345678",
                     "ana@gmail.com",
                     "Clave123",
-                    null);
+                    null,
+                    "ADMINISTRADOR");
 
                 Assert.Fail("Se esperaba una ArgumentException.");
             }
@@ -387,6 +390,71 @@ namespace HotelTramonto.Pruebas
 
             Assert.IsFalse(
                 PasswordService.Verificar(hash, "ClaveIncorrecta"));
+        }
+        // Verificar que el cambio de contraseña guarde un hash válido
+        [TestMethod]
+        public void UsuarioNegocios_CambiarContrasena_GuardaHashValido()
+        {
+            int idUsuario = 2;
+            string nuevaContrasena = "NuevaClavePrueba456";
+
+            var negocio = new UsuarioNegocios();
+            negocio.CambiarContrasena(idUsuario, nuevaContrasena);
+
+            using var conexion =
+                HotelTramonto.Datos.ConexionBD.ObtenerConexion();
+
+            conexion.Open();
+
+            using var comando = new Microsoft.Data.SqlClient.SqlCommand(
+                "SELECT contrasena FROM dbo.Usuarios WHERE id_usuario = @id",
+                conexion);
+
+            comando.Parameters.AddWithValue("@id", idUsuario);
+
+            string hash = comando.ExecuteScalar()?.ToString() ?? "";
+
+            Assert.IsTrue(
+                PasswordService.Verificar(hash, nuevaContrasena),
+                "La contraseña almacenada no coincide con la nueva contraseña.");
+        }
+
+        [TestMethod]
+        public void UsuarioNegocios_AutenticarConEmailInexistente_RetornaNull()
+        {
+            var negocio = new UsuarioNegocios();
+
+            var resultado = negocio.Autenticar(
+                "noexiste@example.com",
+                "ClavePrueba456");
+
+            Assert.IsNull(resultado);
+        }
+
+        [TestMethod]
+        public void PasswordService_VerificarContrasenaIncorrecta_RetornaFalse()
+        {
+            string hash = PasswordService.Hash("ClaveCorrecta456");
+
+            bool resultado = PasswordService.Verificar(
+                hash,
+                "ClaveIncorrecta456");
+
+            Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void Permisos_Recepcionista_NoPuedeGestionarUsuarios()
+        {
+            Assert.Throws<UnauthorizedAccessException>(
+                () => Permisos.ExigirAdministrador("RECEPCIONISTA"));
+        }
+
+        [TestMethod]
+        public void Permisos_Gerente_NoPuedeGestionarUsuarios()
+        {
+            Assert.Throws<UnauthorizedAccessException>(
+                () => Permisos.ExigirAdministrador("GERENTE"));
         }
     }
 }

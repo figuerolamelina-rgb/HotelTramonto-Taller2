@@ -35,6 +35,8 @@
             btnNuevoUsuario = new Button();
             btnModificarUsuario = new Button();
             btnDesactivarUsuario = new Button();
+            btnReactivarUsuario = new Button();
+            btnCerrarSesion = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvUsuarios).BeginInit();
             SuspendLayout();
             // 
@@ -116,14 +118,36 @@
             btnDesactivarUsuario.UseVisualStyleBackColor = true;
             btnDesactivarUsuario.Click += btnDesactivarUsuario_Click;
             // 
+            // btnReactivarUsuario
+            // 
+            btnReactivarUsuario.Location = new Point(459, 79);
+            btnReactivarUsuario.Name = "btnReactivarUsuario";
+            btnReactivarUsuario.Size = new Size(140, 30);
+            btnReactivarUsuario.TabIndex = 7;
+            btnReactivarUsuario.Text = "Reactivar usuario";
+            btnReactivarUsuario.UseVisualStyleBackColor = true;
+            btnReactivarUsuario.Click += btnReactivarUsuario_Click;
+            // 
+            // btnCerrarSesion
+            // 
+            btnCerrarSesion.Location = new Point(459, 37);
+            btnCerrarSesion.Name = "btnCerrarSesion";
+            btnCerrarSesion.Size = new Size(116, 23);
+            btnCerrarSesion.TabIndex = 8;
+            btnCerrarSesion.Text = "Cerrar sesión";
+            btnCerrarSesion.UseVisualStyleBackColor = true;
+            btnCerrarSesion.Click += btnCerrarSesion_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(700, 338);
+            Controls.Add(btnCerrarSesion);
             Controls.Add(btnDesactivarUsuario);
             Controls.Add(btnModificarUsuario);
             Controls.Add(btnNuevoUsuario);
+            Controls.Add(btnReactivarUsuario);
             Controls.Add(dgvUsuarios);
             Controls.Add(lblTitulo);
             Controls.Add(btnListarRoles);
@@ -145,5 +169,7 @@
         private Button btnNuevoUsuario;
         private Button btnModificarUsuario;
         private Button btnDesactivarUsuario;
+        private Button btnReactivarUsuario;
+        private Button btnCerrarSesion;
     }
 }

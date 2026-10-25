@@ -6,9 +6,26 @@ namespace HotelTramonto.Presentacion
 {
     public partial class Form1 : Form
     {
-        public Form1()
+        private readonly string rolUsuario;
+
+        public Form1(string rol)
         {
             InitializeComponent();
+
+            rolUsuario = rol.Trim().ToUpperInvariant();
+
+            bool esAdministrador = rolUsuario == "ADMINISTRADOR";
+
+            btnNuevoUsuario.Visible = esAdministrador;
+            btnModificarUsuario.Visible = esAdministrador;
+            btnDesactivarUsuario.Visible = esAdministrador;
+
+            dgvUsuarios.Visible = esAdministrador;
+
+            btnProbarConexion.Visible = esAdministrador;
+            btnListarRoles.Visible = esAdministrador;
+            btnReactivarUsuario.Visible = esAdministrador;
+
             CargarUsuarios();
         }
 
@@ -56,11 +73,22 @@ namespace HotelTramonto.Presentacion
         }
         private void CargarUsuarios()
         {
+            if (rolUsuario != "ADMINISTRADOR")
+                return;
+
             try
             {
                 UsuarioNegocios negocio = new UsuarioNegocios();
 
-                dgvUsuarios.DataSource = negocio.Listar();
+                dgvUsuarios.DataSource = negocio.Listar(rolUsuario);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Acceso denegado",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
             catch (Exception ex)
             {
@@ -78,7 +106,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnNuevoUsuario_Click(object sender, EventArgs e)
         {
-            using FormUsuario formulario = new FormUsuario();
+            using FormUsuario formulario = new FormUsuario(rolUsuario);
 
             if (formulario.ShowDialog(this) == DialogResult.OK)
             {
@@ -98,8 +126,7 @@ namespace HotelTramonto.Presentacion
             int idUsuario = Convert.ToInt32(
                 dgvUsuarios.CurrentRow.Cells["id_usuario"].Value);
 
-            using FormModificarUsuario formulario =
-                new FormModificarUsuario(idUsuario);
+            using FormModificarUsuario formulario = new FormModificarUsuario(idUsuario, rolUsuario);
 
             if (formulario.ShowDialog(this) == DialogResult.OK)
             {
@@ -134,7 +161,7 @@ namespace HotelTramonto.Presentacion
             try
             {
                 UsuarioNegocios negocio = new UsuarioNegocios();
-                negocio.Desactivar(idUsuario);
+                negocio.Desactivar(idUsuario, rolUsuario);
 
                 MessageBox.Show("Usuario desactivado correctamente.");
 
@@ -149,5 +176,62 @@ namespace HotelTramonto.Presentacion
                     MessageBoxIcon.Error);
             }
         }
+
+
+        private void btnReactivarUsuario_Click(object sender, EventArgs e)
+        {
+            if (dgvUsuarios.CurrentRow == null ||
+                dgvUsuarios.CurrentRow.IsNewRow)
+            {
+                MessageBox.Show("Seleccione un usuario de la tabla.");
+                return;
+            }
+
+            int idUsuario = Convert.ToInt32(
+                dgvUsuarios.CurrentRow.Cells["id_usuario"].Value);
+
+            string nombre = dgvUsuarios.CurrentRow.Cells["nombre"].Value?.ToString() ?? "";
+
+            DialogResult respuesta = MessageBox.Show(
+                $"¿Está seguro de reactivar al usuario {nombre}?",
+                "Confirmar reactivación",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button2);
+
+            if (respuesta != DialogResult.Yes)
+                return;
+
+            try
+            {
+                UsuarioNegocios negocio = new UsuarioNegocios();
+                negocio.Reactivar(idUsuario, rolUsuario);
+
+                MessageBox.Show(
+                    "Usuario reactivado correctamente.",
+                    "Hotel Tramonto",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                CargarUsuarios();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo reactivar el usuario: " + ex.Message,
+                    "Hotel Tramonto",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+
+        private void btnCerrarSesion_Click(object sender, EventArgs e)
+        {
+            FormLogin login = new FormLogin();
+            login.Show();
+            this.Close();
+        }
+ 
     }
 }
