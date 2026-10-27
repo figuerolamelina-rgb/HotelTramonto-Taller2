@@ -89,6 +89,7 @@
             btnBuscarDNI.TabIndex = 4;
             btnBuscarDNI.Text = "Buscar por DNI";
             btnBuscarDNI.UseVisualStyleBackColor = true;
+            btnBuscarDNI.Click += btnBuscarDNI_Click_1;
             // 
             // btnActualizar
             // 

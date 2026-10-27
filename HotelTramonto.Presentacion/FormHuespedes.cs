@@ -222,5 +222,81 @@ namespace HotelTramonto.Presentacion
             }
         }
 
+
+        private void btnBuscarDNI_Click(object sender, EventArgs e)
+        {
+            string dni = Microsoft.VisualBasic.Interaction.InputBox(
+                "Ingrese el DNI del huésped:",
+                "Buscar huésped por DNI");
+
+            if (string.IsNullOrWhiteSpace(dni))
+                return;
+
+            try
+            {
+                HotelTramonto.Negocios.HuespedNegocios negocio =
+                    new HotelTramonto.Negocios.HuespedNegocios();
+
+                DataTable resultado = negocio.BuscarPorDNI(dni.Trim());
+
+                dgvHuespedes.DataSource = resultado;
+
+                if (resultado.Rows.Count == 0)
+                {
+                    MessageBox.Show(
+                        "No se encontró ningún huésped con ese DNI.",
+                        "Hotel Tramonto",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Error al buscar el huésped: " + ex.Message,
+                    "Hotel Tramonto",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+
+        private void btnBuscarDNI_Click_1(object sender, EventArgs e)
+        {
+            string dni = Microsoft.VisualBasic.Interaction.InputBox(
+                "Ingrese el DNI del huésped:",
+                "Buscar huésped por DNI");
+
+            if (string.IsNullOrWhiteSpace(dni))
+                return;
+
+            try
+            {
+                HotelTramonto.Negocios.HuespedNegocios negocio =
+                    new HotelTramonto.Negocios.HuespedNegocios();
+
+                DataTable resultado = negocio.BuscarPorDNI(dni.Trim());
+
+                dgvHuespedes.DataSource = resultado;
+
+                if (resultado.Rows.Count == 0)
+                {
+                    MessageBox.Show(
+                        "No se encontró ningún huésped con ese DNI.",
+                        "Hotel Tramonto",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Error al buscar el huésped: " + ex.Message,
+                    "Hotel Tramonto",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
     }
 }
