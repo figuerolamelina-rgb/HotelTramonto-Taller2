@@ -232,6 +232,28 @@ namespace HotelTramonto.Presentacion
             login.Show();
             this.Close();
         }
- 
+
+        private void btnHabitaciones_Click(object sender, EventArgs e)
+        {
+            FormHabitaciones formulario = new FormHabitaciones();
+            formulario.ShowDialog();
+        }
+
+        private void btnReservas_Click(object sender, EventArgs e)
+        {
+            using (FormReservas formulario = new FormReservas())
+            {
+                formulario.ShowDialog();
+            }
+        }
+
+        private void btnHuespedes_Click(object sender, EventArgs e)
+        {
+            using (FormHuespedes formulario = new FormHuespedes())
+            {
+                formulario.ShowDialog();
+            }
+        }
+
     }
 }

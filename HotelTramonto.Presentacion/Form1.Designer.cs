@@ -37,6 +37,9 @@
             btnDesactivarUsuario = new Button();
             btnReactivarUsuario = new Button();
             btnCerrarSesion = new Button();
+            btnHabitaciones = new Button();
+            btnReservas = new Button();
+            btnHuespedes = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvUsuarios).BeginInit();
             SuspendLayout();
             // 
@@ -80,12 +83,12 @@
             dgvUsuarios.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvUsuarios.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
             dgvUsuarios.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvUsuarios.Location = new Point(23, 120);
+            dgvUsuarios.Location = new Point(23, 136);
             dgvUsuarios.MultiSelect = false;
             dgvUsuarios.Name = "dgvUsuarios";
             dgvUsuarios.ReadOnly = true;
             dgvUsuarios.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvUsuarios.Size = new Size(740, 300);
+            dgvUsuarios.Size = new Size(740, 284);
             dgvUsuarios.TabIndex = 3;
             // 
             // btnNuevoUsuario
@@ -120,7 +123,7 @@
             // 
             // btnReactivarUsuario
             // 
-            btnReactivarUsuario.Location = new Point(459, 79);
+            btnReactivarUsuario.Location = new Point(450, 79);
             btnReactivarUsuario.Name = "btnReactivarUsuario";
             btnReactivarUsuario.Size = new Size(140, 30);
             btnReactivarUsuario.TabIndex = 7;
@@ -138,11 +141,45 @@
             btnCerrarSesion.UseVisualStyleBackColor = true;
             btnCerrarSesion.Click += btnCerrarSesion_Click;
             // 
+            // btnHabitaciones
+            // 
+            btnHabitaciones.Location = new Point(599, 37);
+            btnHabitaciones.Name = "btnHabitaciones";
+            btnHabitaciones.Size = new Size(98, 23);
+            btnHabitaciones.TabIndex = 9;
+            btnHabitaciones.Text = "Habitaciones";
+            btnHabitaciones.UseVisualStyleBackColor = true;
+            btnHabitaciones.Click += btnHabitaciones_Click;
+            // 
+            // btnReservas
+            // 
+            btnReservas.Location = new Point(613, 66);
+            btnReservas.Name = "btnReservas";
+            btnReservas.Size = new Size(75, 23);
+            btnReservas.TabIndex = 10;
+            btnReservas.Text = "Reservas";
+            btnReservas.UseVisualStyleBackColor = true;
+            btnReservas.Click += btnReservas_Click;
+            // 
+            // btnHuespedes
+            // 
+            btnHuespedes.Location = new Point(613, 95);
+            btnHuespedes.Name = "btnHuespedes";
+            btnHuespedes.RightToLeft = RightToLeft.No;
+            btnHuespedes.Size = new Size(75, 23);
+            btnHuespedes.TabIndex = 11;
+            btnHuespedes.Text = "Huéspedes";
+            btnHuespedes.UseVisualStyleBackColor = true;
+            btnHuespedes.Click += btnHuespedes_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(700, 338);
+            Controls.Add(btnHuespedes);
+            Controls.Add(btnReservas);
+            Controls.Add(btnHabitaciones);
             Controls.Add(btnCerrarSesion);
             Controls.Add(btnDesactivarUsuario);
             Controls.Add(btnModificarUsuario);
@@ -171,5 +208,8 @@
         private Button btnDesactivarUsuario;
         private Button btnReactivarUsuario;
         private Button btnCerrarSesion;
+        private Button btnHabitaciones;
+        private Button btnReservas;
+        private Button btnHuespedes;
     }
 }
