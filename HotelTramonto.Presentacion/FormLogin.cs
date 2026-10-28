@@ -49,14 +49,15 @@ namespace HotelTramonto.Presentacion
                 string nombre = Convert.ToString(usuario["nombre"]) ?? "";
                 string apellido = Convert.ToString(usuario["apellido"]) ?? "";
                 string rol = Convert.ToString(usuario["nombre_rol"]) ?? "";
+                int idUsuario = Convert.ToInt32(usuario["id_usuario"]);
 
                 MessageBox.Show(
                  $"Bienvenido/a, {nombre} {apellido}.\nRol: {rol}",
                 "Acceso correcto",
                 MessageBoxButtons.OK,
                  MessageBoxIcon.Information);
-                
-                Form1 formularioPrincipal = new Form1(rol);
+
+                Form1 formularioPrincipal = new Form1(rol, idUsuario);
                 formularioPrincipal.Show();
                 this.Hide();
             }

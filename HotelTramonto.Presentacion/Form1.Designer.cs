@@ -40,6 +40,7 @@
             btnHabitaciones = new Button();
             btnReservas = new Button();
             btnHuespedes = new Button();
+            btnPagos = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvUsuarios).BeginInit();
             SuspendLayout();
             // 
@@ -172,11 +173,22 @@
             btnHuespedes.UseVisualStyleBackColor = true;
             btnHuespedes.Click += btnHuespedes_Click;
             // 
+            // btnPagos
+            // 
+            btnPagos.Location = new Point(158, 38);
+            btnPagos.Name = "btnPagos";
+            btnPagos.Size = new Size(75, 23);
+            btnPagos.TabIndex = 12;
+            btnPagos.Text = "Pagos";
+            btnPagos.UseVisualStyleBackColor = true;
+            btnPagos.Click += btnPagos_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(700, 338);
+            Controls.Add(btnPagos);
             Controls.Add(btnHuespedes);
             Controls.Add(btnReservas);
             Controls.Add(btnHabitaciones);
@@ -211,5 +223,6 @@
         private Button btnHabitaciones;
         private Button btnReservas;
         private Button btnHuespedes;
+        private Button btnPagos;
     }
 }

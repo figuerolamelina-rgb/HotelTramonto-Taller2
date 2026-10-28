@@ -7,12 +7,14 @@ namespace HotelTramonto.Presentacion
     public partial class Form1 : Form
     {
         private readonly string rolUsuario;
+        private readonly int idUsuario;
 
-        public Form1(string rol)
+        public Form1(string rol, int idUsuario)
         {
             InitializeComponent();
 
             rolUsuario = rol.Trim().ToUpperInvariant();
+            this.idUsuario = idUsuario;
 
             bool esAdministrador = rolUsuario == "ADMINISTRADOR";
 
@@ -241,7 +243,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnReservas_Click(object sender, EventArgs e)
         {
-            using (FormReservas formulario = new FormReservas())
+            using (FormReservas formulario = new FormReservas(idUsuario))
             {
                 formulario.ShowDialog();
             }
@@ -250,6 +252,14 @@ namespace HotelTramonto.Presentacion
         private void btnHuespedes_Click(object sender, EventArgs e)
         {
             using (FormHuespedes formulario = new FormHuespedes())
+            {
+                formulario.ShowDialog();
+            }
+        }
+
+        private void btnPagos_Click(object sender, EventArgs e)
+        {
+            using (FormPagos formulario = new FormPagos(idUsuario))
             {
                 formulario.ShowDialog();
             }

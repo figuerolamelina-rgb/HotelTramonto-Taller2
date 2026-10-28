@@ -1,4 +1,5 @@
-﻿using HotelTramonto.Negocios;
+﻿using HotelTramonto.Entidades;
+using HotelTramonto.Negocios;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,11 +12,30 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormReservas : Form
     {
-        public FormReservas()
+        private readonly int idUsuario;
+
+        public FormReservas(int idUsuario)
         {
             InitializeComponent();
+
+            this.idUsuario = idUsuario;
+
             ConfigurarComboEstado();
             CargarReservas();
+
+            Button btnNuevaReserva = new Button
+            {
+                Name = "btnNuevaReserva",
+                Text = "Nueva reserva",
+                Width = 120,
+                Height = 30,
+                Left = 20,
+                Top = 10
+            };
+
+            btnNuevaReserva.Click += btnNuevaReserva_Click;
+            Controls.Add(btnNuevaReserva);
+            btnNuevaReserva.BringToFront();
         }
 
 
@@ -304,6 +324,19 @@ namespace HotelTramonto.Presentacion
                     MessageBoxIcon.Error);
             }
         }
+
+
+        private void btnNuevaReserva_Click(object sender, EventArgs e)
+        {
+            using (FormNuevaReserva formulario = new FormNuevaReserva(idUsuario))
+            {
+                if (formulario.ShowDialog(this) == DialogResult.OK)
+                {
+                    CargarReservas();
+                }
+            }
+        }
+
 
     }
 }
