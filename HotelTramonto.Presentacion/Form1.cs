@@ -18,12 +18,16 @@ namespace HotelTramonto.Presentacion
 
             bool esAdministrador = rolUsuario == "ADMINISTRADOR";
 
+            bool puedeVerReportes =
+                rolUsuario == "ADMINISTRADOR" ||
+                rolUsuario == "GERENTE";
+
+            btnReportes.Visible = puedeVerReportes;
+
             btnNuevoUsuario.Visible = esAdministrador;
             btnModificarUsuario.Visible = esAdministrador;
             btnDesactivarUsuario.Visible = esAdministrador;
-
             dgvUsuarios.Visible = esAdministrador;
-
             btnProbarConexion.Visible = esAdministrador;
             btnListarRoles.Visible = esAdministrador;
             btnReactivarUsuario.Visible = esAdministrador;
@@ -265,5 +269,12 @@ namespace HotelTramonto.Presentacion
             }
         }
 
+        private void btnReportes_Click(object sender, EventArgs e)
+        {
+            using (FormReportes formulario = new FormReportes())
+            {
+                formulario.ShowDialog(this);
+            }
+        }
     }
 }
