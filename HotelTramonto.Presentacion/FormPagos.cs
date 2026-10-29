@@ -31,87 +31,154 @@ namespace HotelTramonto.Presentacion
             ConfigurarFormulario();
         }
 
+
+
         private void ConfigurarFormulario()
         {
-            Text = "Gestión de pagos";
-            Width = 900;
-            Height = 500;
+            // Paleta Hotel Tramonto
+            Color marron = Color.FromArgb(74, 48, 39);
+            Color marronClaro = Color.FromArgb(91, 62, 49);
+            Color crema = Color.FromArgb(245, 239, 229);
+            Color marfil = Color.FromArgb(255, 252, 247);
+            Color dorado = Color.FromArgb(198, 161, 91);
+            Color texto = Color.FromArgb(66, 51, 43);
+
+            // Ventana
+            Text = "Hotel Tramonto | Gestión de pagos";
+            BackColor = crema;
+            Font = new Font("Segoe UI", 10F);
+            WindowState = FormWindowState.Maximized;
             StartPosition = FormStartPosition.CenterScreen;
+            MinimumSize = new Size(1000, 650);
 
-            lblIdReserva = new Label
+            // Inicializar TODOS los controles antes de configurarlos
+            lblIdReserva = new Label();
+            numIdReserva = new NumericUpDown();
+            dgvPagos = new DataGridView();
+            btnConsultar = new Button();
+            btnRegistrarSaldo = new Button();
+            btnCerrar = new Button();
+            btnRegistrarServicios = new Button();
+
+            // Título
+            Label lblTitulo = new Label
             {
-                Text = "ID de reserva:",
-                Left = 20,
-                Top = 25,
-                Width = 100
+                Name = "lblTituloPagos",
+                Text = "GESTIÓN DE PAGOS",
+                Font = new Font("Georgia", 25F, FontStyle.Bold),
+                ForeColor = dorado,
+                BackColor = Color.Transparent,
+                AutoSize = true,
+                Location = new Point(30, 25)
             };
 
-            numIdReserva = new NumericUpDown
-            {
-                Left = 125,
-                Top = 20,
-                Width = 120,
-                Minimum = 1,
-                Maximum = 1000000
-            };
+            // ID de reserva
+            lblIdReserva.Text = "ID de reserva:";
+            lblIdReserva.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblIdReserva.ForeColor = marron;
+            lblIdReserva.BackColor = Color.Transparent;
+            lblIdReserva.Location = new Point(35, 105);
+            lblIdReserva.Size = new Size(110, 25);
 
-            btnConsultar = new Button
-            {
-                Text = "Consultar pagos",
-                Left = 265,
-                Top = 18,
-                Width = 140,
-                Height = 30
-            };
+            numIdReserva.Location = new Point(150, 100);
+            numIdReserva.Size = new Size(120, 32);
+            numIdReserva.Minimum = 1;
+            numIdReserva.Maximum = 1000000;
+            numIdReserva.Font = new Font("Segoe UI", 10F);
+            numIdReserva.BackColor = marfil;
+            numIdReserva.ForeColor = marron;
+
+            // Botones superiores
+            EstilizarBotonPago(btnConsultar, "Consultar pagos", marron);
+            btnConsultar.Location = new Point(290, 96);
+            btnConsultar.Size = new Size(150, 40);
             btnConsultar.Click += btnConsultar_Click;
 
-            dgvPagos = new DataGridView
-            {
-                Left = 20,
-                Top = 65,
-                Width = 840,
-                Height = 330,
-                ReadOnly = true,
-                AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false
-            };
-
-            btnCerrar = new Button
-            {
-                Text = "Cerrar",
-                Left = 760,
-                Top = 410,
-                Width = 100,
-                Height = 30
-            };
-            btnCerrar.Click += (sender, e) => Close();
-
-
-            btnRegistrarSaldo = new Button
-            {
-                Text = "Registrar saldo",
-                Left = 420,
-                Top = 18,
-                Width = 140,
-                Height = 30
-            };
-
+            EstilizarBotonPago(btnRegistrarSaldo, "Registrar saldo", dorado);
+            btnRegistrarSaldo.ForeColor = marron;
+            btnRegistrarSaldo.Location = new Point(455, 96);
+            btnRegistrarSaldo.Size = new Size(155, 40);
             btnRegistrarSaldo.Click += btnRegistrarSaldo_Click;
 
-            btnRegistrarServicios = new Button
-            {
-                Text = "Registrar servicios",
-                Left = 575,
-                Top = 18,
-                Width = 150,
-                Height = 30
-            };
-
+            EstilizarBotonPago(
+                btnRegistrarServicios,
+                "Registrar servicios",
+                marronClaro);
+            btnRegistrarServicios.Location = new Point(625, 96);
+            btnRegistrarServicios.Size = new Size(175, 40);
             btnRegistrarServicios.Click += btnRegistrarServicios_Click;
 
+            // Tabla
+            dgvPagos.Location = new Point(35, 165);
+            dgvPagos.Size = new Size(
+                Math.Max(400, ClientSize.Width - 70),
+                Math.Max(200, ClientSize.Height - 260));
+
+            dgvPagos.Anchor =
+                AnchorStyles.Top |
+                AnchorStyles.Bottom |
+                AnchorStyles.Left |
+                AnchorStyles.Right;
+
+            dgvPagos.ReadOnly = true;
+            dgvPagos.AllowUserToAddRows = false;
+            dgvPagos.AllowUserToDeleteRows = false;
+            dgvPagos.SelectionMode =
+                DataGridViewSelectionMode.FullRowSelect;
+            dgvPagos.MultiSelect = false;
+            dgvPagos.RowHeadersVisible = false;
+            dgvPagos.ScrollBars = ScrollBars.Both;
+            dgvPagos.AutoSizeColumnsMode =
+                DataGridViewAutoSizeColumnsMode.DisplayedCells;
+            dgvPagos.RowTemplate.Height = 36;
+            dgvPagos.ColumnHeadersHeight = 42;
+
+            dgvPagos.BackgroundColor = marfil;
+            dgvPagos.BorderStyle = BorderStyle.None;
+            dgvPagos.GridColor = Color.FromArgb(229, 218, 202);
+            dgvPagos.EnableHeadersVisualStyles = false;
+
+            dgvPagos.ColumnHeadersDefaultCellStyle.BackColor = marron;
+            dgvPagos.ColumnHeadersDefaultCellStyle.ForeColor = dorado;
+            dgvPagos.ColumnHeadersDefaultCellStyle.Font =
+                new Font("Segoe UI", 9F, FontStyle.Bold);
+            dgvPagos.ColumnHeadersDefaultCellStyle.SelectionBackColor = marron;
+            dgvPagos.ColumnHeadersDefaultCellStyle.SelectionForeColor = dorado;
+
+            dgvPagos.DefaultCellStyle.BackColor = marfil;
+            dgvPagos.DefaultCellStyle.ForeColor = texto;
+            dgvPagos.DefaultCellStyle.Font = new Font("Segoe UI", 9F);
+            dgvPagos.DefaultCellStyle.SelectionBackColor =
+                Color.FromArgb(238, 222, 190);
+            dgvPagos.DefaultCellStyle.SelectionForeColor = marron;
+
+            dgvPagos.AlternatingRowsDefaultCellStyle.BackColor =
+                Color.FromArgb(248, 243, 235);
+
+            // Formato del importe cada vez que se cargan pagos
+            dgvPagos.DataBindingComplete += (sender, e) =>
+            {
+                if (dgvPagos.Columns.Contains("monto"))
+                {
+                    dgvPagos.Columns["monto"].DefaultCellStyle.Format = "N2";
+                    dgvPagos.Columns["monto"].DefaultCellStyle.Alignment =
+                        DataGridViewContentAlignment.MiddleRight;
+                }
+            };
+
+            // Botón cerrar
+            EstilizarBotonPago(btnCerrar, "Cerrar", dorado);
+            btnCerrar.ForeColor = marron;
+            btnCerrar.Size = new Size(130, 42);
+            btnCerrar.Location = new Point(
+                ClientSize.Width - 165,
+                ClientSize.Height - 70);
+            btnCerrar.Anchor =
+                AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCerrar.Click += (sender, e) => Close();
+
+            // Agregar cada control una sola vez
+            Controls.Add(lblTitulo);
             Controls.Add(lblIdReserva);
             Controls.Add(numIdReserva);
             Controls.Add(btnConsultar);
@@ -120,7 +187,29 @@ namespace HotelTramonto.Presentacion
             Controls.Add(dgvPagos);
             Controls.Add(btnCerrar);
 
+            lblTitulo.BringToFront();
         }
+
+
+        private void EstilizarBotonPago(
+            Button boton,
+            string textoBoton,
+            Color fondo)
+        {
+            boton.Text = textoBoton;
+            boton.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            boton.BackColor = fondo;
+            boton.ForeColor = Color.FromArgb(255, 252, 247);
+            boton.FlatStyle = FlatStyle.Flat;
+            boton.FlatAppearance.BorderSize = 0;
+            boton.FlatAppearance.MouseOverBackColor =
+                Color.FromArgb(126, 91, 65);
+            boton.FlatAppearance.MouseDownBackColor =
+                Color.FromArgb(105, 73, 52);
+            boton.Cursor = Cursors.Hand;
+            boton.UseVisualStyleBackColor = false;
+        }
+
 
         private void btnConsultar_Click(object sender, EventArgs e)
         {

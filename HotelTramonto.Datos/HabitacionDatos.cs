@@ -140,6 +140,7 @@ namespace HotelTramonto.Datos
 
 
 
+
         public void Reactivar(int idHabitacion)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
@@ -154,6 +155,7 @@ namespace HotelTramonto.Datos
             conexion.Open();
             comando.ExecuteNonQuery();
         }
+
 
 
     }

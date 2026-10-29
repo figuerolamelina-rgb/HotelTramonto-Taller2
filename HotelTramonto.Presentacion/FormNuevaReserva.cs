@@ -4,7 +4,6 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using HotelTramonto.Negocios;
-using System.Linq;
 
 namespace HotelTramonto.Presentacion
 {
@@ -15,7 +14,6 @@ namespace HotelTramonto.Presentacion
         private readonly HuespedNegocios huespedNegocios = new HuespedNegocios();
         private readonly HabitacionNegocios habitacionNegocios = new HabitacionNegocios();
         private readonly TipoHabitacionNegocios tipoNegocios = new TipoHabitacionNegocios();
-
         private readonly ReservaTemporalNegocios temporalNegocios = new ReservaTemporalNegocios();
         private readonly ReservaNegocios reservaNegocios = new ReservaNegocios();
         private readonly PagoNegocios pagoNegocios = new PagoNegocios();
@@ -33,6 +31,12 @@ namespace HotelTramonto.Presentacion
 
         private DataTable tiposHabitacion = new DataTable();
 
+        private readonly Color marron = Color.FromArgb(74, 48, 39);
+        private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
+        private readonly Color crema = Color.FromArgb(245, 239, 229);
+        private readonly Color marfil = Color.FromArgb(255, 252, 247);
+        private readonly Color dorado = Color.FromArgb(198, 161, 91);
+
         public FormNuevaReserva(int idUsuario)
         {
             InitializeComponent();
@@ -49,101 +53,231 @@ namespace HotelTramonto.Presentacion
             ActualizarTotal();
         }
 
+
         private void ConfigurarFormulario()
         {
-            Text = "Nueva reserva";
+            Text = "Nueva reserva - Hotel Tramonto";
             StartPosition = FormStartPosition.CenterParent;
-            Size = new Size(520, 570);
+            ClientSize = new Size(700, 620);
+            MinimumSize = new Size(716, 659);
+            MaximumSize = new Size(716, 659);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
+            BackColor = crema;
+            ForeColor = marron;
+            Font = new Font("Segoe UI", 10F);
 
             Controls.Clear();
 
-            AgregarEtiqueta("Huésped:", 25, 25);
-            ConfigurarCombo(cmbHuesped, 190, 22, 280);
+            // Encabezado
+            Panel panelTitulo = new Panel
+            {
+                Location = new Point(0, 0),
+                Size = new Size(700, 90),
+                BackColor = marron
+            };
 
-            AgregarEtiqueta("Habitación:", 25, 75);
-            ConfigurarCombo(cmbHabitacion, 190, 72, 280);
+            Label lblTitulo = new Label
+            {
+                Text = "NUEVA RESERVA",
+                Location = new Point(25, 12),
+                AutoSize = true,
+                ForeColor = dorado,
+                Font = new Font("Segoe UI", 19F, FontStyle.Bold)
+            };
 
-            AgregarEtiqueta("Fecha de entrada:", 25, 125);
-            ConfigurarFecha(dtpEntrada, 190, 122);
+            Label lblSubtitulo = new Label
+            {
+                Text = "Completá los datos de alojamiento y pago",
+                Location = new Point(28, 53),
+                AutoSize = true,
+                ForeColor = crema,
+                Font = new Font("Segoe UI", 9.5F)
+            };
 
-            AgregarEtiqueta("Fecha de salida:", 25, 175);
-            ConfigurarFecha(dtpSalida, 190, 172);
+            panelTitulo.Controls.Add(lblTitulo);
+            panelTitulo.Controls.Add(lblSubtitulo);
+            Controls.Add(panelTitulo);
 
-            AgregarEtiqueta("Cantidad de personas:", 25, 225);
-            nudPersonas.Location = new Point(190, 222);
-            nudPersonas.Width = 100;
+            // Panel del formulario
+            Panel panelFormulario = new Panel
+            {
+                Location = new Point(20, 105),
+                Size = new Size(660, 430),
+                BackColor = marfil,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            Controls.Add(panelFormulario);
+
+            int etiquetaX = 25;
+            int campoX = 225;
+
+            // Huésped
+            AgregarEtiqueta(panelFormulario, "Huésped", etiquetaX, 15);
+            ConfigurarCombo(panelFormulario, cmbHuesped, campoX, 12, 400);
+
+            // Habitación
+            AgregarEtiqueta(panelFormulario, "Habitación", etiquetaX, 60);
+            ConfigurarCombo(panelFormulario, cmbHabitacion, campoX, 57, 400);
+
+            // Fechas
+            AgregarEtiqueta(panelFormulario, "Fecha de entrada", etiquetaX, 105);
+            ConfigurarFecha(panelFormulario, dtpEntrada, campoX, 102);
+
+            AgregarEtiqueta(panelFormulario, "Fecha de salida", etiquetaX, 150);
+            ConfigurarFecha(panelFormulario, dtpSalida, campoX, 147);
+
+            // Cantidad de personas
+            AgregarEtiqueta(panelFormulario, "Cantidad de personas", etiquetaX, 195);
+
+            nudPersonas.Location = new Point(campoX, 192);
+            nudPersonas.Size = new Size(120, 28);
             nudPersonas.Minimum = 1;
             nudPersonas.Maximum = 20;
             nudPersonas.Value = 1;
-            Controls.Add(nudPersonas);
+            nudPersonas.BackColor = marfil;
+            nudPersonas.ForeColor = marron;
+            nudPersonas.Font = new Font("Segoe UI", 10F);
 
-            AgregarEtiqueta("Modalidad de pago:", 25, 275);
-            ConfigurarCombo(cmbModalidadPago, 190, 272, 280);
-            cmbModalidadPago.Items.Add("Pago total");
-            cmbModalidadPago.Items.Add("Seña del 50 %");
+            panelFormulario.Controls.Add(nudPersonas);
+
+            // Modalidad de pago
+            AgregarEtiqueta(panelFormulario, "Modalidad de pago", etiquetaX, 240);
+            ConfigurarCombo(panelFormulario, cmbModalidadPago, campoX, 237, 400);
+
+            cmbModalidadPago.Items.AddRange(new object[]
+            {
+        "Pago total",
+        "Seña del 50 %"
+            });
+
             cmbModalidadPago.SelectedIndex = 0;
 
-            AgregarEtiqueta("Método de pago:", 25, 325);
-            ConfigurarCombo(cmbMetodoPago, 190, 322, 280);
+            // Método de pago
+            AgregarEtiqueta(panelFormulario, "Método de pago", etiquetaX, 285);
+            ConfigurarCombo(panelFormulario, cmbMetodoPago, campoX, 282, 400);
+
             cmbMetodoPago.Items.AddRange(new object[]
             {
-                "EFECTIVO",
-                "TARJETA",
-                "TRANSFERENCIA"
+        "EFECTIVO",
+        "TARJETA",
+        "TRANSFERENCIA"
             });
+
             cmbMetodoPago.SelectedIndex = 0;
 
-            lblTotal.Location = new Point(25, 380);
-            lblTotal.Size = new Size(445, 50);
-            lblTotal.Font = new Font("Segoe UI", 11, FontStyle.Bold);
-            Controls.Add(lblTotal);
+            // Resumen del alojamiento
+            Panel panelTotal = new Panel
+            {
+                Location = new Point(20, 325),
+                Size = new Size(618, 78),
+                BackColor = crema
+            };
 
-            btnGuardar.Text = "Crear reserva";
-            btnGuardar.Location = new Point(190, 455);
-            btnGuardar.Size = new Size(130, 35);
+            Label lblResumen = new Label
+            {
+                Text = "RESUMEN DEL ALOJAMIENTO",
+                Location = new Point(12, 7),
+                AutoSize = true,
+                ForeColor = marronClaro,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold)
+            };
+
+            lblTotal.Location = new Point(12, 30);
+            lblTotal.Size = new Size(594, 43);
+            lblTotal.ForeColor = marron;
+            lblTotal.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+
+            panelTotal.Controls.Add(lblResumen);
+            panelTotal.Controls.Add(lblTotal);
+            panelFormulario.Controls.Add(panelTotal);
+
+            // Botones visibles en la parte inferior
+            btnGuardar = CrearBoton("Confirmar reserva", dorado, marron);
+            btnGuardar.Location = new Point(220, 555);
+            btnGuardar.Size = new Size(190, 40);
             btnGuardar.Click += btnGuardar_Click;
             Controls.Add(btnGuardar);
 
-            btnCancelar.Text = "Cancelar";
-            btnCancelar.Location = new Point(330, 455);
-            btnCancelar.Size = new Size(100, 35);
+            btnCancelar = CrearBoton("Cancelar", marronClaro, Color.White);
+            btnCancelar.Location = new Point(425, 555);
+            btnCancelar.Size = new Size(125, 40);
             btnCancelar.DialogResult = DialogResult.Cancel;
             Controls.Add(btnCancelar);
 
+            AcceptButton = btnGuardar;
             CancelButton = btnCancelar;
         }
 
-        private void AgregarEtiqueta(string texto, int izquierda, int arriba)
+
+        private void AgregarEtiqueta(
+            Control contenedor, string texto, int izquierda, int arriba)
         {
             Label etiqueta = new Label
             {
                 Text = texto,
-                Location = new Point(izquierda, arriba + 3),
-                AutoSize = true
+                Location = new Point(izquierda, arriba + 4),
+                AutoSize = true,
+                ForeColor = marron,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold)
             };
 
-            Controls.Add(etiqueta);
+            contenedor.Controls.Add(etiqueta);
         }
 
-        private void ConfigurarCombo(ComboBox combo, int izquierda, int arriba, int ancho)
+        private void ConfigurarCombo(
+            Control contenedor, ComboBox combo,
+            int izquierda, int arriba, int ancho)
         {
             combo.Location = new Point(izquierda, arriba);
-            combo.Width = ancho;
+            combo.Size = new Size(ancho, 30);
             combo.DropDownStyle = ComboBoxStyle.DropDownList;
-            Controls.Add(combo);
+            combo.BackColor = marfil;
+            combo.ForeColor = marron;
+            combo.Font = new Font("Segoe UI", 10F);
+
+            contenedor.Controls.Add(combo);
         }
 
-        private void ConfigurarFecha(DateTimePicker fecha, int izquierda, int arriba)
+        private void ConfigurarFecha(
+            Control contenedor, DateTimePicker fecha,
+            int izquierda, int arriba)
         {
             fecha.Location = new Point(izquierda, arriba);
-            fecha.Width = 180;
-            fecha.Format = DateTimePickerFormat.Short;
+            fecha.Size = new Size(180, 30);
+            fecha.Format = DateTimePickerFormat.Custom;
+            fecha.CustomFormat = "dd/MM/yyyy";
             fecha.MinDate = DateTime.Today;
             fecha.Value = DateTime.Today.AddDays(1);
-            Controls.Add(fecha);
+            fecha.Font = new Font("Segoe UI", 10F);
+            fecha.CalendarForeColor = marron;
+
+            contenedor.Controls.Add(fecha);
+        }
+
+        private Button CrearBoton(
+            string texto, Color fondo, Color textoColor)
+        {
+            Button boton = new Button
+            {
+                Text = texto,
+                BackColor = fondo,
+                ForeColor = textoColor,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                UseVisualStyleBackColor = false
+            };
+
+            boton.FlatAppearance.BorderSize = 0;
+            boton.FlatAppearance.MouseOverBackColor =
+                Color.FromArgb(211, 178, 119);
+            boton.FlatAppearance.MouseDownBackColor =
+                Color.FromArgb(174, 139, 76);
+
+            return boton;
         }
 
         private void CargarHuespedes()
@@ -175,9 +309,7 @@ namespace HotelTramonto.Presentacion
         private void CargarHabitaciones()
         {
             DataTable habitaciones = habitacionNegocios.Listar();
-
             tiposHabitacion = tipoNegocios.Listar();
-           
 
             DataTable disponiblesParaSeleccion = habitaciones.Clone();
 
@@ -185,12 +317,19 @@ namespace HotelTramonto.Presentacion
             {
                 string estado = Convert.ToString(fila["estado"]) ?? "";
 
-                if (!estado.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase))
+                if (!estado.Equals(
+                    "MANTENIMIENTO", StringComparison.OrdinalIgnoreCase))
+                {
                     disponiblesParaSeleccion.ImportRow(fila);
+                }
             }
 
-            if (!disponiblesParaSeleccion.Columns.Contains("descripcion_habitacion"))
-                disponiblesParaSeleccion.Columns.Add("descripcion_habitacion", typeof(string));
+            if (!disponiblesParaSeleccion.Columns.Contains(
+                "descripcion_habitacion"))
+            {
+                disponiblesParaSeleccion.Columns.Add(
+                    "descripcion_habitacion", typeof(string));
+            }
 
             foreach (DataRow fila in disponiblesParaSeleccion.Rows)
             {
@@ -209,7 +348,6 @@ namespace HotelTramonto.Presentacion
         {
             cmbHabitacion.SelectedIndexChanged += (s, e) => ActualizarTotal();
             cmbModalidadPago.SelectedIndexChanged += (s, e) => ActualizarTotal();
-
             nudPersonas.ValueChanged += (s, e) => ActualizarTotal();
 
             dtpEntrada.ValueChanged += (s, e) =>
@@ -233,12 +371,12 @@ namespace HotelTramonto.Presentacion
             if (cmbHabitacion.SelectedItem is not DataRowView habitacion ||
                 cmbModalidadPago.SelectedIndex < 0)
             {
-                lblTotal.Text = "Seleccioná una habitación para calcular el importe.";
+                lblTotal.Text =
+                    "Seleccioná una habitación para calcular el importe.";
                 return;
             }
 
             int idTipo = Convert.ToInt32(habitacion["tipo_habitacion"]);
-
             DataRow tipoEncontrado = null;
 
             foreach (DataRow filaTipo in tiposHabitacion.Rows)
@@ -256,10 +394,12 @@ namespace HotelTramonto.Presentacion
                 return;
             }
 
-   
+            decimal precioNoche =
+                Convert.ToDecimal(tipoEncontrado["precio_noche"]);
 
-            decimal precioNoche = Convert.ToDecimal(tipoEncontrado["precio_noche"]);
-            int noches = Math.Max(1, (dtpSalida.Value.Date - dtpEntrada.Value.Date).Days);
+            int noches = Math.Max(
+                1, (dtpSalida.Value.Date - dtpEntrada.Value.Date).Days);
+
             decimal total = precioNoche * noches;
             decimal pagoInicial = cmbModalidadPago.SelectedIndex == 0
                 ? total
@@ -269,7 +409,6 @@ namespace HotelTramonto.Presentacion
                 $"Noches: {noches} | Total: {total:C2}\n" +
                 $"Pago inicial: {pagoInicial:C2} | Saldo: {(total - pagoInicial):C2}";
         }
-
 
         private void btnGuardar_Click(object sender, EventArgs e)
         {
@@ -304,7 +443,8 @@ namespace HotelTramonto.Presentacion
                 DataRowView habitacionSeleccionada =
                     (DataRowView)cmbHabitacion.SelectedItem;
 
-                int idTipo = Convert.ToInt32(habitacionSeleccionada["tipo_habitacion"]);
+                int idTipo = Convert.ToInt32(
+                    habitacionSeleccionada["tipo_habitacion"]);
 
                 DataRow tipoEncontrado = null;
 
@@ -336,14 +476,19 @@ namespace HotelTramonto.Presentacion
                 }
 
                 int noches = (salida - entrada).Days;
+
                 if (noches <= 0)
                 {
-                    MessageBox.Show("La salida debe ser posterior a la entrada.");
+                    MessageBox.Show(
+                        "La salida debe ser posterior a la entrada.");
                     return;
                 }
 
-                decimal precioNoche = Convert.ToDecimal(tipoEncontrado["precio_noche"]);
+                decimal precioNoche =
+                    Convert.ToDecimal(tipoEncontrado["precio_noche"]);
+
                 decimal total = precioNoche * noches;
+
                 decimal pagoInicial = modalidad == "PAGO_TOTAL"
                     ? total
                     : Math.Round(total / 2m, 2);
@@ -422,6 +567,5 @@ namespace HotelTramonto.Presentacion
                     MessageBoxIcon.Error);
             }
         }
-
     }
 }

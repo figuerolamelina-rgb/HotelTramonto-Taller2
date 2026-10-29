@@ -69,6 +69,7 @@
             // lblTitulo
             // 
             lblTitulo.AutoSize = true;
+            lblTitulo.BackColor = Color.AntiqueWhite;
             lblTitulo.Font = new Font("Microsoft Sans Serif", 15.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblTitulo.Location = new Point(158, 9);
             lblTitulo.Name = "lblTitulo";
@@ -90,7 +91,7 @@
             dgvUsuarios.Name = "dgvUsuarios";
             dgvUsuarios.ReadOnly = true;
             dgvUsuarios.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvUsuarios.Size = new Size(740, 284);
+            dgvUsuarios.Size = new Size(1024, 557);
             dgvUsuarios.TabIndex = 3;
             // 
             // btnNuevoUsuario
@@ -198,7 +199,8 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(700, 338);
+            BackColor = Color.FromArgb(240, 238, 230);
+            ClientSize = new Size(984, 611);
             Controls.Add(btnReportes);
             Controls.Add(btnPagos);
             Controls.Add(btnHuespedes);
@@ -214,8 +216,11 @@
             Controls.Add(btnListarRoles);
             Controls.Add(btnProbarConexion);
             Margin = new Padding(3, 2, 3, 2);
+            MinimumSize = new Size(1000, 650);
             Name = "Form1";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Form1";
+            WindowState = FormWindowState.Maximized;
             ((System.ComponentModel.ISupportInitialize)dgvUsuarios).EndInit();
             ResumeLayout(false);
             PerformLayout();

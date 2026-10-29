@@ -215,9 +215,7 @@ GO
 
 
 
-
-
--- listar usuarios activos.
+--listar usuarios
 
 CREATE OR ALTER PROCEDURE sp_Usuario_Listar
 AS
@@ -238,11 +236,9 @@ BEGIN
     FROM Usuarios U
     INNER JOIN Roles R
         ON U.id_rol = R.id_rol
-    WHERE U.activo = 1
     ORDER BY U.apellido, U.nombre;
 END;
 GO
-
 
 
 --buscar usuario por DNI.
@@ -436,6 +432,7 @@ GO
 
 --listar habitaciones activas.
 
+
 CREATE OR ALTER PROCEDURE sp_Habitacion_Listar
 AS
 BEGIN
@@ -452,10 +449,10 @@ BEGIN
     FROM Habitaciones H
     INNER JOIN TiposHabitacion T
         ON H.tipo_habitacion = T.id_tipoHabitacion
-    WHERE H.activo = 1
     ORDER BY H.numero;
 END;
 GO
+
 
 
 

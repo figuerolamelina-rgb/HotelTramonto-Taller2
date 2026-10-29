@@ -1,6 +1,7 @@
-using Microsoft.Data.SqlClient;
 using HotelTramonto.Datos;
 using HotelTramonto.Negocios;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace HotelTramonto.Presentacion
 {
@@ -12,6 +13,7 @@ namespace HotelTramonto.Presentacion
         public Form1(string rol, int idUsuario)
         {
             InitializeComponent();
+            AplicarEstilo();
 
             rolUsuario = rol.Trim().ToUpperInvariant();
             this.idUsuario = idUsuario;
@@ -34,6 +36,259 @@ namespace HotelTramonto.Presentacion
 
             CargarUsuarios();
         }
+
+
+        private void AplicarEstilo()
+        {
+            // Paleta Hotel Tramonto
+            Color marron = Color.FromArgb(74, 48, 39);
+            Color marronClaro = Color.FromArgb(91, 62, 49);
+            Color crema = Color.FromArgb(245, 239, 229);
+            Color marfil = Color.FromArgb(255, 252, 247);
+            Color dorado = Color.FromArgb(198, 161, 91);
+            Color texto = Color.FromArgb(66, 51, 43);
+
+            // Ventana
+            Text = "Hotel Tramonto | Gestión";
+            BackColor = crema;
+            Font = new Font("Segoe UI", 10F);
+            WindowState = FormWindowState.Maximized;
+            StartPosition = FormStartPosition.CenterScreen;
+            MinimumSize = new Size(1000, 650);
+
+            // Menú lateral
+            Panel pnlMenu = new Panel
+            {
+                Name = "pnlMenu",
+                BackColor = marron,
+                Location = new Point(0, 0),
+                Size = new Size(250, ClientSize.Height),
+                Anchor = AnchorStyles.Top |
+                         AnchorStyles.Bottom |
+                         AnchorStyles.Left
+            };
+
+            Controls.Add(pnlMenu);
+            pnlMenu.SendToBack();
+
+            // Separador dorado
+            Panel lineaDorada = new Panel
+            {
+                Name = "lineaDorada",
+                BackColor = dorado,
+                Location = new Point(250, 0),
+                Size = new Size(3, ClientSize.Height),
+                Anchor = AnchorStyles.Top |
+                         AnchorStyles.Bottom |
+                         AnchorStyles.Left
+            };
+
+            Controls.Add(lineaDorada);
+            lineaDorada.BringToFront();
+
+            // Marca del hotel en el menú
+            Label lblMarca = new Label
+            {
+                Name = "lblMarcaHotel",
+                Text = "HOTEL\nTRAMONTO",
+                Font = new Font("Georgia", 21F, FontStyle.Bold),
+                ForeColor = dorado,
+                BackColor = marron,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Location = new Point(15, 28),
+                Size = new Size(215, 78)
+            };
+
+            Controls.Add(lblMarca);
+            lblMarca.BringToFront();
+
+            Label lblSubMarca = new Label
+            {
+                Name = "lblSubMarca",
+                Text = "GESTIÓN HOTELERA",
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                ForeColor = crema,
+                BackColor = marron,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Location = new Point(15, 105),
+                Size = new Size(215, 25)
+            };
+
+            Controls.Add(lblSubMarca);
+            lblSubMarca.BringToFront();
+
+            // Título principal
+            lblTitulo.Text = "HOTEL TRAMONTO";
+            lblTitulo.Font = new Font("Georgia", 27F, FontStyle.Bold);
+            lblTitulo.ForeColor = dorado;
+            lblTitulo.BackColor = Color.Transparent;
+            lblTitulo.AutoSize = true;
+            lblTitulo.Location = new Point(290, 28);
+
+            // Sección de administración
+            Label lblAdministracion = new Label
+            {
+                Name = "lblAdministracion",
+                Text = "GESTIÓN DE USUARIOS",
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = marron,
+                BackColor = Color.Transparent,
+                AutoSize = true,
+                Location = new Point(290, 113)
+            };
+
+            Controls.Add(lblAdministracion);
+            lblAdministracion.BringToFront();
+
+            // Botones de navegación
+            EstilizarBoton(btnHabitaciones, "Habitaciones");
+            EstilizarBoton(btnReservas, "Reservas");
+            EstilizarBoton(btnHuespedes, "Huéspedes");
+            EstilizarBoton(btnPagos, "Pagos");
+            EstilizarBoton(btnReportes, "Reportes");
+
+            Button[] botonesMenu =
+            {
+        btnHabitaciones,
+        btnReservas,
+        btnHuespedes,
+        btnPagos,
+        btnReportes
+    };
+
+            int[] posicionesY = { 160, 215, 270, 325, 380 };
+
+            for (int i = 0; i < botonesMenu.Length; i++)
+            {
+                botonesMenu[i].Location = new Point(25, posicionesY[i]);
+                botonesMenu[i].Size = new Size(195, 42);
+                botonesMenu[i].BackColor = marronClaro;
+                botonesMenu[i].TextAlign = ContentAlignment.MiddleLeft;
+                botonesMenu[i].Padding = new Padding(15, 0, 0, 0);
+                botonesMenu[i].BringToFront();
+            }
+
+            // Cerrar sesión al pie del menú
+            EstilizarBoton(btnCerrarSesion, "Cerrar sesión");
+            btnCerrarSesion.Location = new Point(25, 455);
+            btnCerrarSesion.Size = new Size(195, 42);
+            btnCerrarSesion.BackColor = dorado;
+            btnCerrarSesion.ForeColor = marron;
+            btnCerrarSesion.Anchor =
+                AnchorStyles.Bottom | AnchorStyles.Left;
+            btnCerrarSesion.Location = new Point(
+                25, ClientSize.Height - 75);
+
+            // Acciones administrativas
+            EstilizarBoton(btnNuevoUsuario, "Nuevo usuario");
+            EstilizarBoton(btnModificarUsuario, "Modificar usuario");
+            EstilizarBoton(btnDesactivarUsuario, "Desactivar usuario");
+            EstilizarBoton(btnReactivarUsuario, "Reactivar usuario");
+            EstilizarBoton(btnProbarConexion, "Probar conexión");
+            EstilizarBoton(btnListarRoles, "Listar roles");
+
+            btnNuevoUsuario.Location = new Point(290, 150);
+            btnModificarUsuario.Location = new Point(435, 150);
+            btnDesactivarUsuario.Location = new Point(590, 150);
+            btnReactivarUsuario.Location = new Point(745, 150);
+
+            btnNuevoUsuario.Size = new Size(135, 40);
+            btnModificarUsuario.Size = new Size(145, 40);
+            btnDesactivarUsuario.Size = new Size(145, 40);
+            btnReactivarUsuario.Size = new Size(145, 40);
+
+            btnProbarConexion.Location = new Point(290, 200);
+            btnListarRoles.Location = new Point(435, 200);
+            btnProbarConexion.Size = new Size(135, 36);
+            btnListarRoles.Size = new Size(145, 36);
+
+            // Tabla de usuarios
+            dgvUsuarios.Location = new Point(290, 255);
+            dgvUsuarios.Size = new Size(
+                Math.Max(400, ClientSize.Width - 325),
+                Math.Max(200, ClientSize.Height - 285));
+
+            dgvUsuarios.Anchor =
+                AnchorStyles.Top |
+                AnchorStyles.Bottom |
+                AnchorStyles.Left |
+                AnchorStyles.Right;
+
+            dgvUsuarios.BackgroundColor = marfil;
+            dgvUsuarios.BorderStyle = BorderStyle.None;
+            dgvUsuarios.GridColor = Color.FromArgb(229, 218, 202);
+            dgvUsuarios.EnableHeadersVisualStyles = false;
+            dgvUsuarios.AutoSizeColumnsMode =
+                DataGridViewAutoSizeColumnsMode.Fill;
+            dgvUsuarios.AutoSizeRowsMode =
+                DataGridViewAutoSizeRowsMode.None;
+            dgvUsuarios.RowHeadersVisible = false;
+            dgvUsuarios.RowTemplate.Height = 36;
+            dgvUsuarios.ColumnHeadersHeight = 42;
+            dgvUsuarios.SelectionMode =
+                DataGridViewSelectionMode.FullRowSelect;
+            dgvUsuarios.MultiSelect = false;
+
+            dgvUsuarios.ColumnHeadersDefaultCellStyle.BackColor = marron;
+            dgvUsuarios.ColumnHeadersDefaultCellStyle.ForeColor = dorado;
+            dgvUsuarios.ColumnHeadersDefaultCellStyle.Font =
+                new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            dgvUsuarios.ColumnHeadersDefaultCellStyle.SelectionBackColor =
+                marron;
+            dgvUsuarios.ColumnHeadersDefaultCellStyle.SelectionForeColor =
+                dorado;
+
+            dgvUsuarios.DefaultCellStyle.BackColor = marfil;
+            dgvUsuarios.DefaultCellStyle.ForeColor = texto;
+            dgvUsuarios.DefaultCellStyle.Font =
+                new Font("Segoe UI", 9.5F);
+            dgvUsuarios.DefaultCellStyle.SelectionBackColor =
+                Color.FromArgb(238, 222, 190);
+            dgvUsuarios.DefaultCellStyle.SelectionForeColor = marron;
+            dgvUsuarios.AlternatingRowsDefaultCellStyle.BackColor =
+                Color.FromArgb(248, 243, 235);
+
+            // El panel y las etiquetas quedan detrás de los controles
+            pnlMenu.SendToBack();
+            lblMarca.BringToFront();
+            lblSubMarca.BringToFront();
+            lblTitulo.BringToFront();
+            lblAdministracion.BringToFront();
+            lineaDorada.BringToFront();
+
+            // Los botones y la tabla deben quedar por encima del fondo
+            foreach (Button boton in botonesMenu)
+                boton.BringToFront();
+
+            btnCerrarSesion.BringToFront();
+            btnNuevoUsuario.BringToFront();
+            btnModificarUsuario.BringToFront();
+            btnDesactivarUsuario.BringToFront();
+            btnReactivarUsuario.BringToFront();
+            btnProbarConexion.BringToFront();
+            btnListarRoles.BringToFront();
+            dgvUsuarios.BringToFront();
+        }
+
+        private void EstilizarBoton(Button boton, string texto)
+        {
+            boton.Text = texto;
+            boton.FlatStyle = FlatStyle.Flat;
+            boton.FlatAppearance.BorderSize = 0;
+            boton.FlatAppearance.MouseOverBackColor =
+                Color.FromArgb(126, 91, 65);
+            boton.FlatAppearance.MouseDownBackColor =
+                Color.FromArgb(105, 73, 52);
+
+            boton.BackColor = Color.FromArgb(74, 48, 39);
+            boton.ForeColor = Color.FromArgb(255, 252, 247);
+            boton.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            boton.Size = new Size(135, 40);
+            boton.Cursor = Cursors.Hand;
+            boton.UseVisualStyleBackColor = false;
+            boton.TextAlign = ContentAlignment.MiddleCenter;
+        }
+
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -85,8 +340,77 @@ namespace HotelTramonto.Presentacion
             try
             {
                 UsuarioNegocios negocio = new UsuarioNegocios();
+                DataTable usuarios = negocio.Listar(rolUsuario);
 
-                dgvUsuarios.DataSource = negocio.Listar(rolUsuario);
+                dgvUsuarios.DataSource = null;
+                dgvUsuarios.DataSource = usuarios;
+
+                // Ocultar el ID interno
+                if (dgvUsuarios.Columns.Contains("id_usuario"))
+                    dgvUsuarios.Columns["id_usuario"].Visible = false;
+
+                // Ocultar el ID del rol
+                if (dgvUsuarios.Columns.Contains("id_rol"))
+                    dgvUsuarios.Columns["id_rol"].Visible = false;
+
+                // Cambiar el encabezado del rol
+                if (dgvUsuarios.Columns.Contains("nombre_rol"))
+                    dgvUsuarios.Columns["nombre_rol"].HeaderText = "Rol";
+
+                // Mostrar el estado como texto
+                if (dgvUsuarios.Columns.Contains("activo"))
+                {
+                    dgvUsuarios.Columns["activo"].Visible = false;
+
+                    if (!dgvUsuarios.Columns.Contains("estadoVisual"))
+                    {
+                        DataGridViewTextBoxColumn columnaEstado =
+                            new DataGridViewTextBoxColumn();
+
+                        columnaEstado.Name = "estadoVisual";
+                        columnaEstado.HeaderText = "Estado";
+                        columnaEstado.ReadOnly = true;
+
+                        dgvUsuarios.Columns.Add(columnaEstado);
+                    }
+
+                    foreach (DataGridViewRow fila in dgvUsuarios.Rows)
+                    {
+                        if (fila.IsNewRow)
+                            continue;
+
+                        object valor = fila.Cells["activo"].Value;
+
+                        bool activo = valor != null
+                            && valor != DBNull.Value
+                            && Convert.ToBoolean(valor);
+
+                        fila.Cells["estadoVisual"].Value =
+                            activo ? "Activo" : "Inactivo";
+                    }
+                }
+
+                // Nombres de columnas más claros
+                if (dgvUsuarios.Columns.Contains("id_usuario"))
+                    dgvUsuarios.Columns["id_usuario"].HeaderText = "ID";
+
+                if (dgvUsuarios.Columns.Contains("nombre"))
+                    dgvUsuarios.Columns["nombre"].HeaderText = "Nombre";
+
+                if (dgvUsuarios.Columns.Contains("apellido"))
+                    dgvUsuarios.Columns["apellido"].HeaderText = "Apellido";
+
+                if (dgvUsuarios.Columns.Contains("dni"))
+                    dgvUsuarios.Columns["dni"].HeaderText = "DNI";
+
+                if (dgvUsuarios.Columns.Contains("email"))
+                    dgvUsuarios.Columns["email"].HeaderText = "Email";
+
+                if (dgvUsuarios.Columns.Contains("telefono"))
+                    dgvUsuarios.Columns["telefono"].HeaderText = "Teléfono";
+
+                if (dgvUsuarios.Columns.Contains("fecha_alta"))
+                    dgvUsuarios.Columns["fecha_alta"].HeaderText = "Fecha de alta";
             }
             catch (UnauthorizedAccessException ex)
             {
