@@ -146,6 +146,174 @@ namespace HotelTramonto.Presentacion
         }
 
 
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            Color marron = Color.FromArgb(74, 48, 39);
+            Color marronClaro = Color.FromArgb(91, 62, 49);
+            Color crema = Color.FromArgb(245, 239, 229);
+            Color dorado = Color.FromArgb(198, 161, 91);
+
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(380, 165);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(380, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTitulo = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(350, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(340, 40),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Location = new Point(135, 115),
+                    Size = new Size(110, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTitulo);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
+
+        private bool MostrarConfirmacion(string titulo, string detalle)
+        {
+            Color marron = Color.FromArgb(74, 48, 39);
+            Color marronClaro = Color.FromArgb(91, 62, 49);
+            Color crema = Color.FromArgb(245, 239, 229);
+            Color dorado = Color.FromArgb(198, 161, 91);
+            bool confirmado = false;
+
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(400, 180);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(400, 7),
+                    BackColor = dorado
+                };
+
+                Label lblTitulo = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(370, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(360, 40),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnSi = new Button
+                {
+                    Text = "Sí",
+                    Location = new Point(85, 115),
+                    Size = new Size(100, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.Yes,
+                    Cursor = Cursors.Hand
+                };
+
+                Button btnNo = new Button
+                {
+                    Text = "No",
+                    Location = new Point(215, 115),
+                    Size = new Size(100, 35),
+                    BackColor = marronClaro,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.No,
+                    Cursor = Cursors.Hand
+                };
+
+                btnSi.FlatAppearance.BorderSize = 0;
+                btnNo.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTitulo);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnSi);
+                mensaje.Controls.Add(btnNo);
+
+                mensaje.AcceptButton = btnSi;
+                mensaje.CancelButton = btnNo;
+
+                confirmado = mensaje.ShowDialog(this) == DialogResult.Yes;
+            }
+
+            return confirmado;
+        }
+
         private void CargarHabitaciones()
         {
             try
@@ -156,11 +324,11 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al cargar las habitaciones: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al cargar las habitaciones",
+                    "No se pudieron cargar las habitaciones.\n\nDetalle: "
+                    + ex.Message,
+                    true);
             }
         }
 
@@ -182,7 +350,7 @@ namespace HotelTramonto.Presentacion
             if (dgvHabitaciones.CurrentRow == null ||
                 dgvHabitaciones.CurrentRow.IsNewRow)
             {
-                MessageBox.Show("Seleccione una habitación de la tabla.");
+                MostrarMensaje("Habitación no seleccionada", "Seleccioná una habitación de la tabla para continuar.");
                 return;
             }
 
@@ -204,42 +372,33 @@ namespace HotelTramonto.Presentacion
             if (dgvHabitaciones.CurrentRow == null ||
                 dgvHabitaciones.CurrentRow.IsNewRow)
             {
-                MessageBox.Show("Seleccione una habitación de la tabla.");
+                MostrarMensaje("Habitación no seleccionada", "Seleccioná una habitación de la tabla para continuar.");
                 return;
             }
 
             int idHabitacion = Convert.ToInt32(
                 dgvHabitaciones.CurrentRow.Cells["id_habitacion"].Value);
 
-            DialogResult confirmacion = MessageBox.Show(
-                "¿Está seguro de que desea desactivar esta habitación?",
-                "Confirmar desactivación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+            bool confirmacion = MostrarConfirmacion(
+                                "Confirmar desactivación",
+                                "¿Estás seguro de que querés desactivar esta habitación?");
 
-            if (confirmacion != DialogResult.Yes)
+            if (!confirmacion)
                 return;
+           
 
             try
             {
                 HabitacionNegocios negocio = new HabitacionNegocios();
                 negocio.Desactivar(idHabitacion);
 
-                MessageBox.Show(
-                    "Habitación desactivada correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje("Habitación desactivada", "La habitación se desactivó correctamente.");
 
                 CargarHabitaciones();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo desactivar la habitación: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje("Error al desactivar", "No se pudo desactivar la habitación.\n\nDetalle: " + ex.Message, true);
             }
         }
 
@@ -248,7 +407,7 @@ namespace HotelTramonto.Presentacion
             if (dgvHabitaciones.CurrentRow == null ||
                 dgvHabitaciones.CurrentRow.IsNewRow)
             {
-                MessageBox.Show("Seleccione una habitación de la tabla.");
+                MostrarMensaje("Habitación no seleccionada", "Seleccioná una habitación de la tabla para continuar.");
                 return;
             }
 
@@ -260,17 +419,13 @@ namespace HotelTramonto.Presentacion
 
             if (activa)
             {
-                MessageBox.Show("La habitación seleccionada ya está activa.");
+                MostrarMensaje("Habitación ya activa","La habitación seleccionada ya se encuentra activa.");
                 return;
             }
 
-            DialogResult confirmacion = MessageBox.Show(
-                "¿Desea reactivar la habitación seleccionada?",
-                "Confirmar reactivación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+            bool confirmacion = MostrarConfirmacion("Confirmar reactivación", "¿Desea reactivar la habitación seleccionada?");
 
-            if (confirmacion != DialogResult.Yes)
+            if (!confirmacion)
                 return;
 
             try
@@ -278,21 +433,13 @@ namespace HotelTramonto.Presentacion
                 HabitacionNegocios negocio = new HabitacionNegocios();
                 negocio.Reactivar(idHabitacion);
 
-                MessageBox.Show(
-                    "Habitación reactivada correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje("Habitación reactivada", "La habitación se reactivó correctamente.");
 
                 CargarHabitaciones();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo reactivar la habitación: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje("Error al reactivar","No se pudo reactivar la habitación.\n\nDetalle: " + ex.Message,true);
             }
         }
 

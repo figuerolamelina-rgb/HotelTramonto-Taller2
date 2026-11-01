@@ -32,7 +32,6 @@ namespace HotelTramonto.Presentacion
             ForeColor = marron;
             Font = new Font("Segoe UI", 10F);
 
-            // Encabezado
             Panel panelTitulo = new Panel
             {
                 Location = new Point(0, 0),
@@ -62,7 +61,6 @@ namespace HotelTramonto.Presentacion
             panelTitulo.Controls.Add(lblSubtitulo);
             Controls.Add(panelTitulo);
 
-            // Panel de datos
             Panel panelDatos = new Panel
             {
                 Location = new Point(20, 105),
@@ -111,13 +109,15 @@ namespace HotelTramonto.Presentacion
                 panelDatos.Controls.Add(campos[i]);
             }
 
-            // Botón guardar
-            EstilizarBoton(btnGuardar, "Guardar huésped", dorado, marron);
+            EstilizarBoton(
+                btnGuardar, "Guardar huésped", dorado, marron);
+
             btnGuardar.Location = new Point(155, 430);
             btnGuardar.Size = new Size(175, 40);
 
-            // Botón cancelar
-            EstilizarBoton(btnCancelar, "Cancelar", marronClaro, Color.White);
+            EstilizarBoton(
+                btnCancelar, "Cancelar", marronClaro, Color.White);
+
             btnCancelar.Location = new Point(345, 430);
             btnCancelar.Size = new Size(120, 40);
 
@@ -142,6 +142,81 @@ namespace HotelTramonto.Presentacion
             boton.UseVisualStyleBackColor = false;
         }
 
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(420, 185);
+                mensaje.BackColor = crema;
+                mensaje.ForeColor = marron;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(420, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 18),
+                    Size = new Size(390, 35),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 57),
+                    Size = new Size(380, 65),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9.5F)
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Location = new Point(155, 135),
+                    Size = new Size(110, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand,
+                    UseVisualStyleBackColor = false
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+                btnAceptar.FlatAppearance.MouseOverBackColor =
+                    Color.FromArgb(211, 178, 119);
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
         private void btnGuardar_Click(object sender, EventArgs e)
         {
             try
@@ -157,25 +232,33 @@ namespace HotelTramonto.Presentacion
                     txtNacionalidad.Text
                 );
 
-                MessageBox.Show(
-                    "Huésped registrado correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
+                MostrarMensaje(
+                    "¡Huésped registrado!",
+                    "El huésped se registró correctamente.");
 
                 DialogResult = DialogResult.OK;
                 Close();
             }
+
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo registrar el huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
+                if (ex.Message.Contains("UNIQUE KEY") ||
+                    ex.Message.Contains("duplicate key"))
+                {
+                    MostrarMensaje(
+                        "Error al registrar",
+                        "No se pudo registrar el huésped porque ya existe un huésped con alguno de los datos ingresados.\n\nVerificá el DNI y el correo electrónico.",
+                        true);
+                }
+                else
+                {
+                    MostrarMensaje(
+                        "Error al registrar",
+                        "No se pudo registrar el huésped.\n\nDetalle: " + ex.Message,
+                        true);
+                }
             }
+
         }
 
         private void btnCancelar_Click(object sender, EventArgs e)

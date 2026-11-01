@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Data;
+using System.Drawing;
 using System.Windows.Forms;
 using HotelTramonto.Negocios;
 
@@ -19,6 +20,12 @@ namespace HotelTramonto.Presentacion
         private Button btnRegistrarServicios;
         private Label lblIdReserva;
 
+        private readonly Color marron = Color.FromArgb(74, 48, 39);
+        private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
+        private readonly Color crema = Color.FromArgb(245, 239, 229);
+        private readonly Color marfil = Color.FromArgb(255, 252, 247);
+        private readonly Color dorado = Color.FromArgb(198, 161, 91);
+
         public FormPagos(int idUsuario)
         {
             InitializeComponent();
@@ -31,27 +38,16 @@ namespace HotelTramonto.Presentacion
             ConfigurarFormulario();
         }
 
-
-
         private void ConfigurarFormulario()
         {
-            // Paleta Hotel Tramonto
-            Color marron = Color.FromArgb(74, 48, 39);
-            Color marronClaro = Color.FromArgb(91, 62, 49);
-            Color crema = Color.FromArgb(245, 239, 229);
-            Color marfil = Color.FromArgb(255, 252, 247);
-            Color dorado = Color.FromArgb(198, 161, 91);
-            Color texto = Color.FromArgb(66, 51, 43);
-
-            // Ventana
             Text = "Hotel Tramonto | Gestión de pagos";
             BackColor = crema;
+            ForeColor = marron;
             Font = new Font("Segoe UI", 10F);
             WindowState = FormWindowState.Maximized;
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(1000, 650);
 
-            // Inicializar TODOS los controles antes de configurarlos
             lblIdReserva = new Label();
             numIdReserva = new NumericUpDown();
             dgvPagos = new DataGridView();
@@ -60,7 +56,6 @@ namespace HotelTramonto.Presentacion
             btnCerrar = new Button();
             btnRegistrarServicios = new Button();
 
-            // Título
             Label lblTitulo = new Label
             {
                 Name = "lblTituloPagos",
@@ -72,7 +67,6 @@ namespace HotelTramonto.Presentacion
                 Location = new Point(30, 25)
             };
 
-            // ID de reserva
             lblIdReserva.Text = "ID de reserva:";
             lblIdReserva.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lblIdReserva.ForeColor = marron;
@@ -88,7 +82,6 @@ namespace HotelTramonto.Presentacion
             numIdReserva.BackColor = marfil;
             numIdReserva.ForeColor = marron;
 
-            // Botones superiores
             EstilizarBotonPago(btnConsultar, "Consultar pagos", marron);
             btnConsultar.Location = new Point(290, 96);
             btnConsultar.Size = new Size(150, 40);
@@ -104,11 +97,11 @@ namespace HotelTramonto.Presentacion
                 btnRegistrarServicios,
                 "Registrar servicios",
                 marronClaro);
+
             btnRegistrarServicios.Location = new Point(625, 96);
             btnRegistrarServicios.Size = new Size(175, 40);
             btnRegistrarServicios.Click += btnRegistrarServicios_Click;
 
-            // Tabla
             dgvPagos.Location = new Point(35, 165);
             dgvPagos.Size = new Size(
                 Math.Max(400, ClientSize.Width - 70),
@@ -123,8 +116,7 @@ namespace HotelTramonto.Presentacion
             dgvPagos.ReadOnly = true;
             dgvPagos.AllowUserToAddRows = false;
             dgvPagos.AllowUserToDeleteRows = false;
-            dgvPagos.SelectionMode =
-                DataGridViewSelectionMode.FullRowSelect;
+            dgvPagos.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvPagos.MultiSelect = false;
             dgvPagos.RowHeadersVisible = false;
             dgvPagos.ScrollBars = ScrollBars.Both;
@@ -146,7 +138,7 @@ namespace HotelTramonto.Presentacion
             dgvPagos.ColumnHeadersDefaultCellStyle.SelectionForeColor = dorado;
 
             dgvPagos.DefaultCellStyle.BackColor = marfil;
-            dgvPagos.DefaultCellStyle.ForeColor = texto;
+            dgvPagos.DefaultCellStyle.ForeColor = marron;
             dgvPagos.DefaultCellStyle.Font = new Font("Segoe UI", 9F);
             dgvPagos.DefaultCellStyle.SelectionBackColor =
                 Color.FromArgb(238, 222, 190);
@@ -155,7 +147,6 @@ namespace HotelTramonto.Presentacion
             dgvPagos.AlternatingRowsDefaultCellStyle.BackColor =
                 Color.FromArgb(248, 243, 235);
 
-            // Formato del importe cada vez que se cargan pagos
             dgvPagos.DataBindingComplete += (sender, e) =>
             {
                 if (dgvPagos.Columns.Contains("monto"))
@@ -166,18 +157,15 @@ namespace HotelTramonto.Presentacion
                 }
             };
 
-            // Botón cerrar
             EstilizarBotonPago(btnCerrar, "Cerrar", dorado);
             btnCerrar.ForeColor = marron;
             btnCerrar.Size = new Size(130, 42);
             btnCerrar.Location = new Point(
                 ClientSize.Width - 165,
                 ClientSize.Height - 70);
-            btnCerrar.Anchor =
-                AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCerrar.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnCerrar.Click += (sender, e) => Close();
 
-            // Agregar cada control una sola vez
             Controls.Add(lblTitulo);
             Controls.Add(lblIdReserva);
             Controls.Add(numIdReserva);
@@ -190,7 +178,6 @@ namespace HotelTramonto.Presentacion
             lblTitulo.BringToFront();
         }
 
-
         private void EstilizarBotonPago(
             Button boton,
             string textoBoton,
@@ -199,7 +186,7 @@ namespace HotelTramonto.Presentacion
             boton.Text = textoBoton;
             boton.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             boton.BackColor = fondo;
-            boton.ForeColor = Color.FromArgb(255, 252, 247);
+            boton.ForeColor = fondo == dorado ? marron : marfil;
             boton.FlatStyle = FlatStyle.Flat;
             boton.FlatAppearance.BorderSize = 0;
             boton.FlatAppearance.MouseOverBackColor =
@@ -210,6 +197,265 @@ namespace HotelTramonto.Presentacion
             boton.UseVisualStyleBackColor = false;
         }
 
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(440, 190);
+                mensaje.BackColor = crema;
+                mensaje.ForeColor = marron;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(440, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 18),
+                    Size = new Size(410, 35),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(400, 70),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9.5F)
+                };
+
+                Button btnAceptar = CrearBotonDialogo(
+                    "Aceptar", dorado, marron);
+
+                btnAceptar.Location = new Point(165, 140);
+                btnAceptar.Size = new Size(110, 35);
+                btnAceptar.DialogResult = DialogResult.OK;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
+        private bool MostrarConfirmacion(
+            string titulo,
+            string detalle)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(440, 220);
+                mensaje.BackColor = crema;
+                mensaje.ForeColor = marron;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(440, 7),
+                    BackColor = dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 18),
+                    Size = new Size(410, 35),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(25, 60),
+                    Size = new Size(390, 65),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9.5F)
+                };
+
+                Button btnSi = CrearBotonDialogo(
+                    "Sí, confirmar", dorado, marron);
+
+                btnSi.Location = new Point(65, 155);
+                btnSi.Size = new Size(145, 38);
+                btnSi.DialogResult = DialogResult.Yes;
+
+                Button btnNo = CrearBotonDialogo(
+                    "No, cancelar", marronClaro, Color.White);
+
+                btnNo.Location = new Point(230, 155);
+                btnNo.Size = new Size(145, 38);
+                btnNo.DialogResult = DialogResult.No;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnSi);
+                mensaje.Controls.Add(btnNo);
+
+                mensaje.AcceptButton = btnSi;
+                mensaje.CancelButton = btnNo;
+
+                return mensaje.ShowDialog(this) == DialogResult.Yes;
+            }
+        }
+
+        private Button CrearBotonDialogo(
+            string texto,
+            Color fondo,
+            Color textoColor)
+        {
+            Button boton = new Button
+            {
+                Text = texto,
+                BackColor = fondo,
+                ForeColor = textoColor,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                UseVisualStyleBackColor = false
+            };
+
+            boton.FlatAppearance.BorderSize = 0;
+            boton.FlatAppearance.MouseOverBackColor =
+                Color.FromArgb(211, 178, 119);
+
+            return boton;
+        }
+
+        private bool MostrarSelectorMetodoPago(out string metodoSeleccionado)
+        {
+            metodoSeleccionado = "";
+
+            using (Form selector = new Form())
+            {
+                selector.Text = "Hotel Tramonto | Método de pago";
+                selector.StartPosition = FormStartPosition.CenterParent;
+                selector.FormBorderStyle = FormBorderStyle.FixedDialog;
+                selector.MaximizeBox = false;
+                selector.MinimizeBox = false;
+                selector.ShowInTaskbar = false;
+                selector.ClientSize = new Size(360, 185);
+                selector.BackColor = crema;
+                selector.ForeColor = marron;
+                selector.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(360, 7),
+                    BackColor = dorado
+                };
+
+                Label lblTitulo = new Label
+                {
+                    Text = "SELECCIONAR MÉTODO DE PAGO",
+                    Location = new Point(15, 18),
+                    Size = new Size(330, 30),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 10F, FontStyle.Bold)
+                };
+
+                Label lblMetodo = new Label
+                {
+                    Text = "Método de pago:",
+                    Location = new Point(20, 58),
+                    AutoSize = true,
+                    ForeColor = marron
+                };
+
+                ComboBox cmbMetodo = new ComboBox
+                {
+                    Location = new Point(20, 82),
+                    Size = new Size(320, 30),
+                    DropDownStyle = ComboBoxStyle.DropDownList,
+                    BackColor = marfil,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 10F)
+                };
+
+                cmbMetodo.Items.AddRange(new object[]
+                {
+                    "EFECTIVO",
+                    "TARJETA",
+                    "TRANSFERENCIA"
+                });
+
+                cmbMetodo.SelectedIndex = 0;
+
+                Button btnAceptar = CrearBotonDialogo(
+                    "Continuar", dorado, marron);
+
+                btnAceptar.Location = new Point(65, 130);
+                btnAceptar.Size = new Size(110, 35);
+                btnAceptar.DialogResult = DialogResult.OK;
+
+                Button btnCancelar = CrearBotonDialogo(
+                    "Cancelar", marronClaro, Color.White);
+
+                btnCancelar.Location = new Point(190, 130);
+                btnCancelar.Size = new Size(110, 35);
+                btnCancelar.DialogResult = DialogResult.Cancel;
+
+                selector.Controls.Add(encabezado);
+                selector.Controls.Add(lblTitulo);
+                selector.Controls.Add(lblMetodo);
+                selector.Controls.Add(cmbMetodo);
+                selector.Controls.Add(btnAceptar);
+                selector.Controls.Add(btnCancelar);
+
+                selector.AcceptButton = btnAceptar;
+                selector.CancelButton = btnCancelar;
+
+                if (selector.ShowDialog(this) != DialogResult.OK)
+                    return false;
+
+                if (cmbMetodo.SelectedItem == null)
+                {
+                    MostrarMensaje(
+                        "Método requerido",
+                        "Seleccioná un método de pago.");
+
+                    return false;
+                }
+
+                metodoSeleccionado = cmbMetodo.SelectedItem.ToString()!;
+                return true;
+            }
+        }
 
         private void btnConsultar_Click(object sender, EventArgs e)
         {
@@ -222,24 +468,19 @@ namespace HotelTramonto.Presentacion
 
                 if (pagos.Rows.Count == 0)
                 {
-                    MessageBox.Show(
-                        "No se encontraron pagos para esa reserva.",
+                    MostrarMensaje(
                         "Consulta de pagos",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                        "No se encontraron pagos para esa reserva.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al consultar los pagos: " + ex.Message,
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al consultar",
+                    "No se pudieron consultar los pagos.\n\n" + ex.Message,
+                    true);
             }
         }
-
-
 
         private void btnRegistrarSaldo_Click(object sender, EventArgs e)
         {
@@ -247,173 +488,70 @@ namespace HotelTramonto.Presentacion
             {
                 int idReserva = (int)numIdReserva.Value;
 
-                using Form selector = new Form
-                {
-                    Text = "Método de pago",
-                    Width = 320,
-                    Height = 180,
-                    StartPosition = FormStartPosition.CenterParent,
-                    FormBorderStyle = FormBorderStyle.FixedDialog,
-                    MaximizeBox = false,
-                    MinimizeBox = false
-                };
-
-                Label lblMetodo = new Label
-                {
-                    Text = "Seleccioná el método de pago:",
-                    Left = 15,
-                    Top = 15,
-                    Width = 260
-                };
-
-                ComboBox cmbMetodo = new ComboBox
-                {
-                    Left = 15,
-                    Top = 45,
-                    Width = 270,
-                    DropDownStyle = ComboBoxStyle.DropDownList
-                };
-
-                cmbMetodo.Items.AddRange(new object[]
-                {
-            "EFECTIVO",
-            "TARJETA",
-            "TRANSFERENCIA"
-                });
-                cmbMetodo.SelectedIndex = 0;
-
-                Button btnAceptar = new Button
-                {
-                    Text = "Registrar",
-                    Left = 95,
-                    Top = 85,
-                    Width = 100,
-                    DialogResult = DialogResult.OK
-                };
-
-                selector.Controls.Add(lblMetodo);
-                selector.Controls.Add(cmbMetodo);
-                selector.Controls.Add(btnAceptar);
-                selector.AcceptButton = btnAceptar;
-
-                if (selector.ShowDialog(this) != DialogResult.OK)
+                if (!MostrarSelectorMetodoPago(out string metodo))
                     return;
 
-                DialogResult confirmacion = MessageBox.Show(
-                    "¿Confirmás que recibiste o verificaste el pago del saldo pendiente?",
+                bool confirmacion = MostrarConfirmacion(
                     "Confirmar pago",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
+                    "¿Confirmás que recibiste o verificaste el pago del saldo pendiente?");
 
-                if (confirmacion != DialogResult.Yes)
+                if (!confirmacion)
                     return;
 
-                DataTable resultado = negocio.RegistrarSaldoAlojamiento(idReserva, idUsuario,cmbMetodo.SelectedItem!.ToString()!);
+                negocio.RegistrarSaldoAlojamiento(
+                    idReserva,
+                    idUsuario,
+                    metodo);
 
                 dgvPagos.DataSource = negocio.ListarPorReserva(idReserva);
 
-                MessageBox.Show("Saldo registrado correctamente.","Gestión de pagos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MostrarMensaje(
+                    "Pago registrado",
+                    "El saldo de alojamiento se registró correctamente.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo registrar el saldo: " + ex.Message,
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al registrar el saldo",
+                    "No se pudo registrar el saldo.\n\n" + ex.Message,
+                    true);
             }
         }
 
-        
-private void btnRegistrarServicios_Click(object sender, EventArgs e)
-{
-    try
-    {
-        int idReserva = (int)numIdReserva.Value;
-
-        using Form selector = new Form
+        private void btnRegistrarServicios_Click(object sender, EventArgs e)
         {
-            Text = "Método de pago",
-            Width = 320,
-            Height = 180,
-            StartPosition = FormStartPosition.CenterParent,
-            FormBorderStyle = FormBorderStyle.FixedDialog,
-            MaximizeBox = false,
-            MinimizeBox = false
-        };
+            try
+            {
+                int idReserva = (int)numIdReserva.Value;
 
-        Label lblMetodo = new Label
-        {
-            Text = "Seleccioná el método de pago:",
-            Left = 15,
-            Top = 15,
-            Width = 260
-        };
+                if (!MostrarSelectorMetodoPago(out string metodo))
+                    return;
 
-        ComboBox cmbMetodo = new ComboBox
-        {
-            Left = 15,
-            Top = 45,
-            Width = 270,
-            DropDownStyle = ComboBoxStyle.DropDownList
-        };
+                bool confirmacion = MostrarConfirmacion(
+                    "Confirmar pago de servicios",
+                    "¿Confirmás que recibiste o verificaste el pago de los servicios adicionales?");
 
-        cmbMetodo.Items.AddRange(new object[]
-        {
-            "EFECTIVO",
-            "TARJETA",
-            "TRANSFERENCIA"
-        });
-        cmbMetodo.SelectedIndex = 0;
+                if (!confirmacion)
+                    return;
 
-        Button btnAceptar = new Button
-        {
-            Text = "Registrar",
-            Left = 95,
-            Top = 85,
-            Width = 100,
-            DialogResult = DialogResult.OK
-        };
+                negocio.RegistrarServicios(
+                    idReserva,
+                    idUsuario,
+                    metodo);
 
-        selector.Controls.Add(lblMetodo);
-        selector.Controls.Add(cmbMetodo);
-        selector.Controls.Add(btnAceptar);
-        selector.AcceptButton = btnAceptar;
+                dgvPagos.DataSource = negocio.ListarPorReserva(idReserva);
 
-        if (selector.ShowDialog(this) != DialogResult.OK)
-            return;
-
-        DialogResult confirmacion = MessageBox.Show(
-            "¿Confirmás que recibiste o verificaste el pago de los servicios adicionales?",
-            "Confirmar pago",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Question);
-
-        if (confirmacion != DialogResult.Yes)
-            return;
-
-        negocio.RegistrarServicios(
-            idReserva,
-            idUsuario,
-            cmbMetodo.SelectedItem!.ToString()!);
-
-        dgvPagos.DataSource = negocio.ListarPorReserva(idReserva);
-
-        MessageBox.Show(
-            "Pago de servicios adicionales registrado correctamente.",
-            "Gestión de pagos",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show(
-            "No se pudo registrar el pago de servicios: " + ex.Message,
-            "Error",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error);
-    }
-}
-
+                MostrarMensaje(
+                    "Pago registrado",
+                    "El pago de servicios adicionales se registró correctamente.");
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "Error al registrar servicios",
+                    "No se pudo registrar el pago de servicios.\n\n" + ex.Message,
+                    true);
+            }
+        }
     }
 }

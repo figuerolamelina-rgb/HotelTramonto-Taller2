@@ -43,7 +43,6 @@ namespace HotelTramonto.Presentacion
             ForeColor = marron;
             Font = new Font("Segoe UI", 10F);
 
-            // Encabezado
             Panel panelTitulo = new Panel
             {
                 Dock = DockStyle.Top,
@@ -72,7 +71,6 @@ namespace HotelTramonto.Presentacion
             panelTitulo.Controls.Add(lblTitulo);
             panelTitulo.Controls.Add(lblSubtitulo);
 
-            // Panel de filtros
             Panel panelFiltros = new Panel
             {
                 Dock = DockStyle.Top,
@@ -131,7 +129,9 @@ namespace HotelTramonto.Presentacion
 
             cmbReporte.SelectedIndex = 0;
 
-            btnConsultar = CrearBoton("Consultar reporte", dorado, marron);
+            btnConsultar = CrearBoton(
+                "Consultar reporte", dorado, marron);
+
             btnConsultar.Location = new Point(650, 35);
             btnConsultar.Size = new Size(165, 38);
             btnConsultar.Click += btnConsultar_Click;
@@ -144,7 +144,6 @@ namespace HotelTramonto.Presentacion
                 btnConsultar
             });
 
-            // Tabla de resultados
             dgvReporte = new DataGridView
             {
                 Dock = DockStyle.Fill,
@@ -155,7 +154,8 @@ namespace HotelTramonto.Presentacion
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
                 AllowUserToResizeRows = false,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells,
+                AutoSizeColumnsMode =
+                    DataGridViewAutoSizeColumnsMode.DisplayedCells,
                 AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 MultiSelect = false,
@@ -188,7 +188,6 @@ namespace HotelTramonto.Presentacion
 
             dgvReporte.AlternatingRowsDefaultCellStyle.BackColor = crema;
 
-            // Barra inferior
             Panel panelInferior = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -212,6 +211,7 @@ namespace HotelTramonto.Presentacion
             btnCerrar.Size = new Size(115, 38);
             btnCerrar.Location = new Point(
                 panelInferior.Width - 145, 12);
+
             btnCerrar.Click += (sender, e) => Close();
 
             panelInferior.Resize += (sender, e) =>
@@ -224,13 +224,12 @@ namespace HotelTramonto.Presentacion
             panelInferior.Controls.Add(lblEstado);
             panelInferior.Controls.Add(btnCerrar);
 
-            // Orden de acoplamiento: inferior, tabla, filtros y encabezado.
+            // Orden de acoplamiento.
             Controls.Add(dgvReporte);
             Controls.Add(panelInferior);
             Controls.Add(panelFiltros);
             Controls.Add(panelTitulo);
 
-            // Fechas iniciales
             dtpHasta.Value = DateTime.Today;
             dtpDesde.Value = DateTime.Today.AddMonths(-1);
         }
@@ -271,6 +270,70 @@ namespace HotelTramonto.Presentacion
             return boton;
         }
 
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(440, 190);
+                mensaje.BackColor = crema;
+                mensaje.ForeColor = marron;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(440, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 18),
+                    Size = new Size(410, 35),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(400, 70),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9.5F)
+                };
+
+                Button btnAceptar = CrearBoton(
+                    "Aceptar", dorado, marron);
+
+                btnAceptar.Location = new Point(165, 140);
+                btnAceptar.Size = new Size(110, 35);
+                btnAceptar.DialogResult = DialogResult.OK;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
         private void btnConsultar_Click(object sender, EventArgs e)
         {
             try
@@ -280,11 +343,10 @@ namespace HotelTramonto.Presentacion
 
                 if (desde > hasta)
                 {
-                    MessageBox.Show(
-                        "La fecha desde no puede ser posterior a la fecha hasta.",
-                        "Hotel Tramonto",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                    MostrarMensaje(
+                        "Rango de fechas inválido",
+                        "La fecha inicial no puede ser posterior a la fecha final.");
+
                     return;
                 }
 
@@ -313,11 +375,10 @@ namespace HotelTramonto.Presentacion
                         break;
 
                     default:
-                        MessageBox.Show(
-                            "Seleccioná un reporte.",
-                            "Hotel Tramonto",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning);
+                        MostrarMensaje(
+                            "Reporte requerido",
+                            "Seleccioná un tipo de reporte.");
+
                         return;
                 }
 
@@ -329,20 +390,17 @@ namespace HotelTramonto.Presentacion
 
                 if (tabla.Rows.Count == 0)
                 {
-                    MessageBox.Show(
-                        "El reporte no devolvió resultados para ese período.",
-                        "Hotel Tramonto",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    MostrarMensaje(
+                        "Sin resultados",
+                        "El reporte no devolvió resultados para ese período.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo generar el reporte: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al generar el reporte",
+                    "No se pudo generar el reporte.\n\n" + ex.Message,
+                    true);
             }
         }
     }

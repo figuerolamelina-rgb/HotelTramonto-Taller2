@@ -214,6 +214,79 @@ namespace HotelTramonto.Presentacion
             boton.UseVisualStyleBackColor = false;
         }
 
+
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(380, 165);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(380, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(350, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(340, 40),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Location = new Point(135, 115),
+                    Size = new Size(110, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
+
         private void btnIngresar_Click(object sender, EventArgs e)
         {
             try
@@ -227,11 +300,10 @@ namespace HotelTramonto.Presentacion
 
                 if (usuario == null)
                 {
-                    MessageBox.Show(
-                        "Email o contraseña incorrectos, o usuario inactivo.",
+                    MostrarMensaje(
                         "Error de acceso",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                        "Email o contraseña incorrectos, o usuario inactivo.",
+                        true);
 
                     return;
                 }
@@ -241,11 +313,9 @@ namespace HotelTramonto.Presentacion
                 string rol = Convert.ToString(usuario["nombre_rol"]) ?? "";
                 int idUsuario = Convert.ToInt32(usuario["id_usuario"]);
 
-                MessageBox.Show(
-                    $"Bienvenido/a, {nombre} {apellido}.\nRol: {rol}",
-                    "Acceso correcto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje(
+                    "¡Acceso correcto!",
+                    $"Bienvenido/a, {nombre} {apellido}.\nRol: {rol}");
 
                 Form1 formularioPrincipal = new Form1(rol, idUsuario);
                 formularioPrincipal.Show();
@@ -253,21 +323,20 @@ namespace HotelTramonto.Presentacion
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(
-                    ex.Message,
+                MostrarMensaje(
                     "Datos incompletos",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                    ex.Message,
+                    true);
             }
             catch (Exception)
             {
-                MessageBox.Show(
+                MostrarMensaje(
+                    "Error de inicio de sesión",
                     "Ocurrió un error al intentar iniciar sesión.",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                    true);
             }
         }
+
 
         private void btnSalir_Click(object sender, EventArgs e)
         {

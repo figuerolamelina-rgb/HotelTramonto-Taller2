@@ -162,6 +162,76 @@ namespace HotelTramonto.Presentacion
             boton.UseVisualStyleBackColor = false;
         }
 
+        private void MostrarMensaje(
+    string titulo,
+    string detalle,
+    bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(400, 175);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(400, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(370, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(360, 45),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Location = new Point(145, 120),
+                    Size = new Size(110, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
         private void CargarDatosHuesped()
         {
             try
@@ -173,11 +243,7 @@ namespace HotelTramonto.Presentacion
 
                 if (filas.Length == 0)
                 {
-                    MessageBox.Show(
-                        "No se encontró el huésped seleccionado.",
-                        "Hotel Tramonto",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                    MostrarMensaje("Huésped no encontrado", "No se encontró el huésped seleccionado.");
 
                     DialogResult = DialogResult.Cancel;
                     Close();
@@ -201,11 +267,10 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al cargar los datos del huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                "Error al cargar el huésped",
+                "No se pudieron cargar los datos.\n\nDetalle: " + ex.Message,
+                true);
 
                 DialogResult = DialogResult.Cancel;
                 Close();
@@ -225,22 +290,17 @@ namespace HotelTramonto.Presentacion
                     txtEmail.Text,
                     txtNacionalidad.Text);
 
-                MessageBox.Show(
-                    "Huésped modificado correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje("Huésped modificado","Los datos del huésped se actualizaron correctamente.");
 
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo modificar el huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al modificar el huésped",
+                    "No se pudo modificar el huésped.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
 

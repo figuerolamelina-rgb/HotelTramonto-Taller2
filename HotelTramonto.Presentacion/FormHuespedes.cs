@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -10,19 +11,18 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormHuespedes : Form
     {
+        private readonly Color marron = Color.FromArgb(74, 48, 39);
+        private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
+        private readonly Color crema = Color.FromArgb(245, 239, 229);
+        private readonly Color marfil = Color.FromArgb(255, 252, 247);
+        private readonly Color dorado = Color.FromArgb(198, 161, 91);
+
         public FormHuespedes()
         {
             InitializeComponent();
             AplicarEstilo();
             CargarHuespedes();
         }
-
-
-        private readonly Color marron = Color.FromArgb(74, 48, 39);
-        private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
-        private readonly Color crema = Color.FromArgb(245, 239, 229);
-        private readonly Color marfil = Color.FromArgb(255, 252, 247);
-        private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
         private void AplicarEstilo()
         {
@@ -32,7 +32,6 @@ namespace HotelTramonto.Presentacion
             BackColor = crema;
             Font = new Font("Segoe UI", 10F);
 
-            // Título
             Label lblTitulo = new Label
             {
                 Name = "lblTituloHuespedes",
@@ -66,17 +65,13 @@ namespace HotelTramonto.Presentacion
             Controls.Add(panelTitulo);
             panelTitulo.BringToFront();
 
-            // Botones: primera fila
             EstilizarBoton(btnNuevoHuesped, "＋ Nuevo huésped", dorado, marron);
             EstilizarBoton(btnModificarHuesped, "Modificar huésped", marronClaro, Color.White);
             EstilizarBoton(btnDesactivarHuesped, "Desactivar huésped", marronClaro, Color.White);
-
-            // Segunda fila
             EstilizarBoton(btnBuscarDNI, "Buscar por DNI", marronClaro, Color.White);
             EstilizarBoton(btnActualizar, "Actualizar listado", marronClaro, Color.White);
             EstilizarBoton(btnReactivarHuesped, "Reactivar huésped", marronClaro, Color.White);
 
-            // Tabla
             dgvHuespedes.BackgroundColor = marfil;
             dgvHuespedes.BorderStyle = BorderStyle.None;
             dgvHuespedes.GridColor = Color.FromArgb(222, 211, 194);
@@ -108,7 +103,6 @@ namespace HotelTramonto.Presentacion
             dgvHuespedes.DefaultCellStyle.Padding = new Padding(6, 4, 6, 4);
             dgvHuespedes.AlternatingRowsDefaultCellStyle.BackColor = crema;
 
-            // Reacomodar automáticamente al cambiar el tamaño
             Resize += (s, e) => AcomodarControles();
             AcomodarControles();
         }
@@ -139,7 +133,6 @@ namespace HotelTramonto.Presentacion
             int separacion = 12;
             int inicioY = 120;
 
-            // Primera fila
             btnNuevoHuesped.SetBounds(
                 margen, inicioY, anchoBoton, altoBoton);
 
@@ -151,7 +144,6 @@ namespace HotelTramonto.Presentacion
                 margen + (anchoBoton + separacion) * 2,
                 inicioY, anchoBoton, altoBoton);
 
-            // Segunda fila
             int segundaFilaY = inicioY + altoBoton + 10;
 
             btnBuscarDNI.SetBounds(
@@ -165,8 +157,8 @@ namespace HotelTramonto.Presentacion
                 margen + (anchoBoton + separacion) * 2,
                 segundaFilaY, anchoBoton, altoBoton);
 
-            // Tabla debajo de los botones
             int tablaY = segundaFilaY + altoBoton + 18;
+
             dgvHuespedes.SetBounds(
                 margen,
                 tablaY,
@@ -178,7 +170,159 @@ namespace HotelTramonto.Presentacion
                 AnchorStyles.Left | AnchorStyles.Right;
         }
 
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(400, 175);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
 
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(400, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(370, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(360, 45),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Location = new Point(145, 120),
+                    Size = new Size(110, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
+        private bool MostrarConfirmacion(string titulo, string detalle)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(400, 180);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(400, 7),
+                    BackColor = dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(370, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(360, 40),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnSi = new Button
+                {
+                    Text = "Sí",
+                    Location = new Point(85, 115),
+                    Size = new Size(100, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.Yes,
+                    Cursor = Cursors.Hand
+                };
+
+                Button btnNo = new Button
+                {
+                    Text = "No",
+                    Location = new Point(215, 115),
+                    Size = new Size(100, 35),
+                    BackColor = marronClaro,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.No,
+                    Cursor = Cursors.Hand
+                };
+
+                btnSi.FlatAppearance.BorderSize = 0;
+                btnNo.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnSi);
+                mensaje.Controls.Add(btnNo);
+
+                mensaje.AcceptButton = btnSi;
+                mensaje.CancelButton = btnNo;
+
+                return mensaje.ShowDialog(this) == DialogResult.Yes;
+            }
+        }
 
         private void CargarHuespedes()
         {
@@ -197,13 +341,11 @@ namespace HotelTramonto.Presentacion
                 dgvHuespedes.AutoSizeColumnsMode =
                     DataGridViewAutoSizeColumnsMode.Fill;
 
-                // Ocultar el identificador interno
                 if (dgvHuespedes.Columns.Contains("id_huesped"))
                 {
                     dgvHuespedes.Columns["id_huesped"].Visible = false;
                 }
 
-                // Mostrar el estado con texto, sin alterar el valor booleano
                 if (dgvHuespedes.Columns.Contains("activo"))
                 {
                     dgvHuespedes.Columns["activo"].HeaderText = "Estado";
@@ -241,28 +383,22 @@ namespace HotelTramonto.Presentacion
                         }
                     }
 
-                    // Ocultar la columna técnica original.
-                    // La lógica de los botones sigue usando el valor booleano.
                     dgvHuespedes.Columns["activo"].Visible = false;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al cargar los huéspedes: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al cargar los huéspedes",
+                    "No se pudieron cargar los huéspedes.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
-
-
 
         private void btnActualizar_Click(object sender, EventArgs e)
         {
             CargarHuespedes();
         }
-
 
         private void btnNuevoHuesped_Click(object sender, EventArgs e)
         {
@@ -275,16 +411,14 @@ namespace HotelTramonto.Presentacion
             }
         }
 
-
         private void btnModificarHuesped_Click(object sender, EventArgs e)
         {
             if (dgvHuespedes.CurrentRow == null)
             {
-                MessageBox.Show(
-                    "Seleccione un huésped para modificar.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MostrarMensaje(
+                    "Huésped no seleccionado",
+                    "Seleccioná un huésped para modificar.");
+
                 return;
             }
 
@@ -304,24 +438,21 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al modificar el huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al modificar el huésped",
+                    "No se pudo modificar el huésped.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
-
 
         private void btnDesactivarHuesped_Click(object sender, EventArgs e)
         {
             if (dgvHuespedes.CurrentRow == null)
             {
-                MessageBox.Show(
-                    "Seleccione un huésped para desactivar.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MostrarMensaje(
+                    "Huésped no seleccionado",
+                    "Seleccioná un huésped para desactivar.");
+
                 return;
             }
 
@@ -330,21 +461,18 @@ namespace HotelTramonto.Presentacion
 
             if (!activo)
             {
-                MessageBox.Show(
-                    "El huésped ya está desactivado.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MostrarMensaje(
+                    "Huésped ya desactivado",
+                    "El huésped seleccionado ya está desactivado.");
+
                 return;
             }
 
-            DialogResult confirmacion = MessageBox.Show(
-                "¿Está seguro de que desea desactivar al huésped seleccionado?",
+            bool confirmacion = MostrarConfirmacion(
                 "Confirmar desactivación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+                "¿Querés desactivar al huésped seleccionado?");
 
-            if (confirmacion != DialogResult.Yes)
+            if (!confirmacion)
                 return;
 
             try
@@ -355,34 +483,29 @@ namespace HotelTramonto.Presentacion
                 new HotelTramonto.Negocios.HuespedNegocios()
                     .Desactivar(idHuesped);
 
-                MessageBox.Show(
-                    "Huésped desactivado correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje(
+                    "Huésped desactivado",
+                    "El huésped se desactivó correctamente.");
 
                 CargarHuespedes();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo desactivar el huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al desactivar",
+                    "No se pudo desactivar el huésped.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
-
 
         private void btnReactivarHuesped_Click(object sender, EventArgs e)
         {
             if (dgvHuespedes.CurrentRow == null)
             {
-                MessageBox.Show(
-                    "Seleccione un huésped para reactivar.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MostrarMensaje(
+                    "Huésped no seleccionado",
+                    "Seleccioná un huésped para reactivar.");
+
                 return;
             }
 
@@ -391,21 +514,18 @@ namespace HotelTramonto.Presentacion
 
             if (activo)
             {
-                MessageBox.Show(
-                    "El huésped seleccionado ya está activo.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MostrarMensaje(
+                    "Huésped ya activo",
+                    "El huésped seleccionado ya está activo.");
+
                 return;
             }
 
-            DialogResult confirmacion = MessageBox.Show(
-                "¿Desea reactivar al huésped seleccionado?",
+            bool confirmacion = MostrarConfirmacion(
                 "Confirmar reactivación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+                "¿Querés reactivar al huésped seleccionado?");
 
-            if (confirmacion != DialogResult.Yes)
+            if (!confirmacion)
                 return;
 
             try
@@ -416,97 +536,172 @@ namespace HotelTramonto.Presentacion
                 new HotelTramonto.Negocios.HuespedNegocios()
                     .Reactivar(idHuesped);
 
-                MessageBox.Show(
-                    "Huésped reactivado correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje(
+                    "Huésped reactivado",
+                    "El huésped se reactivó correctamente.");
 
                 CargarHuespedes();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo reactivar el huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al reactivar",
+                    "No se pudo reactivar el huésped.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
-
 
         private void btnBuscarDNI_Click(object sender, EventArgs e)
         {
-            string dni = Microsoft.VisualBasic.Interaction.InputBox(
-                "Ingrese el DNI del huésped:",
-                "Buscar huésped por DNI");
-
-            if (string.IsNullOrWhiteSpace(dni))
-                return;
-
-            try
-            {
-                HotelTramonto.Negocios.HuespedNegocios negocio =
-                    new HotelTramonto.Negocios.HuespedNegocios();
-
-                DataTable resultado = negocio.BuscarPorDNI(dni.Trim());
-
-                dgvHuespedes.DataSource = resultado;
-
-                if (resultado.Rows.Count == 0)
-                {
-                    MessageBox.Show(
-                        "No se encontró ningún huésped con ese DNI.",
-                        "Hotel Tramonto",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "Error al buscar el huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
+            BuscarHuespedPorDNI();
         }
-
 
         private void btnBuscarDNI_Click_1(object sender, EventArgs e)
         {
-            string dni = Microsoft.VisualBasic.Interaction.InputBox(
-                "Ingrese el DNI del huésped:",
-                "Buscar huésped por DNI");
+            BuscarHuespedPorDNI();
+        }
+
+
+        private string MostrarEntradaDNI()
+        {
+            string dniIngresado = "";
+
+            using (Form formulario = new Form())
+            {
+                formulario.Text = "Buscar huésped";
+                formulario.StartPosition = FormStartPosition.CenterParent;
+                formulario.FormBorderStyle = FormBorderStyle.FixedDialog;
+                formulario.MaximizeBox = false;
+                formulario.MinimizeBox = false;
+                formulario.ShowInTaskbar = false;
+                formulario.ClientSize = new Size(400, 205);
+                formulario.BackColor = crema;
+                formulario.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(400, 7),
+                    BackColor = dorado
+                };
+
+                Label lblTitulo = new Label
+                {
+                    Text = "BUSCAR HUÉSPED",
+                    Location = new Point(20, 20),
+                    Size = new Size(360, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 13F, FontStyle.Bold)
+                };
+
+                Label lblDNI = new Label
+                {
+                    Text = "Ingresá el DNI del huésped:",
+                    Location = new Point(30, 65),
+                    AutoSize = true,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 10F, FontStyle.Bold)
+                };
+
+                TextBox txtDNI = new TextBox
+                {
+                    Location = new Point(30, 92),
+                    Size = new Size(340, 30),
+                    Font = new Font("Segoe UI", 11F),
+                    BackColor = marfil,
+                    ForeColor = marron,
+                    BorderStyle = BorderStyle.FixedSingle,
+                    MaxLength = 8
+                };
+
+                Button btnBuscar = new Button
+                {
+                    Text = "Buscar",
+                    Location = new Point(85, 145),
+                    Size = new Size(105, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand
+                };
+
+                Button btnCancelarBusqueda = new Button
+                {
+                    Text = "Cancelar",
+                    Location = new Point(210, 145),
+                    Size = new Size(105, 35),
+                    BackColor = marronClaro,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    DialogResult = DialogResult.Cancel,
+                    Cursor = Cursors.Hand
+                };
+
+                btnBuscar.FlatAppearance.BorderSize = 0;
+                btnCancelarBusqueda.FlatAppearance.BorderSize = 0;
+
+                formulario.Controls.Add(encabezado);
+                formulario.Controls.Add(lblTitulo);
+                formulario.Controls.Add(lblDNI);
+                formulario.Controls.Add(txtDNI);
+                formulario.Controls.Add(btnBuscar);
+                formulario.Controls.Add(btnCancelarBusqueda);
+
+                formulario.AcceptButton = btnBuscar;
+                formulario.CancelButton = btnCancelarBusqueda;
+
+                if (formulario.ShowDialog(this) == DialogResult.OK)
+                    dniIngresado = txtDNI.Text.Trim();
+            }
+
+            return dniIngresado;
+        }
+
+
+        private void BuscarHuespedPorDNI()
+        {
+            string dni = MostrarEntradaDNI();
 
             if (string.IsNullOrWhiteSpace(dni))
                 return;
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dni, @"^\d{1,8}$"))
+            {
+                MostrarMensaje(
+                    "DNI inválido",
+                    "Ingresá un DNI numérico de hasta 8 dígitos.");
+
+                return;
+            }
 
             try
             {
                 HotelTramonto.Negocios.HuespedNegocios negocio =
                     new HotelTramonto.Negocios.HuespedNegocios();
 
-                DataTable resultado = negocio.BuscarPorDNI(dni.Trim());
+                DataTable resultado = negocio.BuscarPorDNI(dni);
 
                 dgvHuespedes.DataSource = resultado;
 
+                if (dgvHuespedes.Columns.Contains("id_huesped"))
+                    dgvHuespedes.Columns["id_huesped"].Visible = false;
+
                 if (resultado.Rows.Count == 0)
                 {
-                    MessageBox.Show(
-                        "No se encontró ningún huésped con ese DNI.",
-                        "Hotel Tramonto",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    MostrarMensaje(
+                        "Huésped no encontrado",
+                        "No se encontró ningún huésped con ese DNI.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al buscar el huésped: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al buscar el huésped",
+                    "No se pudo realizar la búsqueda.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -67,7 +68,10 @@ namespace HotelTramonto.Presentacion
             panelTitulo.Controls.Add(lblEncabezado);
             panelTitulo.Controls.Add(lblSubtitulo);
             Controls.Add(panelTitulo);
+
+            // Ocultar el título original del Designer.
             lblTitulo.Visible = false;
+
             Panel panelDatos = new Panel
             {
                 Location = new Point(20, 105),
@@ -121,6 +125,7 @@ namespace HotelTramonto.Presentacion
 
             cmbTipoHabitacion.DropDownStyle =
                 ComboBoxStyle.DropDownList;
+
             cmbEstado.DropDownStyle =
                 ComboBoxStyle.DropDownList;
 
@@ -141,6 +146,7 @@ namespace HotelTramonto.Presentacion
 
             btnCancelar.Location = new Point(380, 430);
             btnCancelar.Size = new Size(120, 40);
+
             btnCancelar.Click -= btnCancelar_Click;
             btnCancelar.Click += btnCancelar_Click;
 
@@ -159,14 +165,91 @@ namespace HotelTramonto.Presentacion
             boton.ForeColor = textoColor;
             boton.FlatStyle = FlatStyle.Flat;
             boton.FlatAppearance.BorderSize = 0;
+
             boton.FlatAppearance.MouseOverBackColor =
                 Color.FromArgb(211, 178, 119);
+
             boton.FlatAppearance.MouseDownBackColor =
                 Color.FromArgb(174, 139, 76);
+
             boton.Font = new Font(
                 "Segoe UI", 10F, FontStyle.Bold);
+
             boton.Cursor = Cursors.Hand;
             boton.UseVisualStyleBackColor = false;
+        }
+
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(380, 165);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(380, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(350, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font(
+                        "Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(340, 40),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Location = new Point(135, 115),
+                    Size = new Size(110, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font(
+                        "Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
         }
 
         private void ConfigurarCombos()
@@ -193,11 +276,11 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al cargar los tipos de habitación: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al cargar los tipos",
+                    "No se pudieron cargar los tipos de habitación.\n\nDetalle: "
+                    + ex.Message,
+                    true);
             }
         }
 
@@ -205,16 +288,18 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                HabitacionNegocios negocio = new HabitacionNegocios();
-                DataTable resultado = negocio.BuscarPorId(idHabitacion);
+                HabitacionNegocios negocio =
+                    new HabitacionNegocios();
+
+                DataTable resultado =
+                    negocio.BuscarPorId(idHabitacion);
 
                 if (resultado.Rows.Count == 0)
                 {
-                    MessageBox.Show(
+                    MostrarMensaje(
+                        "Habitación no encontrada",
                         "No se encontró la habitación seleccionada.",
-                        "Hotel Tramonto",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                        true);
 
                     DialogResult = DialogResult.Cancel;
                     Close();
@@ -226,22 +311,24 @@ namespace HotelTramonto.Presentacion
                 cmbTipoHabitacion.SelectedValue =
                     Convert.ToInt32(habitacion["tipo_habitacion"]);
 
-                txtPiso.Text = habitacion["piso"] == DBNull.Value
-                    ? ""
-                    : habitacion["piso"].ToString();
+                txtPiso.Text =
+                    habitacion["piso"] == DBNull.Value
+                        ? ""
+                        : habitacion["piso"].ToString();
 
-                txtNumero.Text = habitacion["numero"].ToString();
+                txtNumero.Text =
+                    habitacion["numero"].ToString();
 
                 cmbEstado.SelectedItem =
                     habitacion["estado"].ToString();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al cargar los datos de la habitación: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al cargar la habitación",
+                    "No se pudieron cargar los datos de la habitación.\n\nDetalle: "
+                    + ex.Message,
+                    true);
 
                 DialogResult = DialogResult.Cancel;
                 Close();
@@ -252,43 +339,58 @@ namespace HotelTramonto.Presentacion
         {
             if (cmbTipoHabitacion.SelectedValue == null)
             {
-                MessageBox.Show("Seleccione un tipo de habitación.");
+                MostrarMensaje(
+                    "Tipo de habitación requerido",
+                    "Seleccioná un tipo de habitación para continuar.");
+
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(txtNumero.Text))
             {
-                MessageBox.Show("Ingrese el número de habitación.");
+                MostrarMensaje(
+                    "Número requerido",
+                    "Ingresá el número de la habitación.");
+
                 txtNumero.Focus();
                 return;
             }
 
             if (cmbEstado.SelectedItem == null)
             {
-                MessageBox.Show("Seleccione un estado.");
+                MostrarMensaje(
+                    "Estado requerido",
+                    "Seleccioná un estado para la habitación.");
+
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtPiso.Text))
+            {
+                MostrarMensaje(
+                    "Piso requerido",
+                    "Ingresá el piso de la habitación para continuar.");
+
+                txtPiso.Focus();
+                return;
+            }
+
+            if (!int.TryParse(
+                txtPiso.Text.Trim(),
+                out int pisoIngresado) || pisoIngresado < 0)
+            {
+                MostrarMensaje(
+                    "Piso inválido",
+                    "Ingresá un número de piso válido, igual o mayor que cero.");
+
+                txtPiso.Focus();
                 return;
             }
 
             int tipoHabitacion =
                 Convert.ToInt32(cmbTipoHabitacion.SelectedValue);
 
-            int? piso = null;
-
-            if (!string.IsNullOrWhiteSpace(txtPiso.Text))
-            {
-                if (!int.TryParse(
-                    txtPiso.Text.Trim(), out int pisoIngresado)
-                    || pisoIngresado < 0)
-                {
-                    MessageBox.Show(
-                        "Ingrese un número de piso válido, igual o mayor que cero.");
-
-                    txtPiso.Focus();
-                    return;
-                }
-
-                piso = pisoIngresado;
-            }
+            int? piso = pisoIngresado;
 
             string numero = txtNumero.Text.Trim();
             string estado = cmbEstado.SelectedItem.ToString()!;
@@ -305,22 +407,20 @@ namespace HotelTramonto.Presentacion
                     numero,
                     estado);
 
-                MessageBox.Show(
-                    "Habitación modificada correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje(
+                    "¡Cambios guardados!",
+                    "La habitación se modificó correctamente.");
 
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo modificar la habitación: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al modificar",
+                    "No se pudo modificar la habitación.\n\nDetalle: "
+                    + ex.Message,
+                    true);
             }
         }
 

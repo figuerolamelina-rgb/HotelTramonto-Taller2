@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using HotelTramonto.Negocios;
+using System.Globalization;
 
 namespace HotelTramonto.Presentacion
 {
@@ -53,7 +54,6 @@ namespace HotelTramonto.Presentacion
             ActualizarTotal();
         }
 
-
         private void ConfigurarFormulario()
         {
             Text = "Nueva reserva - Hotel Tramonto";
@@ -70,7 +70,6 @@ namespace HotelTramonto.Presentacion
 
             Controls.Clear();
 
-            // Encabezado
             Panel panelTitulo = new Panel
             {
                 Location = new Point(0, 0),
@@ -100,7 +99,6 @@ namespace HotelTramonto.Presentacion
             panelTitulo.Controls.Add(lblSubtitulo);
             Controls.Add(panelTitulo);
 
-            // Panel del formulario
             Panel panelFormulario = new Panel
             {
                 Location = new Point(20, 105),
@@ -114,22 +112,18 @@ namespace HotelTramonto.Presentacion
             int etiquetaX = 25;
             int campoX = 225;
 
-            // Huésped
             AgregarEtiqueta(panelFormulario, "Huésped", etiquetaX, 15);
             ConfigurarCombo(panelFormulario, cmbHuesped, campoX, 12, 400);
 
-            // Habitación
             AgregarEtiqueta(panelFormulario, "Habitación", etiquetaX, 60);
             ConfigurarCombo(panelFormulario, cmbHabitacion, campoX, 57, 400);
 
-            // Fechas
             AgregarEtiqueta(panelFormulario, "Fecha de entrada", etiquetaX, 105);
             ConfigurarFecha(panelFormulario, dtpEntrada, campoX, 102);
 
             AgregarEtiqueta(panelFormulario, "Fecha de salida", etiquetaX, 150);
             ConfigurarFecha(panelFormulario, dtpSalida, campoX, 147);
 
-            // Cantidad de personas
             AgregarEtiqueta(panelFormulario, "Cantidad de personas", etiquetaX, 195);
 
             nudPersonas.Location = new Point(campoX, 192);
@@ -143,32 +137,29 @@ namespace HotelTramonto.Presentacion
 
             panelFormulario.Controls.Add(nudPersonas);
 
-            // Modalidad de pago
             AgregarEtiqueta(panelFormulario, "Modalidad de pago", etiquetaX, 240);
             ConfigurarCombo(panelFormulario, cmbModalidadPago, campoX, 237, 400);
 
             cmbModalidadPago.Items.AddRange(new object[]
             {
-        "Pago total",
-        "Seña del 50 %"
+                "Pago total",
+                "Seña del 50 %"
             });
 
             cmbModalidadPago.SelectedIndex = 0;
 
-            // Método de pago
             AgregarEtiqueta(panelFormulario, "Método de pago", etiquetaX, 285);
             ConfigurarCombo(panelFormulario, cmbMetodoPago, campoX, 282, 400);
 
             cmbMetodoPago.Items.AddRange(new object[]
             {
-        "EFECTIVO",
-        "TARJETA",
-        "TRANSFERENCIA"
+                "EFECTIVO",
+                "TARJETA",
+                "TRANSFERENCIA"
             });
 
             cmbMetodoPago.SelectedIndex = 0;
 
-            // Resumen del alojamiento
             Panel panelTotal = new Panel
             {
                 Location = new Point(20, 325),
@@ -194,7 +185,6 @@ namespace HotelTramonto.Presentacion
             panelTotal.Controls.Add(lblTotal);
             panelFormulario.Controls.Add(panelTotal);
 
-            // Botones visibles en la parte inferior
             btnGuardar = CrearBoton("Confirmar reserva", dorado, marron);
             btnGuardar.Location = new Point(220, 555);
             btnGuardar.Size = new Size(190, 40);
@@ -210,7 +200,6 @@ namespace HotelTramonto.Presentacion
             AcceptButton = btnGuardar;
             CancelButton = btnCancelar;
         }
-
 
         private void AgregarEtiqueta(
             Control contenedor, string texto, int izquierda, int arriba)
@@ -405,9 +394,138 @@ namespace HotelTramonto.Presentacion
                 ? total
                 : Math.Round(total / 2m, 2);
 
+            CultureInfo cultura = CultureInfo.GetCultureInfo("es-AR");
+
             lblTotal.Text =
-                $"Noches: {noches} | Total: {total:C2}\n" +
-                $"Pago inicial: {pagoInicial:C2} | Saldo: {(total - pagoInicial):C2}";
+                $"Noches: {noches} | Total: {total.ToString("C2", cultura)}\n" +
+                $"Pago inicial: {pagoInicial.ToString("C2", cultura)} | Saldo: {(total - pagoInicial).ToString("C2", cultura)}";
+        }
+
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(440, 190);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(440, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTitulo = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 18),
+                    Size = new Size(410, 34),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(400, 75),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnAceptar = CrearBoton("Aceptar", dorado, marron);
+                btnAceptar.Location = new Point(165, 140);
+                btnAceptar.Size = new Size(110, 35);
+                btnAceptar.DialogResult = DialogResult.OK;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTitulo);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
+        private bool MostrarConfirmacion(
+            string titulo,
+            string detalle)
+        {
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(460, 330);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(460, 7),
+                    BackColor = dorado
+                };
+
+                Label lblTitulo = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 18),
+                    Size = new Size(430, 34),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(25, 58),
+                    Size = new Size(410, 190),
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9.5F)
+                };
+
+                Button btnSi = CrearBoton("Sí, confirmar", dorado, marron);
+                btnSi.Location = new Point(75, 270);
+                btnSi.Size = new Size(140, 38);
+                btnSi.DialogResult = DialogResult.Yes;
+
+                Button btnNo = CrearBoton("No, cancelar", marronClaro, Color.White);
+                btnNo.Location = new Point(245, 270);
+                btnNo.Size = new Size(140, 38);
+                btnNo.DialogResult = DialogResult.No;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTitulo);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnSi);
+                mensaje.Controls.Add(btnNo);
+
+                mensaje.AcceptButton = btnSi;
+                mensaje.CancelButton = btnNo;
+
+                return mensaje.ShowDialog(this) == DialogResult.Yes;
+            }
         }
 
         private void btnGuardar_Click(object sender, EventArgs e)
@@ -417,11 +535,10 @@ namespace HotelTramonto.Presentacion
                 cmbModalidadPago.SelectedIndex < 0 ||
                 cmbMetodoPago.SelectedIndex < 0)
             {
-                MessageBox.Show(
-                    "Completá todos los campos.",
-                    "Validación",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MostrarMensaje(
+                    "Datos incompletos",
+                    "Completá todos los campos antes de continuar.");
+
                 return;
             }
 
@@ -459,7 +576,11 @@ namespace HotelTramonto.Presentacion
 
                 if (tipoEncontrado == null)
                 {
-                    MessageBox.Show("No se encontró el tipo de habitación.");
+                    MostrarMensaje(
+                        "Tipo no encontrado",
+                        "No se encontró el tipo de habitación seleccionado.",
+                        true);
+
                     return;
                 }
 
@@ -467,11 +588,10 @@ namespace HotelTramonto.Presentacion
 
                 if (cantidadPersonas > capacidad)
                 {
-                    MessageBox.Show(
-                        $"La habitación admite como máximo {capacidad} persona(s).",
+                    MostrarMensaje(
                         "Capacidad excedida",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                        $"La habitación admite como máximo {capacidad} persona(s).");
+
                     return;
                 }
 
@@ -479,8 +599,10 @@ namespace HotelTramonto.Presentacion
 
                 if (noches <= 0)
                 {
-                    MessageBox.Show(
+                    MostrarMensaje(
+                        "Fechas inválidas",
                         "La salida debe ser posterior a la entrada.");
+
                     return;
                 }
 
@@ -493,20 +615,23 @@ namespace HotelTramonto.Presentacion
                     ? total
                     : Math.Round(total / 2m, 2);
 
-                DialogResult confirmacion = MessageBox.Show(
+                CultureInfo cultura = CultureInfo.GetCultureInfo("es-AR");
+
+                string detalleConfirmacion =
                     $"Huésped: {cmbHuesped.Text}\n" +
                     $"Habitación: {cmbHabitacion.Text}\n" +
                     $"Entrada: {entrada:dd/MM/yyyy}\n" +
                     $"Salida: {salida:dd/MM/yyyy}\n" +
                     $"Personas: {cantidadPersonas}\n" +
-                    $"Total: {total:C2}\n" +
-                    $"Pago inicial: {pagoInicial:C2}\n\n" +
-                    "¿Confirmás que recibiste o verificaste este pago?",
-                    "Confirmar reserva y pago",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
+                    $"Total: {total.ToString("C2", cultura)}\n" +
+                    $"Pago inicial: {pagoInicial.ToString("C2", cultura)}\n\n" +
+                    "¿Confirmás que recibiste o verificaste este pago?";
 
-                if (confirmacion != DialogResult.Yes)
+                bool confirmacion = MostrarConfirmacion(
+                    "Confirmar reserva y pago",
+                    detalleConfirmacion);
+
+                if (!confirmacion)
                     return;
 
                 int idTemporal = temporalNegocios.Insertar(
@@ -534,37 +659,32 @@ namespace HotelTramonto.Presentacion
                     DataRow reserva = resultado.Rows[0];
 
                     string mensaje =
-                        $"Reserva creada correctamente.\n" +
                         $"Número de reserva: {reserva["id_reserva"]}\n" +
-                        $"Total: {Convert.ToDecimal(reserva["total_alojamiento"]):C2}\n" +
-                        $"Pago inicial: {Convert.ToDecimal(reserva["pago_inicial"]):C2}\n" +
-                        $"Saldo pendiente: {Convert.ToDecimal(reserva["saldo_alojamiento"]):C2}";
+                        $"Total: {Convert.ToDecimal(reserva["total_alojamiento"]).ToString("C2", cultura)}\n" +
+                        $"Pago inicial: {Convert.ToDecimal(reserva["pago_inicial"]).ToString("C2", cultura)}\n" +
+                        $"Saldo pendiente: {Convert.ToDecimal(reserva["saldo_alojamiento"]).ToString("C2", cultura)}";
 
-                    MessageBox.Show(
-                        mensaje,
-                        "Reserva confirmada",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    MostrarMensaje(
+                        "¡Reserva confirmada!",
+                        mensaje);
 
                     DialogResult = DialogResult.OK;
                     Close();
                 }
                 else
                 {
-                    MessageBox.Show(
+                    MostrarMensaje(
+                        "Reserva sin información",
                         "No se obtuvo información de la reserva confirmada.",
-                        "Aviso",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                        true);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
+                MostrarMensaje(
+                    "Error al crear la reserva",
                     "No se pudo crear la reserva.\n\nDetalle: " + ex.Message,
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                    true);
             }
         }
     }

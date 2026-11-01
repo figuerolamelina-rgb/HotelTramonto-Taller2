@@ -1,3 +1,6 @@
+using System;
+using System.Drawing;
+using System.Windows.Forms;
 using HotelTramonto.Datos;
 using HotelTramonto.Negocios;
 using Microsoft.Data.SqlClient;
@@ -290,6 +293,170 @@ namespace HotelTramonto.Presentacion
         }
 
 
+        private void MostrarMensaje(
+            string titulo,
+            string detalle,
+            bool esError = false)
+        {
+            Color marron = Color.FromArgb(74, 48, 39);
+            Color marronClaro = Color.FromArgb(91, 62, 49);
+            Color crema = Color.FromArgb(245, 239, 229);
+            Color dorado = Color.FromArgb(198, 161, 91);
+
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(400, 175);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(400, 7),
+                    BackColor = esError
+                        ? Color.FromArgb(160, 65, 55)
+                        : dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(370, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(360, 45),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Location = new Point(145, 120),
+                    Size = new Size(110, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.OK,
+                    Cursor = Cursors.Hand
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnAceptar);
+
+                mensaje.AcceptButton = btnAceptar;
+                mensaje.ShowDialog(this);
+            }
+        }
+
+        private bool MostrarConfirmacion(string titulo, string detalle)
+        {
+            Color marron = Color.FromArgb(74, 48, 39);
+            Color marronClaro = Color.FromArgb(91, 62, 49);
+            Color crema = Color.FromArgb(245, 239, 229);
+            Color dorado = Color.FromArgb(198, 161, 91);
+
+            using (Form mensaje = new Form())
+            {
+                mensaje.Text = "Hotel Tramonto";
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.MaximizeBox = false;
+                mensaje.MinimizeBox = false;
+                mensaje.ShowInTaskbar = false;
+                mensaje.ClientSize = new Size(400, 180);
+                mensaje.BackColor = crema;
+                mensaje.Font = new Font("Segoe UI", 10F);
+
+                Panel encabezado = new Panel
+                {
+                    Location = new Point(0, 0),
+                    Size = new Size(400, 7),
+                    BackColor = dorado
+                };
+
+                Label lblTituloMensaje = new Label
+                {
+                    Text = titulo,
+                    Location = new Point(15, 20),
+                    Size = new Size(370, 32),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = detalle,
+                    Location = new Point(20, 55),
+                    Size = new Size(360, 45),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = marronClaro,
+                    Font = new Font("Segoe UI", 9F)
+                };
+
+                Button btnSi = new Button
+                {
+                    Text = "Sí",
+                    Location = new Point(85, 120),
+                    Size = new Size(100, 35),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.Yes,
+                    Cursor = Cursors.Hand
+                };
+
+                Button btnNo = new Button
+                {
+                    Text = "No",
+                    Location = new Point(215, 120),
+                    Size = new Size(100, 35),
+                    BackColor = marronClaro,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    DialogResult = DialogResult.No,
+                    Cursor = Cursors.Hand
+                };
+
+                btnSi.FlatAppearance.BorderSize = 0;
+                btnNo.FlatAppearance.BorderSize = 0;
+
+                mensaje.Controls.Add(encabezado);
+                mensaje.Controls.Add(lblTituloMensaje);
+                mensaje.Controls.Add(lblDetalle);
+                mensaje.Controls.Add(btnSi);
+                mensaje.Controls.Add(btnNo);
+
+                mensaje.AcceptButton = btnSi;
+                mensaje.CancelButton = btnNo;
+
+                return mensaje.ShowDialog(this) == DialogResult.Yes;
+            }
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
             try
@@ -297,11 +464,11 @@ namespace HotelTramonto.Presentacion
                 using SqlConnection conexion = ConexionBD.ObtenerConexion();
                 conexion.Open();
 
-                MessageBox.Show("Conexión exitosa con SQL Server.");
+                MostrarMensaje("Conexión exitosa", "La conexión con SQL Server se estableció correctamente.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error de conexión: " + ex.Message);
+                MostrarMensaje("Error de conexión", "No se pudo conectar con SQL Server.\n\nDetalle: " + ex.Message, true);
             }
         }
 
@@ -314,9 +481,16 @@ namespace HotelTramonto.Presentacion
 
                 if (roles.Rows.Count == 0)
                 {
-                    MessageBox.Show("No hay roles registrados.");
+                    MostrarMensaje(
+                        "Sin roles registrados",
+                        "No hay roles registrados en el sistema.");
                     return;
                 }
+
+                // Ordenar los roles por su identificador, de menor a mayor.
+                System.Data.DataView vista = roles.DefaultView;
+                vista.Sort = "id_rol ASC";
+                roles = vista.ToTable();
 
                 string mensaje = "";
 
@@ -325,13 +499,17 @@ namespace HotelTramonto.Presentacion
                     mensaje += $"{fila["id_rol"]} - {fila["nombre_rol"]}\n";
                 }
 
-                MessageBox.Show(mensaje, "Roles registrados");
+                MostrarMensaje("Roles registrados", mensaje);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al listar los roles: " + ex.Message);
+                MostrarMensaje(
+                    "Error al listar los roles",
+                    "No se pudieron listar los roles.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
+
         private void CargarUsuarios()
         {
             if (rolUsuario != "ADMINISTRADOR")
@@ -342,57 +520,48 @@ namespace HotelTramonto.Presentacion
                 UsuarioNegocios negocio = new UsuarioNegocios();
                 DataTable usuarios = negocio.Listar(rolUsuario);
 
-                dgvUsuarios.DataSource = null;
-                dgvUsuarios.DataSource = usuarios;
-
-                // Ocultar el ID interno
-                if (dgvUsuarios.Columns.Contains("id_usuario"))
-                    dgvUsuarios.Columns["id_usuario"].Visible = false;
-
-                // Ocultar el ID del rol
-                if (dgvUsuarios.Columns.Contains("id_rol"))
-                    dgvUsuarios.Columns["id_rol"].Visible = false;
-
-                // Cambiar el encabezado del rol
-                if (dgvUsuarios.Columns.Contains("nombre_rol"))
-                    dgvUsuarios.Columns["nombre_rol"].HeaderText = "Rol";
-
-                // Mostrar el estado como texto
-                if (dgvUsuarios.Columns.Contains("activo"))
+                // Crear la columna visual del estado antes de cargar la tabla.
+                if (usuarios.Columns.Contains("activo"))
                 {
-                    dgvUsuarios.Columns["activo"].Visible = false;
-
-                    if (!dgvUsuarios.Columns.Contains("estadoVisual"))
+                    if (!usuarios.Columns.Contains("estadoVisual"))
                     {
-                        DataGridViewTextBoxColumn columnaEstado =
-                            new DataGridViewTextBoxColumn();
-
-                        columnaEstado.Name = "estadoVisual";
-                        columnaEstado.HeaderText = "Estado";
-                        columnaEstado.ReadOnly = true;
-
-                        dgvUsuarios.Columns.Add(columnaEstado);
+                        usuarios.Columns.Add("estadoVisual", typeof(string));
                     }
 
-                    foreach (DataGridViewRow fila in dgvUsuarios.Rows)
+                    foreach (DataRow fila in usuarios.Rows)
                     {
-                        if (fila.IsNewRow)
-                            continue;
+                        bool activo = fila["activo"] != DBNull.Value &&
+                                      Convert.ToBoolean(fila["activo"]);
 
-                        object valor = fila.Cells["activo"].Value;
-
-                        bool activo = valor != null
-                            && valor != DBNull.Value
-                            && Convert.ToBoolean(valor);
-
-                        fila.Cells["estadoVisual"].Value =
-                            activo ? "Activo" : "Inactivo";
+                        fila["estadoVisual"] = activo ? "Activo" : "Inactivo";
                     }
                 }
 
-                // Nombres de columnas más claros
+                // Cargar los datos en la tabla.
+                dgvUsuarios.DataSource = null;
+                dgvUsuarios.DataSource = usuarios;
+
+                // Ocultar identificadores internos.
                 if (dgvUsuarios.Columns.Contains("id_usuario"))
-                    dgvUsuarios.Columns["id_usuario"].HeaderText = "ID";
+                    dgvUsuarios.Columns["id_usuario"].Visible = false;
+
+                if (dgvUsuarios.Columns.Contains("id_rol"))
+                    dgvUsuarios.Columns["id_rol"].Visible = false;
+
+                if (dgvUsuarios.Columns.Contains("activo"))
+                    dgvUsuarios.Columns["activo"].Visible = false;
+
+                // Configurar columna Estado.
+                if (dgvUsuarios.Columns.Contains("estadoVisual"))
+                {
+                    dgvUsuarios.Columns["estadoVisual"].HeaderText = "Estado";
+                    dgvUsuarios.Columns["estadoVisual"].ReadOnly = true;
+                    dgvUsuarios.Columns["estadoVisual"].DisplayIndex = 0;
+                }
+
+                // Encabezados.
+                if (dgvUsuarios.Columns.Contains("nombre_rol"))
+                    dgvUsuarios.Columns["nombre_rol"].HeaderText = "Rol";
 
                 if (dgvUsuarios.Columns.Contains("nombre"))
                     dgvUsuarios.Columns["nombre"].HeaderText = "Nombre";
@@ -414,21 +583,19 @@ namespace HotelTramonto.Presentacion
             }
             catch (UnauthorizedAccessException ex)
             {
-                MessageBox.Show(
-                    ex.Message,
+                MostrarMensaje(
                     "Acceso denegado",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                    ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al cargar los usuarios: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al cargar los usuarios",
+                    "No se pudieron cargar los usuarios.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
+
         private void label1_Click(object sender, EventArgs e)
         {
 
@@ -449,7 +616,7 @@ namespace HotelTramonto.Presentacion
             if (dgvUsuarios.CurrentRow == null ||
                 dgvUsuarios.CurrentRow.IsNewRow)
             {
-                MessageBox.Show("Seleccione un usuario de la tabla.");
+                MostrarMensaje("Usuario no seleccionado", "Seleccioná un usuario de la tabla para continuar.");
                 return;
             }
 
@@ -469,7 +636,7 @@ namespace HotelTramonto.Presentacion
             if (dgvUsuarios.CurrentRow == null ||
                 dgvUsuarios.CurrentRow.IsNewRow)
             {
-                MessageBox.Show("Seleccione un usuario de la tabla.");
+                MostrarMensaje("Usuario no seleccionado", "Seleccioná un usuario de la tabla para continuar.");
                 return;
             }
 
@@ -478,14 +645,11 @@ namespace HotelTramonto.Presentacion
 
             string nombre = dgvUsuarios.CurrentRow.Cells["nombre"].Value?.ToString() ?? "";
 
-            DialogResult respuesta = MessageBox.Show(
-                $"¿Está seguro de desactivar al usuario {nombre}?",
+            bool respuesta = MostrarConfirmacion(
                 "Confirmar desactivación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning,
-                MessageBoxDefaultButton.Button2);
+                $"¿Querés desactivar al usuario {nombre}?");
 
-            if (respuesta != DialogResult.Yes)
+            if (!respuesta)
                 return;
 
             try
@@ -493,17 +657,16 @@ namespace HotelTramonto.Presentacion
                 UsuarioNegocios negocio = new UsuarioNegocios();
                 negocio.Desactivar(idUsuario, rolUsuario);
 
-                MessageBox.Show("Usuario desactivado correctamente.");
+                MostrarMensaje("Usuario desactivado", "El usuario se desactivó correctamente.");
 
                 CargarUsuarios();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo desactivar el usuario: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al desactivar usuario",
+                    "No se pudo desactivar el usuario.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
 
@@ -513,7 +676,7 @@ namespace HotelTramonto.Presentacion
             if (dgvUsuarios.CurrentRow == null ||
                 dgvUsuarios.CurrentRow.IsNewRow)
             {
-                MessageBox.Show("Seleccione un usuario de la tabla.");
+                MostrarMensaje("Usuario no seleccionado", "Seleccioná un usuario de la tabla para continuar.");
                 return;
             }
 
@@ -522,14 +685,11 @@ namespace HotelTramonto.Presentacion
 
             string nombre = dgvUsuarios.CurrentRow.Cells["nombre"].Value?.ToString() ?? "";
 
-            DialogResult respuesta = MessageBox.Show(
-                $"¿Está seguro de reactivar al usuario {nombre}?",
+            bool respuesta = MostrarConfirmacion(
                 "Confirmar reactivación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question,
-                MessageBoxDefaultButton.Button2);
+                $"¿Querés reactivar al usuario {nombre}?");
 
-            if (respuesta != DialogResult.Yes)
+            if (!respuesta)
                 return;
 
             try
@@ -537,21 +697,18 @@ namespace HotelTramonto.Presentacion
                 UsuarioNegocios negocio = new UsuarioNegocios();
                 negocio.Reactivar(idUsuario, rolUsuario);
 
-                MessageBox.Show(
-                    "Usuario reactivado correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MostrarMensaje(
+                    "Usuario reactivado",
+                    "El usuario se reactivó correctamente.");
 
                 CargarUsuarios();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo reactivar el usuario: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MostrarMensaje(
+                    "Error al reactivar usuario",
+                    "No se pudo reactivar el usuario.\n\nDetalle: " + ex.Message,
+                    true);
             }
         }
 

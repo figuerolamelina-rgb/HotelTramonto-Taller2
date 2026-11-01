@@ -12,20 +12,11 @@ namespace HotelTramonto.Presentacion
     {
         private readonly string rolUsuario;
 
-        private readonly Color marron =
-            Color.FromArgb(74, 48, 39);
-
-        private readonly Color marronClaro =
-            Color.FromArgb(91, 62, 49);
-
-        private readonly Color crema =
-            Color.FromArgb(245, 239, 229);
-
-        private readonly Color marfil =
-            Color.FromArgb(255, 252, 247);
-
-        private readonly Color dorado =
-            Color.FromArgb(198, 161, 91);
+        private readonly Color marron = Color.FromArgb(74, 48, 39);
+        private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
+        private readonly Color crema = Color.FromArgb(245, 239, 229);
+        private readonly Color marfil = Color.FromArgb(255, 252, 247);
+        private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
         public FormUsuario(string rol)
         {
@@ -49,7 +40,6 @@ namespace HotelTramonto.Presentacion
             ClientSize = new Size(800, 450);
             Font = new Font("Segoe UI", 10F);
 
-            // Título
             label1.Text = "Nombre";
             label2.Text = "Apellido";
             label3.Text = "DNI";
@@ -66,11 +56,9 @@ namespace HotelTramonto.Presentacion
             foreach (Label etiqueta in etiquetas)
             {
                 etiqueta.ForeColor = marron;
-                etiqueta.Font = new Font(
-                    "Segoe UI", 10F, FontStyle.Bold);
+                etiqueta.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             }
 
-            // Campos de texto
             TextBox[] campos =
             {
                 txtNombre, txtApellido, txtDni,
@@ -101,10 +89,8 @@ namespace HotelTramonto.Presentacion
             label6.Location = new Point(55, 243);
             label7.Location = new Point(55, 283);
 
-            // Ocultar contraseña
             txtContrasena.UseSystemPasswordChar = true;
 
-            // Rol
             cmbRol.Location = new Point(170, 280);
             cmbRol.Size = new Size(230, 28);
             cmbRol.BackColor = marfil;
@@ -112,7 +98,6 @@ namespace HotelTramonto.Presentacion
             cmbRol.Font = new Font("Segoe UI", 10F);
             cmbRol.DropDownStyle = ComboBoxStyle.DropDownList;
 
-            // Guardar
             btnGuardar.Text = "Guardar usuario";
             btnGuardar.Location = new Point(170, 345);
             btnGuardar.Size = new Size(145, 40);
@@ -120,12 +105,12 @@ namespace HotelTramonto.Presentacion
             btnGuardar.ForeColor = marron;
             btnGuardar.FlatStyle = FlatStyle.Flat;
             btnGuardar.FlatAppearance.BorderSize = 0;
-            btnGuardar.Font = new Font(
-                "Segoe UI", 10F, FontStyle.Bold);
+            btnGuardar.FlatAppearance.MouseOverBackColor =
+                Color.FromArgb(218, 185, 119);
+            btnGuardar.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnGuardar.Cursor = Cursors.Hand;
             btnGuardar.UseVisualStyleBackColor = false;
 
-            // Cancelar
             btnCancelar.Text = "Cancelar";
             btnCancelar.Location = new Point(330, 345);
             btnCancelar.Size = new Size(120, 40);
@@ -133,14 +118,117 @@ namespace HotelTramonto.Presentacion
             btnCancelar.ForeColor = Color.White;
             btnCancelar.FlatStyle = FlatStyle.Flat;
             btnCancelar.FlatAppearance.BorderSize = 0;
-            btnCancelar.Font = new Font(
-                "Segoe UI", 10F, FontStyle.Bold);
+            btnCancelar.FlatAppearance.MouseOverBackColor =
+                Color.FromArgb(126, 91, 65);
+            btnCancelar.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnCancelar.Cursor = Cursors.Hand;
             btnCancelar.UseVisualStyleBackColor = false;
             btnCancelar.DialogResult = DialogResult.Cancel;
 
             AcceptButton = btnGuardar;
             CancelButton = btnCancelar;
+        }
+
+        private void MostrarMensaje(
+            string mensaje,
+            string titulo = "Hotel Tramonto",
+            MessageBoxIcon icono = MessageBoxIcon.Information)
+        {
+            using (Form ventana = new Form())
+            {
+                ventana.Text = titulo;
+                ventana.Size = new Size(440, 220);
+                ventana.MinimumSize = new Size(440, 220);
+                ventana.MaximumSize = new Size(440, 220);
+                ventana.StartPosition = FormStartPosition.CenterParent;
+                ventana.FormBorderStyle = FormBorderStyle.FixedDialog;
+                ventana.MaximizeBox = false;
+                ventana.MinimizeBox = false;
+                ventana.ShowInTaskbar = false;
+                ventana.BackColor = crema;
+                ventana.Font = new Font("Segoe UI", 10F);
+
+                Panel panelSuperior = new Panel
+                {
+                    Dock = DockStyle.Top,
+                    Height = 9,
+                    BackColor = dorado
+                };
+
+                string simbolo;
+                Color colorSimbolo;
+
+                switch (icono)
+                {
+                    case MessageBoxIcon.Error:
+                        simbolo = "!";
+                        colorSimbolo = Color.FromArgb(160, 55, 45);
+                        break;
+
+                    case MessageBoxIcon.Warning:
+                        simbolo = "⚠";
+                        colorSimbolo = dorado;
+                        break;
+
+                    case MessageBoxIcon.Question:
+                        simbolo = "?";
+                        colorSimbolo = dorado;
+                        break;
+
+                    default:
+                        simbolo = "✓";
+                        colorSimbolo = marron;
+                        break;
+                }
+
+                Label lblIcono = new Label
+                {
+                    AutoSize = false,
+                    Location = new Point(22, 28),
+                    Size = new Size(45, 45),
+                    Font = new Font("Segoe UI Symbol", 25F, FontStyle.Bold),
+                    ForeColor = colorSimbolo,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Text = simbolo
+                };
+
+                Label lblMensaje = new Label
+                {
+                    AutoSize = false,
+                    Location = new Point(78, 25),
+                    Size = new Size(325, 90),
+                    Text = mensaje,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 10F),
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+
+                Button btnAceptar = new Button
+                {
+                    Text = "Aceptar",
+                    Size = new Size(110, 36),
+                    Location = new Point(294, 130),
+                    BackColor = dorado,
+                    ForeColor = marron,
+                    Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                    FlatStyle = FlatStyle.Flat,
+                    Cursor = Cursors.Hand,
+                    DialogResult = DialogResult.OK,
+                    UseVisualStyleBackColor = false
+                };
+
+                btnAceptar.FlatAppearance.BorderSize = 0;
+                btnAceptar.FlatAppearance.MouseOverBackColor =
+                    Color.FromArgb(218, 185, 119);
+
+                ventana.Controls.Add(panelSuperior);
+                ventana.Controls.Add(lblIcono);
+                ventana.Controls.Add(lblMensaje);
+                ventana.Controls.Add(btnAceptar);
+
+                ventana.AcceptButton = btnAceptar;
+                ventana.ShowDialog(this);
+            }
         }
 
         private void CargarRoles()
@@ -157,10 +245,9 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Error al cargar los roles: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
+                MostrarMensaje(
+                    "Error al cargar los roles:\n" + ex.Message,
+                    "Error",
                     MessageBoxIcon.Error);
             }
         }
@@ -171,10 +258,9 @@ namespace HotelTramonto.Presentacion
             {
                 if (cmbRol.SelectedIndex == -1)
                 {
-                    MessageBox.Show(
+                    MostrarMensaje(
                         "Debe seleccionar un rol.",
-                        "Hotel Tramonto",
-                        MessageBoxButtons.OK,
+                        "Rol requerido",
                         MessageBoxIcon.Warning);
                     return;
                 }
@@ -191,21 +277,18 @@ namespace HotelTramonto.Presentacion
                     txtTelefono.Text,
                     rolUsuario);
 
-                MessageBox.Show(
+                MostrarMensaje(
                     "Usuario registrado correctamente.",
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                    "Registro exitoso");
 
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "No se pudo registrar el usuario: " + ex.Message,
-                    "Hotel Tramonto",
-                    MessageBoxButtons.OK,
+                MostrarMensaje(
+                    "No se pudo registrar el usuario:\n" + ex.Message,
+                    "Error al registrar",
                     MessageBoxIcon.Error);
             }
         }
