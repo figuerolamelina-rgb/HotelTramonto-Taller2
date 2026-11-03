@@ -28,6 +28,7 @@ namespace HotelTramonto.Presentacion
                 rolUsuario == "GERENTE";
 
             btnReportes.Visible = puedeVerReportes;
+            btnServicios.Visible = esAdministrador;
 
             btnNuevoUsuario.Visible = esAdministrador;
             btnModificarUsuario.Visible = esAdministrador;
@@ -149,17 +150,19 @@ namespace HotelTramonto.Presentacion
             EstilizarBoton(btnHuespedes, "Huéspedes");
             EstilizarBoton(btnPagos, "Pagos");
             EstilizarBoton(btnReportes, "Reportes");
+            EstilizarBoton(btnServicios, "Servicios");
 
             Button[] botonesMenu =
             {
-        btnHabitaciones,
-        btnReservas,
-        btnHuespedes,
-        btnPagos,
-        btnReportes
-    };
+                btnHabitaciones,
+                btnReservas,
+                btnHuespedes,
+                btnPagos,
+                btnReportes,
+                btnServicios
+            };
 
-            int[] posicionesY = { 160, 215, 270, 325, 380 };
+            int[] posicionesY = { 160, 215, 270, 325, 380, 435 };
 
             for (int i = 0; i < botonesMenu.Length; i++)
             {
@@ -753,6 +756,23 @@ namespace HotelTramonto.Presentacion
         private void btnReportes_Click(object sender, EventArgs e)
         {
             using (FormReportes formulario = new FormReportes())
+            {
+                formulario.ShowDialog(this);
+            }
+        }
+
+        private void btnServicios_Click(object sender, EventArgs e)
+        {
+            if (rolUsuario != "ADMINISTRADOR")
+            {
+                MostrarMensaje(
+                    "Acceso denegado",
+                    "No tenés permisos para gestionar los servicios.",
+                    true);
+                return;
+            }
+
+            using (FormServicios formulario = new FormServicios(rolUsuario))
             {
                 formulario.ShowDialog(this);
             }

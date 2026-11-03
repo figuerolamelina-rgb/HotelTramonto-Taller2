@@ -42,6 +42,7 @@
             btnHuespedes = new Button();
             btnPagos = new Button();
             btnReportes = new Button();
+            btnServicios = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvUsuarios).BeginInit();
             SuspendLayout();
             // 
@@ -194,6 +195,14 @@
             btnReportes.Text = "Reportes";
             btnReportes.UseVisualStyleBackColor = true;
             btnReportes.Click += btnReportes_Click;
+            // btnServicios
+            btnServicios.Location = new Point(25, 435);
+            btnServicios.Name = "btnServicios";
+            btnServicios.Size = new Size(195, 42);
+            btnServicios.TabIndex = 14;
+            btnServicios.Text = "Servicios";
+            btnServicios.UseVisualStyleBackColor = true;
+            btnServicios.Click += btnServicios_Click;
             // 
             // Form1
             // 
@@ -215,6 +224,7 @@
             Controls.Add(lblTitulo);
             Controls.Add(btnListarRoles);
             Controls.Add(btnProbarConexion);
+            Controls.Add(btnServicios);
             Margin = new Padding(3, 2, 3, 2);
             MinimumSize = new Size(1000, 650);
             Name = "Form1";
@@ -242,5 +252,6 @@
         private Button btnHuespedes;
         private Button btnPagos;
         private Button btnReportes;
+        private Button btnServicios;
     }
 }

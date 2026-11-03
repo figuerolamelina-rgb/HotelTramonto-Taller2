@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿
+using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.Datos
@@ -8,7 +9,8 @@ namespace HotelTramonto.Datos
         public void Insertar(
             string nombre,
             string? descripcion,
-            decimal precio)
+            decimal precio,
+            string categoria)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
             using SqlCommand comando =
@@ -22,6 +24,7 @@ namespace HotelTramonto.Datos
                     ? DBNull.Value
                     : descripcion);
             comando.Parameters.AddWithValue("@precio", precio);
+            comando.Parameters.AddWithValue("@categoria", categoria);
 
             conexion.Open();
             comando.ExecuteNonQuery();
@@ -31,7 +34,8 @@ namespace HotelTramonto.Datos
             int idServicio,
             string nombre,
             string? descripcion,
-            decimal precio)
+            decimal precio,
+            string categoria)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
             using SqlCommand comando =
@@ -46,6 +50,7 @@ namespace HotelTramonto.Datos
                     ? DBNull.Value
                     : descripcion);
             comando.Parameters.AddWithValue("@precio", precio);
+            comando.Parameters.AddWithValue("@categoria", categoria);
 
             conexion.Open();
             comando.ExecuteNonQuery();
@@ -79,5 +84,36 @@ namespace HotelTramonto.Datos
 
             return tabla;
         }
+
+
+        public DataTable ListarInactivos()
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+            using SqlCommand comando =
+                new SqlCommand("sp_Servicio_ListarInactivos", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
+        }
+
+        public void Reactivar(int idServicio)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+            using SqlCommand comando =
+                new SqlCommand("sp_Servicio_Reactivar", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@id_servicio", idServicio);
+
+            conexion.Open();
+            comando.ExecuteNonQuery();
+        }
+
     }
 }
