@@ -105,5 +105,20 @@ namespace HotelTramonto.Datos
 
 
 
+        public void Reactivar(int idHuesped)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando = new SqlCommand(
+                "sp_Huesped_Reactivar", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+
+            comando.Parameters.AddWithValue("@id_huesped", idHuesped);
+
+            conexion.Open();
+            comando.ExecuteNonQuery();
+        }
+
     }
 }

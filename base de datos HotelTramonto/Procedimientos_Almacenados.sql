@@ -67,7 +67,7 @@ GO
 
 
 
-CREATE OR ALTER PROCEDURE sp_Huesped_Listar
+CREATE OR ALTER PROCEDURE dbo.sp_Huesped_Listar
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -83,8 +83,7 @@ BEGIN
         activo,
         fecha_alta
     FROM Huespedes
-    WHERE activo = 1
-    ORDER BY apellido, nombre;
+    ORDER BY activo DESC, apellido, nombre;
 END;
 GO
 
@@ -216,9 +215,7 @@ GO
 
 
 
-
-
--- listar usuarios activos.
+--listar usuarios
 
 CREATE OR ALTER PROCEDURE sp_Usuario_Listar
 AS
@@ -239,11 +236,9 @@ BEGIN
     FROM Usuarios U
     INNER JOIN Roles R
         ON U.id_rol = R.id_rol
-    WHERE U.activo = 1
     ORDER BY U.apellido, U.nombre;
 END;
 GO
-
 
 
 --buscar usuario por DNI.
@@ -437,6 +432,7 @@ GO
 
 --listar habitaciones activas.
 
+
 CREATE OR ALTER PROCEDURE sp_Habitacion_Listar
 AS
 BEGIN
@@ -453,10 +449,10 @@ BEGIN
     FROM Habitaciones H
     INNER JOIN TiposHabitacion T
         ON H.tipo_habitacion = T.id_tipoHabitacion
-    WHERE H.activo = 1
     ORDER BY H.numero;
 END;
 GO
+
 
 
 
@@ -2237,4 +2233,39 @@ GO
 
 -- Comprobar que funciona
 EXEC dbo.sp_Rol_Listar;
+GO
+
+-- ==========================================
+-- PROCEDIMIENTO: REACTIVAR HUÉSPED
+-- ==========================================
+
+CREATE OR ALTER PROCEDURE dbo.sp_Huesped_Reactivar
+    @id_huesped INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.Huespedes
+        WHERE id_huesped = @id_huesped
+    )
+    BEGIN
+        THROW 50040, 'El huésped no existe.', 1;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.Huespedes
+        WHERE id_huesped = @id_huesped
+          AND activo = 1
+    )
+    BEGIN
+        THROW 50041, 'El huésped ya está activo.', 1;
+    END;
+
+    UPDATE dbo.Huespedes
+    SET activo = 1
+    WHERE id_huesped = @id_huesped;
+END;
 GO
