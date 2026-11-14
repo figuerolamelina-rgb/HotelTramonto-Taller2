@@ -168,5 +168,42 @@ namespace HotelTramonto.Datos
 
             return tabla;
         }
+
+        public DataTable CrearYConfirmar(
+    int idHuesped,
+    int idHabitacion,
+    DateTime fechaEntrada,
+    DateTime fechaSalida,
+    string modalidadPago,
+    int idUsuario,
+    decimal monto,
+    string metodoPago,
+    int cantidadPersonas)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando = new SqlCommand(
+                "sp_Reserva_CrearYConfirmar",
+                conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+
+            comando.Parameters.AddWithValue("@id_huesped", idHuesped);
+            comando.Parameters.AddWithValue("@id_habitacion", idHabitacion);
+            comando.Parameters.AddWithValue("@fecha_entrada", fechaEntrada.Date);
+            comando.Parameters.AddWithValue("@fecha_salida", fechaSalida.Date);
+            comando.Parameters.AddWithValue("@modalidad_pago", modalidadPago);
+            comando.Parameters.AddWithValue("@id_usuario", idUsuario);
+            comando.Parameters.AddWithValue("@monto", monto);
+            comando.Parameters.AddWithValue("@metodo_pago", metodoPago);
+            comando.Parameters.AddWithValue("@cantidad_personas", cantidadPersonas);
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
+        }
     }
 }

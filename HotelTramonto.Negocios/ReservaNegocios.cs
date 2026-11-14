@@ -80,5 +80,56 @@ namespace HotelTramonto.Negocios
 
             return reservaDatos.ConfirmarReserva(idReservaTemporal, cantidadPersonas);
         }
+
+        public DataTable CrearYConfirmar(
+    int idHuesped,
+    int idHabitacion,
+    DateTime fechaEntrada,
+    DateTime fechaSalida,
+    string modalidadPago,
+    int idUsuario,
+    decimal monto,
+    string metodoPago,
+    int cantidadPersonas)
+        {
+            if (idHuesped <= 0)
+                throw new ArgumentException("Seleccione un huésped válido.");
+
+            if (idHabitacion <= 0)
+                throw new ArgumentException("Seleccione una habitación válida.");
+
+            if (idUsuario <= 0)
+                throw new ArgumentException("El usuario responsable no es válido.");
+
+            if (fechaEntrada.Date < DateTime.Today)
+                throw new ArgumentException("La fecha de entrada no puede ser anterior a hoy.");
+
+            if (fechaSalida.Date <= fechaEntrada.Date)
+                throw new ArgumentException("La salida debe ser posterior a la entrada.");
+
+            if (cantidadPersonas <= 0)
+                throw new ArgumentException("La cantidad de personas debe ser mayor que cero.");
+
+            if (monto <= 0)
+                throw new ArgumentException("El pago inicial debe ser mayor que cero.");
+
+            if (modalidadPago != "PAGO_TOTAL" &&
+                modalidadPago != "SENA_50")
+                throw new ArgumentException("La modalidad de pago no es válida.");
+
+            if (string.IsNullOrWhiteSpace(metodoPago))
+                throw new ArgumentException("Seleccione un método de pago.");
+
+            return reservaDatos.CrearYConfirmar(
+                idHuesped,
+                idHabitacion,
+                fechaEntrada.Date,
+                fechaSalida.Date,
+                modalidadPago,
+                idUsuario,
+                monto,
+                metodoPago.Trim(),
+                cantidadPersonas);
+        }
     }
 }

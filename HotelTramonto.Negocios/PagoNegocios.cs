@@ -52,7 +52,11 @@ namespace HotelTramonto.Negocios
                 tipoPago.Trim());
         }
 
-        public void ActualizarEstado(int idPago, string estado)
+        public void ActualizarEstado(
+    int idPago,
+    string estado,
+    int idUsuario,
+    string motivo)
         {
             if (idPago <= 0)
                 throw new Exception("El ID del pago no es válido.");
@@ -60,7 +64,17 @@ namespace HotelTramonto.Negocios
             if (string.IsNullOrWhiteSpace(estado))
                 throw new Exception("Debe indicar el estado del pago.");
 
-            datos.ActualizarEstado(idPago, estado.Trim());
+            if (idUsuario <= 0)
+                throw new Exception("El usuario no es válido.");
+
+            if (string.IsNullOrWhiteSpace(motivo))
+                throw new Exception("Debe indicar el motivo del cambio.");
+
+            datos.ActualizarEstado(
+                idPago,
+                estado.Trim(),
+                idUsuario,
+                motivo.Trim());
         }
 
         public DataTable ListarPorReserva(int idReserva)

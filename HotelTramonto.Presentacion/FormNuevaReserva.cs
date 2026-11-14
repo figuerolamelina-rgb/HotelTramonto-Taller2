@@ -528,6 +528,7 @@ namespace HotelTramonto.Presentacion
             }
         }
 
+
         private void btnGuardar_Click(object sender, EventArgs e)
         {
             if (cmbHuesped.SelectedValue == null ||
@@ -634,24 +635,16 @@ namespace HotelTramonto.Presentacion
                 if (!confirmacion)
                     return;
 
-                int idTemporal = temporalNegocios.Insertar(
+                // Crear y confirmar la reserva en una única transacción SQL.
+                DataTable resultado = reservaNegocios.CrearYConfirmar(
                     idHuesped,
                     idHabitacion,
                     entrada,
                     salida,
-                    modalidad);
-
-                pagoNegocios.Insertar(
-                    null,
-                    idTemporal,
+                    modalidad,
                     idUsuario,
                     pagoInicial,
                     metodo,
-                    "APROBADO",
-                    "PAGO_INICIAL");
-
-                DataTable resultado = reservaNegocios.ConfirmarReserva(
-                    idTemporal,
                     cantidadPersonas);
 
                 if (resultado.Rows.Count > 0)
@@ -687,5 +680,6 @@ namespace HotelTramonto.Presentacion
                     true);
             }
         }
+
     }
 }

@@ -49,11 +49,15 @@ namespace HotelTramonto.Datos
         }
 
         // Actualizar el estado de un pago
+
         public void ActualizarEstado(
             int idPago,
-            string estado)
+            string estado,
+            int idUsuario,
+            string motivo)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
             using SqlCommand comando =
                 new SqlCommand("sp_Pago_ActualizarEstado", conexion);
 
@@ -61,10 +65,13 @@ namespace HotelTramonto.Datos
 
             comando.Parameters.AddWithValue("@id_pago", idPago);
             comando.Parameters.AddWithValue("@estado", estado);
+            comando.Parameters.AddWithValue("@id_usuario", idUsuario);
+            comando.Parameters.AddWithValue("@motivo", motivo);
 
             conexion.Open();
             comando.ExecuteNonQuery();
         }
+
 
         // Listar pagos de una reserva
         public DataTable ListarPorReserva(int idReserva)
