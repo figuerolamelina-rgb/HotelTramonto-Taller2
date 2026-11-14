@@ -725,8 +725,11 @@ namespace HotelTramonto.Presentacion
 
         private void btnHabitaciones_Click(object sender, EventArgs e)
         {
-            FormHabitaciones formulario = new FormHabitaciones();
-            formulario.ShowDialog();
+            using (FormHabitaciones formulario =
+                new FormHabitaciones(rolUsuario))
+            {
+                formulario.ShowDialog(this);
+            }
         }
 
         private void btnReservas_Click(object sender, EventArgs e)

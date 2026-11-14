@@ -8,13 +8,33 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormHabitaciones : Form
     {
-        public FormHabitaciones()
+        private readonly string rolUsuario;
+
+        public FormHabitaciones() : this("RECEPCIONISTA")
+        {
+        }
+
+        public FormHabitaciones(string rol)
         {
             InitializeComponent();
+
+            rolUsuario = (rol ?? "").Trim().ToUpperInvariant();
+
             AplicarEstilo();
+            AplicarPermisos();
             CargarHabitaciones();
         }
 
+        private void AplicarPermisos()
+        {
+            bool esRecepcionista = rolUsuario == "RECEPCIONISTA";
+
+            // El recepcionista solamente puede consultar.
+            btnNuevaHabitacion.Visible = !esRecepcionista;
+            btnModificarHabitacion.Visible = !esRecepcionista;
+            btnDesactivarHabitacion.Visible = !esRecepcionista;
+            btnReactivarHabitacion.Visible = !esRecepcionista;
+        }
 
         private void AplicarEstilo()
         {
@@ -335,6 +355,9 @@ namespace HotelTramonto.Presentacion
 
         private void btnNuevaHabitacion_Click(object sender, EventArgs e)
         {
+            if (!PuedeModificarHabitaciones())
+                return;
+
             using (FormNuevaHabitacion formulario = new FormNuevaHabitacion())
             {
                 if (formulario.ShowDialog() == DialogResult.OK)
@@ -347,6 +370,9 @@ namespace HotelTramonto.Presentacion
 
         private void btnModificarHabitacion_Click(object sender, EventArgs e)
         {
+            if (!PuedeModificarHabitaciones())
+                return;
+
             if (dgvHabitaciones.CurrentRow == null ||
                 dgvHabitaciones.CurrentRow.IsNewRow)
             {
@@ -369,6 +395,9 @@ namespace HotelTramonto.Presentacion
 
         private void btnDesactivarHabitacion_Click(object sender, EventArgs e)
         {
+            if (!PuedeModificarHabitaciones())
+                return;
+
             if (dgvHabitaciones.CurrentRow == null ||
                 dgvHabitaciones.CurrentRow.IsNewRow)
             {
@@ -404,6 +433,9 @@ namespace HotelTramonto.Presentacion
 
         private void btnReactivarHabitacion_Click(object sender, EventArgs e)
         {
+            if (!PuedeModificarHabitaciones())
+                return;
+
             if (dgvHabitaciones.CurrentRow == null ||
                 dgvHabitaciones.CurrentRow.IsNewRow)
             {
@@ -466,6 +498,21 @@ namespace HotelTramonto.Presentacion
         private void dgvHabitaciones_SelectionChanged(object sender, EventArgs e)
         {
             ActualizarBotones();
+        }
+
+        private bool PuedeModificarHabitaciones()
+        {
+            if (rolUsuario == "RECEPCIONISTA")
+            {
+                MostrarMensaje(
+                    "Acceso denegado",
+                    "No tenés permisos para modificar la disponibilidad de las habitaciones.",
+                    true);
+
+                return false;
+            }
+
+            return true;
         }
     }
 }
