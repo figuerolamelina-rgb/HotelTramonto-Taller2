@@ -333,6 +333,8 @@ namespace HotelTramonto.Presentacion
 
                 dgvHuespedes.DataSource = negocio.Listar();
 
+                ConfigurarEncabezadosHuespedes();
+
                 dgvHuespedes.ReadOnly = true;
                 dgvHuespedes.SelectionMode =
                     DataGridViewSelectionMode.FullRowSelect;
@@ -686,6 +688,8 @@ namespace HotelTramonto.Presentacion
 
                 dgvHuespedes.DataSource = resultado;
 
+                ConfigurarEncabezadosHuespedes();
+
                 if (dgvHuespedes.Columns.Contains("id_huesped"))
                     dgvHuespedes.Columns["id_huesped"].Visible = false;
 
@@ -703,6 +707,40 @@ namespace HotelTramonto.Presentacion
                     "No se pudo realizar la búsqueda.\n\nDetalle: " + ex.Message,
                     true);
             }
+
+        }
+
+        private void ConfigurarEncabezadosHuespedes()
+        {
+            // Ocultar identificador interno
+            if (dgvHuespedes.Columns.Contains("id_huesped"))
+                dgvHuespedes.Columns["id_huesped"].Visible = false;
+
+            // Encabezados visibles
+            if (dgvHuespedes.Columns.Contains("nombre"))
+                dgvHuespedes.Columns["nombre"].HeaderText = "Nombre";
+
+            if (dgvHuespedes.Columns.Contains("apellido"))
+                dgvHuespedes.Columns["apellido"].HeaderText = "Apellido";
+
+            if (dgvHuespedes.Columns.Contains("dni"))
+                dgvHuespedes.Columns["dni"].HeaderText = "DNI";
+
+            if (dgvHuespedes.Columns.Contains("telefono"))
+                dgvHuespedes.Columns["telefono"].HeaderText = "Teléfono";
+
+            if (dgvHuespedes.Columns.Contains("email"))
+                dgvHuespedes.Columns["email"].HeaderText = "Correo electrónico";
+
+            if (dgvHuespedes.Columns.Contains("nacionalidad"))
+                dgvHuespedes.Columns["nacionalidad"].HeaderText = "Nacionalidad";
+
+            if (dgvHuespedes.Columns.Contains("fecha_alta"))
+                dgvHuespedes.Columns["fecha_alta"].HeaderText = "Fecha de alta";
+
+            // Ocultar columna técnica activo.
+            if (dgvHuespedes.Columns.Contains("activo"))
+                dgvHuespedes.Columns["activo"].Visible = false;
         }
 
     }
