@@ -122,15 +122,27 @@ CREATE OR ALTER PROCEDURE sp_Usuario_Insertar
     @dni VARCHAR(15),
     @email VARCHAR(100),
     @contrasena VARCHAR(255),
+    @longitud_contrasena INT,
     @telefono VARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Validar que la contraseña tenga al menos 8 caracteres
+    IF @longitud_contrasena IS NULL
+       OR @longitud_contrasena < 8
+    BEGIN
+        THROW 50034,
+            'La contraseña debe tener al menos 8 caracteres.',
+            1;
+    END;
+
     -- Validar que el email sea obligatorio
     IF @email IS NULL OR LTRIM(RTRIM(@email)) = ''
     BEGIN
-        THROW 50032, 'El email del usuario es obligatorio.', 1;
+        THROW 50032,
+            'El email del usuario es obligatorio.',
+            1;
     END;
 
     -- Validar que el email no esté repetido
@@ -140,7 +152,9 @@ BEGIN
         WHERE email = @email
     )
     BEGIN
-        THROW 50033, 'Ya existe un usuario con ese email.', 1;
+        THROW 50033,
+            'Ya existe un usuario con ese email.',
+            1;
     END;
 
     INSERT INTO dbo.Usuarios
@@ -149,7 +163,6 @@ BEGIN
         (@id_rol, @nombre, @apellido, @dni, @email, @contrasena, @telefono);
 END;
 GO
-
 
 
 
@@ -272,14 +285,38 @@ GO
 
 --contraseña de usuario
 
+
 CREATE OR ALTER PROCEDURE sp_Usuario_CambiarContrasena
     @id_usuario INT,
-    @contrasena VARCHAR(255)
+    @contrasena VARCHAR(255),
+    @longitud_contrasena INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE Usuarios
+    -- Validar la longitud declarada de la contraseña original
+    IF @longitud_contrasena IS NULL
+       OR @longitud_contrasena < 8
+    BEGIN
+        THROW 50035,
+            'La contraseña debe tener al menos 8 caracteres.',
+            1;
+    END;
+
+    -- Verificar que el usuario exista
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.Usuarios
+        WHERE id_usuario = @id_usuario
+    )
+    BEGIN
+        THROW 50036,
+            'El usuario no existe.',
+            1;
+    END;
+
+    -- Actualizar el hash de la contraseña
+    UPDATE dbo.Usuarios
     SET contrasena = @contrasena
     WHERE id_usuario = @id_usuario;
 END;
@@ -2267,5 +2304,36 @@ BEGIN
     UPDATE dbo.Huespedes
     SET activo = 1
     WHERE id_huesped = @id_huesped;
+END;
+GO
+
+
+
+-- =====================================================
+-- BUSCAR USUARIO POR EMAIL PARA INICIO DE SESIÓN
+-- =====================================================
+
+CREATE OR ALTER PROCEDURE dbo.sp_Usuario_BuscarPorEmail
+    @email VARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        U.id_usuario,
+        U.id_rol,
+        R.nombre_rol,
+        U.nombre,
+        U.apellido,
+        U.dni,
+        U.email,
+        U.contrasena,
+        U.telefono,
+        U.activo,
+        U.fecha_alta
+    FROM dbo.Usuarios AS U
+    INNER JOIN dbo.Roles AS R
+        ON U.id_rol = R.id_rol
+    WHERE U.email = @email;
 END;
 GO

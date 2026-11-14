@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -8,17 +9,49 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormNuevaHabitacion : Form
     {
-        private readonly Color marron = Color.FromArgb(74, 48, 39);
-        private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
-        private readonly Color crema = Color.FromArgb(245, 239, 229);
-        private readonly Color marfil = Color.FromArgb(255, 252, 247);
-        private readonly Color dorado = Color.FromArgb(198, 161, 91);
+        private readonly Color marron =
+            Color.FromArgb(74, 48, 39);
 
+        private readonly Color marronClaro =
+            Color.FromArgb(91, 62, 49);
+
+        private readonly Color crema =
+            Color.FromArgb(245, 239, 229);
+
+        private readonly Color marfil =
+            Color.FromArgb(255, 252, 247);
+
+        private readonly Color dorado =
+            Color.FromArgb(198, 161, 91);
+
+        // Rol del usuario que inició sesión.
+        private readonly string rolUsuario = string.Empty;
+
+        private bool EsAdministrador =>
+            string.Equals(
+                rolUsuario,
+                "ADMINISTRADOR",
+                StringComparison.OrdinalIgnoreCase);
+
+        // Constructor para el diseñador de Windows Forms.
         public FormNuevaHabitacion()
         {
             InitializeComponent();
             AplicarEstilo();
             ConfigurarCombos();
+
+            // Sin rol autenticado, no se permite guardar.
+            btnGuardar.Enabled = false;
+        }
+
+        // Constructor utilizado desde FormHabitaciones.
+        public FormNuevaHabitacion(string rolUsuario) : this()
+        {
+            this.rolUsuario =
+                rolUsuario?.Trim().ToUpperInvariant()
+                ?? string.Empty;
+
+            btnGuardar.Enabled = EsAdministrador;
         }
 
         private void AplicarEstilo()
@@ -46,7 +79,8 @@ namespace HotelTramonto.Presentacion
                 Location = new Point(25, 14),
                 AutoSize = true,
                 ForeColor = dorado,
-                Font = new Font("Segoe UI", 19F, FontStyle.Bold)
+                Font = new Font(
+                    "Segoe UI", 19F, FontStyle.Bold)
             };
 
             Label lblSubtitulo = new Label
@@ -62,7 +96,7 @@ namespace HotelTramonto.Presentacion
             panelTitulo.Controls.Add(lblSubtitulo);
             Controls.Add(panelTitulo);
 
-            // Ocultar el título original del Designer
+            // Ocultar el título original del Designer.
             lblTitulo.Visible = false;
 
             Panel panelDatos = new Panel
@@ -77,29 +111,47 @@ namespace HotelTramonto.Presentacion
 
             Label[] etiquetas =
             {
-                lblTipo, lblPiso, lblNumero, lblEstado
+                lblTipo,
+                lblPiso,
+                lblNumero,
+                lblEstado
             };
 
             string[] textos =
             {
-                "Tipo de habitación", "Piso", "Número", "Estado"
+                "Tipo de habitación",
+                "Piso",
+                "Número",
+                "Estado"
             };
 
             Control[] campos =
             {
-                cmbTipoHabitacion, txtPiso, txtNumero, cmbEstado
+                cmbTipoHabitacion,
+                txtPiso,
+                txtNumero,
+                cmbEstado
             };
 
             for (int i = 0; i < etiquetas.Length; i++)
             {
                 etiquetas[i].Text = textos[i];
-                etiquetas[i].Location = new Point(25, 30 + i * 58);
+
+                etiquetas[i].Location =
+                    new Point(25, 30 + i * 58);
+
                 etiquetas[i].AutoSize = true;
                 etiquetas[i].ForeColor = marron;
-                etiquetas[i].Font = new Font(
-                    "Segoe UI", 10F, FontStyle.Bold);
 
-                campos[i].Location = new Point(190, 25 + i * 58);
+                etiquetas[i].Font =
+                    new Font(
+                        "Segoe UI",
+                        10F,
+                        FontStyle.Bold);
+
+                campos[i].Location =
+                    new Point(190, 25 + i * 58);
+
                 campos[i].Size = new Size(275, 30);
                 campos[i].Font = new Font("Segoe UI", 10F);
                 campos[i].ForeColor = marron;
@@ -109,11 +161,15 @@ namespace HotelTramonto.Presentacion
                 panelDatos.Controls.Add(campos[i]);
             }
 
-            txtPiso.BorderStyle = BorderStyle.FixedSingle;
-            txtNumero.BorderStyle = BorderStyle.FixedSingle;
+            txtPiso.BorderStyle =
+                BorderStyle.FixedSingle;
+
+            txtNumero.BorderStyle =
+                BorderStyle.FixedSingle;
 
             cmbTipoHabitacion.DropDownStyle =
                 ComboBoxStyle.DropDownList;
+
             cmbEstado.DropDownStyle =
                 ComboBoxStyle.DropDownList;
 
@@ -123,8 +179,11 @@ namespace HotelTramonto.Presentacion
                 dorado,
                 marron);
 
-            btnGuardar.Location = new Point(190, 430);
-            btnGuardar.Size = new Size(175, 40);
+            btnGuardar.Location =
+                new Point(190, 430);
+
+            btnGuardar.Size =
+                new Size(175, 40);
 
             EstilizarBoton(
                 btnCancelar,
@@ -132,8 +191,12 @@ namespace HotelTramonto.Presentacion
                 marronClaro,
                 Color.White);
 
-            btnCancelar.Location = new Point(380, 430);
-            btnCancelar.Size = new Size(120, 40);
+            btnCancelar.Location =
+                new Point(380, 430);
+
+            btnCancelar.Size =
+                new Size(120, 40);
+
             btnCancelar.Click -= btnCancelar_Click;
             btnCancelar.Click += btnCancelar_Click;
 
@@ -151,17 +214,23 @@ namespace HotelTramonto.Presentacion
             boton.BackColor = fondo;
             boton.ForeColor = textoColor;
             boton.FlatStyle = FlatStyle.Flat;
+
             boton.FlatAppearance.BorderSize = 0;
+
             boton.FlatAppearance.MouseOverBackColor =
                 Color.FromArgb(211, 178, 119);
+
             boton.FlatAppearance.MouseDownBackColor =
                 Color.FromArgb(174, 139, 76);
+
             boton.Font = new Font(
-                "Segoe UI", 10F, FontStyle.Bold);
+                "Segoe UI",
+                10F,
+                FontStyle.Bold);
+
             boton.Cursor = Cursors.Hand;
             boton.UseVisualStyleBackColor = false;
         }
-
 
         private void MostrarMensaje(
             string titulo,
@@ -171,8 +240,13 @@ namespace HotelTramonto.Presentacion
             using (Form mensaje = new Form())
             {
                 mensaje.Text = "Hotel Tramonto";
-                mensaje.StartPosition = FormStartPosition.CenterParent;
-                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+
+                mensaje.StartPosition =
+                    FormStartPosition.CenterParent;
+
+                mensaje.FormBorderStyle =
+                    FormBorderStyle.FixedDialog;
+
                 mensaje.MaximizeBox = false;
                 mensaje.MinimizeBox = false;
                 mensaje.ShowInTaskbar = false;
@@ -184,19 +258,27 @@ namespace HotelTramonto.Presentacion
                 {
                     Location = new Point(0, 0),
                     Size = new Size(380, 7),
+
                     BackColor = esError
                         ? Color.FromArgb(160, 65, 55)
                         : dorado
                 };
 
-                Label lblTitulo = new Label
+                Label lblTituloMensaje = new Label
                 {
                     Text = titulo,
                     Location = new Point(15, 20),
                     Size = new Size(350, 32),
-                    TextAlign = ContentAlignment.MiddleCenter,
+
+                    TextAlign =
+                        ContentAlignment.MiddleCenter,
+
                     ForeColor = marron,
-                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
+
+                    Font = new Font(
+                        "Segoe UI",
+                        12F,
+                        FontStyle.Bold)
                 };
 
                 Label lblDetalle = new Label
@@ -204,7 +286,10 @@ namespace HotelTramonto.Presentacion
                     Text = detalle,
                     Location = new Point(20, 55),
                     Size = new Size(340, 35),
-                    TextAlign = ContentAlignment.MiddleCenter,
+
+                    TextAlign =
+                        ContentAlignment.MiddleCenter,
+
                     ForeColor = marronClaro,
                     Font = new Font("Segoe UI", 9F)
                 };
@@ -217,7 +302,12 @@ namespace HotelTramonto.Presentacion
                     BackColor = dorado,
                     ForeColor = marron,
                     FlatStyle = FlatStyle.Flat,
-                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+
+                    Font = new Font(
+                        "Segoe UI",
+                        9F,
+                        FontStyle.Bold),
+
                     DialogResult = DialogResult.OK,
                     Cursor = Cursors.Hand
                 };
@@ -225,7 +315,7 @@ namespace HotelTramonto.Presentacion
                 btnAceptar.FlatAppearance.BorderSize = 0;
 
                 mensaje.Controls.Add(encabezado);
-                mensaje.Controls.Add(lblTitulo);
+                mensaje.Controls.Add(lblTituloMensaje);
                 mensaje.Controls.Add(lblDetalle);
                 mensaje.Controls.Add(btnAceptar);
 
@@ -245,7 +335,9 @@ namespace HotelTramonto.Presentacion
 
                 cmbTipoHabitacion.DataSource = tipos;
                 cmbTipoHabitacion.DisplayMember = "nombre";
-                cmbTipoHabitacion.ValueMember = "id_tipoHabitacion";
+                cmbTipoHabitacion.ValueMember =
+                    "id_tipoHabitacion";
+
                 cmbTipoHabitacion.DropDownStyle =
                     ComboBoxStyle.DropDownList;
 
@@ -253,6 +345,7 @@ namespace HotelTramonto.Presentacion
                 cmbEstado.Items.Add("DISPONIBLE");
                 cmbEstado.Items.Add("OCUPADA");
                 cmbEstado.Items.Add("MANTENIMIENTO");
+
                 cmbEstado.DropDownStyle =
                     ComboBoxStyle.DropDownList;
 
@@ -262,19 +355,34 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                "Error al cargar los tipos",
-                "No se pudieron cargar los tipos de habitación.\n\nDetalle: " + ex.Message,
-                true);
+                    "Error al cargar los tipos",
+                    "No se pudieron cargar los tipos de habitación.\n\nDetalle: "
+                    + ex.Message,
+                    true);
             }
         }
 
-        private void btnGuardar_Click(object sender, EventArgs e)
+        private void btnGuardar_Click(
+            object sender,
+            EventArgs e)
         {
+            // Verificar permiso antes de registrar.
+            if (!EsAdministrador)
+            {
+                MostrarMensaje(
+                    "Acceso denegado",
+                    "Solo el administrador puede registrar habitaciones.",
+                    true);
+
+                return;
+            }
+
             if (cmbTipoHabitacion.SelectedValue == null)
             {
                 MostrarMensaje(
-                "Tipo de habitación requerido",
-                "Seleccioná un tipo de habitación para continuar.");
+                    "Tipo de habitación requerido",
+                    "Seleccioná un tipo de habitación para continuar.");
+
                 return;
             }
 
@@ -283,6 +391,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Número requerido",
                     "Ingresá el número de la habitación.");
+
                 txtNumero.Focus();
                 return;
             }
@@ -290,14 +399,15 @@ namespace HotelTramonto.Presentacion
             if (cmbEstado.SelectedItem == null)
             {
                 MostrarMensaje(
-                "Estado requerido",
-                "Seleccioná un estado para la habitación.");
+                    "Estado requerido",
+                    "Seleccioná un estado para la habitación.");
+
                 return;
             }
 
             int tipoHabitacion =
-                Convert.ToInt32(cmbTipoHabitacion.SelectedValue);
-
+                Convert.ToInt32(
+                    cmbTipoHabitacion.SelectedValue);
 
             if (string.IsNullOrWhiteSpace(txtPiso.Text))
             {
@@ -309,7 +419,9 @@ namespace HotelTramonto.Presentacion
                 return;
             }
 
-            if (!int.TryParse(txtPiso.Text.Trim(), out int pisoIngresado)
+            if (!int.TryParse(
+                    txtPiso.Text.Trim(),
+                    out int pisoIngresado)
                 || pisoIngresado < 0)
             {
                 MostrarMensaje(
@@ -322,9 +434,10 @@ namespace HotelTramonto.Presentacion
 
             int? piso = pisoIngresado;
 
-
             string numero = txtNumero.Text.Trim();
-            string estado = cmbEstado.SelectedItem.ToString()!;
+
+            string estado =
+                cmbEstado.SelectedItem.ToString()!;
 
             try
             {
@@ -335,11 +448,12 @@ namespace HotelTramonto.Presentacion
                     tipoHabitacion,
                     piso,
                     numero,
-                    estado);
+                    estado,
+                    rolUsuario);
 
                 MostrarMensaje(
-                            "¡Habitación registrada!",
-                            "La habitación se guardó correctamente.");
+                    "¡Habitación registrada!",
+                    "La habitación se guardó correctamente.");
 
                 DialogResult = DialogResult.OK;
                 Close();
@@ -347,13 +461,16 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                 "Error al registrar",
-                 "No se pudo registrar la habitación.\n\nDetalle: " + ex.Message,
-                 true);
+                    "Error al registrar",
+                    "No se pudo registrar la habitación.\n\nDetalle: "
+                    + ex.Message,
+                    true);
             }
         }
 
-        private void btnCancelar_Click(object sender, EventArgs e)
+        private void btnCancelar_Click(
+            object sender,
+            EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
             Close();

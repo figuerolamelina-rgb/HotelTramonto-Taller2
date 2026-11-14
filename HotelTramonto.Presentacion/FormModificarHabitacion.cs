@@ -10,6 +10,7 @@ namespace HotelTramonto.Presentacion
     public partial class FormModificarHabitacion : Form
     {
         private readonly int idHabitacion;
+        private readonly string rolUsuario;
 
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
@@ -17,13 +18,35 @@ namespace HotelTramonto.Presentacion
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
+        private bool EsAdministrador =>
+            string.Equals(
+                rolUsuario,
+                "ADMINISTRADOR",
+                StringComparison.OrdinalIgnoreCase);
+
+        // Constructor original para mantener compatibilidad.
         public FormModificarHabitacion(int idHabitacion)
+            : this(idHabitacion, string.Empty)
+        {
+        }
+
+        // Constructor que recibe el rol desde FormHabitaciones.
+        public FormModificarHabitacion(
+            int idHabitacion,
+            string rolUsuario)
         {
             InitializeComponent();
 
             this.idHabitacion = idHabitacion;
+            this.rolUsuario =
+                rolUsuario?.Trim().ToUpperInvariant()
+                ?? string.Empty;
 
             AplicarEstilo();
+
+            // Solo el administrador puede guardar modificaciones.
+            btnGuardarCambios.Enabled = EsAdministrador;
+
             ConfigurarCombos();
             CargarDatosHabitacion();
         }
@@ -53,7 +76,8 @@ namespace HotelTramonto.Presentacion
                 Location = new Point(25, 14),
                 AutoSize = true,
                 ForeColor = dorado,
-                Font = new Font("Segoe UI", 19F, FontStyle.Bold)
+                Font = new Font(
+                    "Segoe UI", 19F, FontStyle.Bold)
             };
 
             Label lblSubtitulo = new Label
@@ -84,18 +108,25 @@ namespace HotelTramonto.Presentacion
 
             Label[] etiquetas =
             {
-                lblTipo, lblPiso, lblNumero, lblEstado
+                lblTipo,
+                lblPiso,
+                lblNumero,
+                lblEstado
             };
 
             string[] textos =
             {
-                "Tipo de habitación", "Piso", "Número", "Estado"
+                "Tipo de habitación",
+                "Piso",
+                "Número",
+                "Estado"
             };
 
             for (int i = 0; i < etiquetas.Length; i++)
             {
                 etiquetas[i].Text = textos[i];
-                etiquetas[i].Location = new Point(25, 30 + i * 58);
+                etiquetas[i].Location =
+                    new Point(25, 30 + i * 58);
                 etiquetas[i].AutoSize = true;
                 etiquetas[i].ForeColor = marron;
                 etiquetas[i].Font = new Font(
@@ -106,12 +137,16 @@ namespace HotelTramonto.Presentacion
 
             Control[] campos =
             {
-                cmbTipoHabitacion, txtPiso, txtNumero, cmbEstado
+                cmbTipoHabitacion,
+                txtPiso,
+                txtNumero,
+                cmbEstado
             };
 
             for (int i = 0; i < campos.Length; i++)
             {
-                campos[i].Location = new Point(190, 25 + i * 58);
+                campos[i].Location =
+                    new Point(190, 25 + i * 58);
                 campos[i].Size = new Size(275, 30);
                 campos[i].Font = new Font("Segoe UI", 10F);
                 campos[i].ForeColor = marron;
@@ -135,8 +170,10 @@ namespace HotelTramonto.Presentacion
                 dorado,
                 marron);
 
-            btnGuardarCambios.Location = new Point(190, 430);
-            btnGuardarCambios.Size = new Size(175, 40);
+            btnGuardarCambios.Location =
+                new Point(190, 430);
+            btnGuardarCambios.Size =
+                new Size(175, 40);
 
             EstilizarBoton(
                 btnCancelar,
@@ -187,8 +224,10 @@ namespace HotelTramonto.Presentacion
             using (Form mensaje = new Form())
             {
                 mensaje.Text = "Hotel Tramonto";
-                mensaje.StartPosition = FormStartPosition.CenterParent;
-                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
+                mensaje.StartPosition =
+                    FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle =
+                    FormBorderStyle.FixedDialog;
                 mensaje.MaximizeBox = false;
                 mensaje.MinimizeBox = false;
                 mensaje.ShowInTaskbar = false;
@@ -263,7 +302,8 @@ namespace HotelTramonto.Presentacion
 
                 cmbTipoHabitacion.DataSource = tipos;
                 cmbTipoHabitacion.DisplayMember = "nombre";
-                cmbTipoHabitacion.ValueMember = "id_tipoHabitacion";
+                cmbTipoHabitacion.ValueMember =
+                    "id_tipoHabitacion";
                 cmbTipoHabitacion.DropDownStyle =
                     ComboBoxStyle.DropDownList;
 
@@ -309,7 +349,8 @@ namespace HotelTramonto.Presentacion
                 DataRow habitacion = resultado.Rows[0];
 
                 cmbTipoHabitacion.SelectedValue =
-                    Convert.ToInt32(habitacion["tipo_habitacion"]);
+                    Convert.ToInt32(
+                        habitacion["tipo_habitacion"]);
 
                 txtPiso.Text =
                     habitacion["piso"] == DBNull.Value
@@ -335,14 +376,25 @@ namespace HotelTramonto.Presentacion
             }
         }
 
-        private void btnGuardarCambios_Click(object sender, EventArgs e)
+        private void btnGuardarCambios_Click(
+            object sender,
+            EventArgs e)
         {
+            // Validar permiso antes de modificar.
+            if (!EsAdministrador)
+            {
+                MostrarMensaje(
+                    "Acceso denegado",
+                    "Solo el administrador puede modificar habitaciones.",
+                    true);
+                return;
+            }
+
             if (cmbTipoHabitacion.SelectedValue == null)
             {
                 MostrarMensaje(
                     "Tipo de habitación requerido",
                     "Seleccioná un tipo de habitación para continuar.");
-
                 return;
             }
 
@@ -361,7 +413,6 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Estado requerido",
                     "Seleccioná un estado para la habitación.");
-
                 return;
             }
 
@@ -376,8 +427,9 @@ namespace HotelTramonto.Presentacion
             }
 
             if (!int.TryParse(
-                txtPiso.Text.Trim(),
-                out int pisoIngresado) || pisoIngresado < 0)
+                    txtPiso.Text.Trim(),
+                    out int pisoIngresado)
+                || pisoIngresado < 0)
             {
                 MostrarMensaje(
                     "Piso inválido",
@@ -388,12 +440,14 @@ namespace HotelTramonto.Presentacion
             }
 
             int tipoHabitacion =
-                Convert.ToInt32(cmbTipoHabitacion.SelectedValue);
+                Convert.ToInt32(
+                    cmbTipoHabitacion.SelectedValue);
 
             int? piso = pisoIngresado;
 
             string numero = txtNumero.Text.Trim();
-            string estado = cmbEstado.SelectedItem.ToString()!;
+            string estado =
+                cmbEstado.SelectedItem.ToString()!;
 
             try
             {
@@ -405,7 +459,8 @@ namespace HotelTramonto.Presentacion
                     tipoHabitacion,
                     piso,
                     numero,
-                    estado);
+                    estado,
+                    rolUsuario);
 
                 MostrarMensaje(
                     "¡Cambios guardados!",
@@ -424,7 +479,9 @@ namespace HotelTramonto.Presentacion
             }
         }
 
-        private void btnCancelar_Click(object sender, EventArgs e)
+        private void btnCancelar_Click(
+            object sender,
+            EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
             Close();

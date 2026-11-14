@@ -38,21 +38,30 @@ namespace HotelTramonto.Negocios
         }
 
         public void Insertar(
-    int idRol,
-    string nombre,
-    string apellido,
-    string dni,
-    string email,
-    string contrasena,
-    string? telefono,
-    string rolUsuario)
+            int idRol,
+            string nombre,
+            string apellido,
+            string dni,
+            string email,
+            string contrasena,
+            string? telefono,
+            string rolUsuario)
         {
             Permisos.ExigirAdministrador(rolUsuario);
 
             ValidarDatos(
-                idRol, nombre, apellido, dni, email, contrasena);
+                idRol,
+                nombre,
+                apellido,
+                dni,
+                email,
+                contrasena);
 
-            string contrasenaHash = PasswordService.Hash(contrasena);
+            // La longitud se obtiene antes de generar el hash.
+            int longitudContrasena = contrasena.Length;
+
+            string contrasenaHash =
+                PasswordService.Hash(contrasena);
 
             usuarioDatos.Insertar(
                 idRol,
@@ -61,6 +70,7 @@ namespace HotelTramonto.Negocios
                 dni.Trim(),
                 email.Trim(),
                 contrasenaHash,
+                longitudContrasena,
                 telefono);
         }
 
@@ -77,10 +87,16 @@ namespace HotelTramonto.Negocios
             Permisos.ExigirAdministrador(rolUsuario);
 
             if (idUsuario <= 0)
-                throw new ArgumentException("El usuario no es válido.");
+                throw new ArgumentException(
+                    "El usuario no es válido.");
 
             ValidarDatos(
-                idRol, nombre, apellido, dni, email, null);
+                idRol,
+                nombre,
+                apellido,
+                dni,
+                email,
+                null);
 
             usuarioDatos.Modificar(
                 idUsuario,
@@ -92,45 +108,69 @@ namespace HotelTramonto.Negocios
                 telefono);
         }
 
-
-        public void Desactivar(int idUsuario, string rolUsuario)
+        public void Desactivar(
+            int idUsuario,
+            string rolUsuario)
         {
             Permisos.ExigirAdministrador(rolUsuario);
 
             if (idUsuario <= 0)
-                throw new ArgumentException("El usuario no es válido.");
+                throw new ArgumentException(
+                    "El usuario no es válido.");
 
             usuarioDatos.Desactivar(idUsuario);
         }
 
-
-        public void Reactivar(int idUsuario, string rolUsuario)
+        public void Reactivar(
+            int idUsuario,
+            string rolUsuario)
         {
             Permisos.ExigirAdministrador(rolUsuario);
 
             if (idUsuario <= 0)
-                throw new ArgumentException("El usuario no es válido.");
+                throw new ArgumentException(
+                    "El usuario no es válido.");
 
             usuarioDatos.Reactivar(idUsuario);
         }
 
-
-
         public void CambiarContrasena(
-     int idUsuario,
-     string contrasena)
+            int idUsuario,
+            string contrasena)
         {
             if (idUsuario <= 0)
-                throw new ArgumentException("El usuario no es válido.");
-
-            if (!Validaciones.TextoObligatorio(contrasena))
                 throw new ArgumentException(
-                    "La contraseña es obligatoria.");
+                    "El usuario no es válido.");
 
-            string contrasenaHash = PasswordService.Hash(contrasena);
+            // Validar la contraseña original.
+            ValidarContrasena(contrasena);
+
+            int longitudContrasena = contrasena.Length;
+
+            // Almacenar únicamente el hash.
+            string contrasenaHash =
+                PasswordService.Hash(contrasena);
 
             usuarioDatos.CambiarContrasena(
-                idUsuario, contrasenaHash);
+                idUsuario,
+                contrasenaHash,
+                longitudContrasena);
+        }
+
+        private static void ValidarContrasena(
+            string? contrasena)
+        {
+            if (string.IsNullOrWhiteSpace(contrasena))
+            {
+                throw new ArgumentException(
+                    "La contraseña es obligatoria.");
+            }
+
+            if (contrasena.Length < 8)
+            {
+                throw new ArgumentException(
+                    "La contraseña debe tener al menos 8 caracteres.");
+            }
         }
 
         private static void ValidarDatos(
@@ -142,13 +182,16 @@ namespace HotelTramonto.Negocios
             string? contrasena)
         {
             if (idRol <= 0)
-                throw new ArgumentException("Debe seleccionar un rol válido.");
+                throw new ArgumentException(
+                    "Debe seleccionar un rol válido.");
 
             if (!Validaciones.TextoObligatorio(nombre))
-                throw new ArgumentException("El nombre es obligatorio.");
+                throw new ArgumentException(
+                    "El nombre es obligatorio.");
 
             if (!Validaciones.TextoObligatorio(apellido))
-                throw new ArgumentException("El apellido es obligatorio.");
+                throw new ArgumentException(
+                    "El apellido es obligatorio.");
 
             if (!Validaciones.DNIValido(dni))
                 throw new ArgumentException(
@@ -158,22 +201,28 @@ namespace HotelTramonto.Negocios
                 throw new ArgumentException(
                     "Debe ingresar un email válido.");
 
-            if (contrasena != null
-                && !Validaciones.TextoObligatorio(contrasena))
+            // Al modificar datos sin cambiar contraseña,
+            // se recibe null y no hace falta validarla.
+            if (contrasena != null)
             {
-                throw new ArgumentException(
-                    "La contraseña es obligatoria.");
+                ValidarContrasena(contrasena);
             }
         }
-        public DataRow? Autenticar(string email, string contrasena)
+
+        public DataRow? Autenticar(
+            string email,
+            string contrasena)
         {
             if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("El email es obligatorio.");
+                throw new ArgumentException(
+                    "El email es obligatorio.");
 
             if (string.IsNullOrWhiteSpace(contrasena))
-                throw new ArgumentException("La contraseña es obligatoria.");
+                throw new ArgumentException(
+                    "La contraseña es obligatoria.");
 
-            DataTable usuarios = usuarioDatos.BuscarPorEmail(email.Trim());
+            DataTable usuarios =
+                usuarioDatos.BuscarPorEmail(email.Trim());
 
             if (usuarios.Rows.Count == 0)
                 return null;
@@ -183,10 +232,16 @@ namespace HotelTramonto.Negocios
             if (!Convert.ToBoolean(usuario["activo"]))
                 return null;
 
-            string hash = Convert.ToString(usuario["contrasena"]) ?? string.Empty;
+            string hash =
+                Convert.ToString(usuario["contrasena"])
+                ?? string.Empty;
 
-            if (!PasswordService.Verificar(hash, contrasena))
+            if (!PasswordService.Verificar(
+                hash,
+                contrasena))
+            {
                 return null;
+            }
 
             return usuario;
         }

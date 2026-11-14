@@ -7,18 +7,39 @@ namespace HotelTramonto.Negocios
 {
     public class HabitacionNegocios
     {
-        private readonly HabitacionDatos habitacionDatos = new HabitacionDatos();
+        private readonly HabitacionDatos habitacionDatos =
+            new HabitacionDatos();
+
+        // Solo el administrador puede gestionar habitaciones.
+        private static void ValidarAdministrador(string rolUsuario)
+        {
+            if (string.IsNullOrWhiteSpace(rolUsuario) ||
+                !string.Equals(
+                    rolUsuario.Trim(),
+                    "ADMINISTRADOR",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException(
+                    "No tenés permisos para modificar habitaciones.");
+            }
+        }
 
         public void Insertar(
             int tipoHabitacion,
             int? piso,
             string numero,
-            string estado)
+            string estado,
+            string rolUsuario)
         {
+            ValidarAdministrador(rolUsuario);
+
             ValidarDatos(tipoHabitacion, piso, numero, estado);
 
             habitacionDatos.Insertar(
-                tipoHabitacion, piso, numero.Trim(), estado.Trim());
+                tipoHabitacion,
+                piso,
+                numero.Trim(),
+                estado.Trim());
         }
 
         public void Modificar(
@@ -26,21 +47,34 @@ namespace HotelTramonto.Negocios
             int tipoHabitacion,
             int? piso,
             string numero,
-            string estado)
+            string estado,
+            string rolUsuario)
         {
+            ValidarAdministrador(rolUsuario);
+
             if (idHabitacion <= 0)
-                throw new ArgumentException("La habitación seleccionada no es válida.");
+                throw new ArgumentException(
+                    "La habitación seleccionada no es válida.");
 
             ValidarDatos(tipoHabitacion, piso, numero, estado);
 
             habitacionDatos.Modificar(
-                idHabitacion, tipoHabitacion, piso, numero.Trim(), estado.Trim());
+                idHabitacion,
+                tipoHabitacion,
+                piso,
+                numero.Trim(),
+                estado.Trim());
         }
 
-        public void Desactivar(int idHabitacion)
+        public void Desactivar(
+            int idHabitacion,
+            string rolUsuario)
         {
+            ValidarAdministrador(rolUsuario);
+
             if (idHabitacion <= 0)
-                throw new ArgumentException("La habitación seleccionada no es válida.");
+                throw new ArgumentException(
+                    "La habitación seleccionada no es válida.");
 
             habitacionDatos.Desactivar(idHabitacion);
         }
@@ -50,14 +84,14 @@ namespace HotelTramonto.Negocios
             return habitacionDatos.Listar();
         }
 
-
         public DataTable BuscarPorId(int idHabitacion)
         {
             if (idHabitacion <= 0)
                 throw new ArgumentException(
                     "La habitación seleccionada no es válida.");
 
-            DataTable resultado = habitacionDatos.BuscarPorId(idHabitacion);
+            DataTable resultado =
+                habitacionDatos.BuscarPorId(idHabitacion);
 
             if (resultado.Rows.Count == 0)
                 throw new ArgumentException(
@@ -66,17 +100,17 @@ namespace HotelTramonto.Negocios
             return resultado;
         }
 
-
         public DataTable ConsultarDisponibilidad(
             DateTime fechaEntrada,
             DateTime fechaSalida)
         {
             if (fechaEntrada.Date >= fechaSalida.Date)
                 throw new ArgumentException(
-                    "La fecha de salida debe ser posterior a la fecha de entrada.");
+                    "La fecha de salida debe ser posterior a la entrada.");
 
             return habitacionDatos.ConsultarDisponibilidad(
-                fechaEntrada.Date, fechaSalida.Date);
+                fechaEntrada.Date,
+                fechaSalida.Date);
         }
 
         private void ValidarDatos(
@@ -86,32 +120,38 @@ namespace HotelTramonto.Negocios
             string estado)
         {
             if (tipoHabitacion <= 0)
-                throw new ArgumentException("Seleccione un tipo de habitación.");
+                throw new ArgumentException(
+                    "Seleccione un tipo de habitación.");
 
             if (piso.HasValue && piso.Value < 0)
-                throw new ArgumentException("El piso no puede ser negativo.");
+                throw new ArgumentException(
+                    "El piso no puede ser negativo.");
 
             if (string.IsNullOrWhiteSpace(numero))
-                throw new ArgumentException("Ingrese el número de habitación.");
+                throw new ArgumentException(
+                    "Ingrese el número de habitación.");
 
             if (string.IsNullOrWhiteSpace(estado))
-                throw new ArgumentException("Seleccione el estado de la habitación.");
+                throw new ArgumentException(
+                    "Seleccione el estado de la habitación.");
         }
-
 
         public DataTable ListarInactivas()
         {
             return habitacionDatos.ListarInactivas();
         }
 
-        public void Reactivar(int idHabitacion)
+        public void Reactivar(
+            int idHabitacion,
+            string rolUsuario)
         {
+            ValidarAdministrador(rolUsuario);
+
             if (idHabitacion <= 0)
                 throw new ArgumentException(
                     "La habitación seleccionada no es válida.");
 
             habitacionDatos.Reactivar(idHabitacion);
         }
-
     }
 }
