@@ -584,6 +584,34 @@ END;
 GO
 
 
+-- Cancelar reserva con validaciones
+CREATE OR ALTER PROCEDURE dbo.sp_Reserva_Cancelar
+    @id_reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @estado VARCHAR(20);
+
+    SELECT @estado = estado
+    FROM dbo.Reservas
+    WHERE id_reserva = @id_reserva;
+
+    IF @estado IS NULL
+        THROW 50040, 'La reserva no existe.', 1;
+
+    IF @estado = 'CANCELADA'
+        THROW 50041, 'La reserva ya esta cancelada.', 1;
+
+    IF @estado <> 'CONFIRMADA'
+        THROW 50042, 'Solo se pueden cancelar reservas confirmadas.', 1;
+
+    UPDATE dbo.Reservas
+    SET estado = 'CANCELADA'
+    WHERE id_reserva = @id_reserva;
+END;
+GO
+
 
 
 --listar reservas
@@ -992,18 +1020,52 @@ GO
 
 --modificar el estado de un pago.
 
-CREATE OR ALTER PROCEDURE sp_Pago_ActualizarEstado
+CREATE OR ALTER PROCEDURE dbo.sp_Pago_ActualizarEstado
     @id_pago INT,
     @estado VARCHAR(20)
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
-    UPDATE Pagos
-    SET estado = @estado
-    WHERE id_pago = @id_pago;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @estado_actual VARCHAR(20);
+
+        SELECT @estado_actual = estado
+        FROM dbo.Pagos WITH (UPDLOCK, HOLDLOCK)
+        WHERE id_pago = @id_pago;
+
+        IF @estado_actual IS NULL
+            THROW 50120, 'El pago no existe.', 1;
+
+        IF @estado IS NULL
+           OR @estado NOT IN ('APROBADO', 'RECHAZADO')
+            THROW 50121,
+                'Esta operacion solo permite aprobar o rechazar pagos pendientes.',
+                1;
+
+        IF @estado_actual <> 'PENDIENTE'
+            THROW 50122,
+                'Solo se puede actualizar un pago pendiente.',
+                1;
+
+        UPDATE dbo.Pagos
+        SET estado = @estado
+        WHERE id_pago = @id_pago;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
 END;
 GO
+
 
 
 ---listar los pagos de una reserva.
@@ -1140,29 +1202,72 @@ GO
 ---actualizar el estado de la reserva temporal.
 
 
-CREATE OR ALTER PROCEDURE sp_ReservaTemporal_ActualizarEstado
+
+CREATE OR ALTER PROCEDURE dbo.sp_ReservaTemporal_ActualizarEstado
     @id_reserva_temporal INT,
     @estado VARCHAR(20)
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
-    IF @estado IS NULL
-       OR @estado NOT IN (
-           'PENDIENTE',
-           'CONFIRMADA',
-           'CANCELADA',
-           'EXPIRADA'
-       )
-    BEGIN
-        THROW 50051, 'Estado de reserva temporal no valido.', 1;
-    END;
+    BEGIN TRY
+        BEGIN TRANSACTION;
 
-    UPDATE dbo.ReservasTemporales
-    SET estado = @estado
-    WHERE id_reserva_temporal = @id_reserva_temporal;
+        DECLARE
+            @estado_actual VARCHAR(20),
+            @fecha_expiracion DATETIME,
+            @id_reserva INT;
+
+        SELECT
+            @estado_actual = estado,
+            @fecha_expiracion = fecha_expiracion,
+            @id_reserva = id_reserva
+        FROM dbo.ReservasTemporales WITH (UPDLOCK, HOLDLOCK)
+        WHERE id_reserva_temporal = @id_reserva_temporal;
+
+        IF @estado_actual IS NULL
+            THROW 50130, 'La reserva temporal no existe.', 1;
+
+        IF @estado IS NULL
+           OR @estado NOT IN ('CANCELADA', 'EXPIRADA')
+            THROW 50131,
+                'Solo se permite cancelar o expirar una reserva temporal desde este procedimiento.',
+                1;
+
+        IF @estado_actual <> 'PENDIENTE'
+           OR @id_reserva IS NOT NULL
+            THROW 50132,
+                'Solo se pueden actualizar reservas temporales pendientes sin confirmar.',
+                1;
+
+        IF @estado = 'EXPIRADA'
+           AND @fecha_expiracion > GETDATE()
+            THROW 50133,
+                'La reserva temporal todavia no ha expirado.',
+                1;
+
+        IF @estado = 'CANCELADA'
+           AND @fecha_expiracion <= GETDATE()
+            THROW 50134,
+                'La reserva temporal ya vencio y no puede cancelarse.',
+                1;
+
+        UPDATE dbo.ReservasTemporales
+        SET estado = @estado
+        WHERE id_reserva_temporal = @id_reserva_temporal;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
 END;
 GO
+
 
 --marcar automáticamente como expiradas las reservas temporales vencidas.
 
