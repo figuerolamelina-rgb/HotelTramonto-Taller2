@@ -19,10 +19,7 @@ namespace HotelTramonto.Presentacion
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
         private bool EsAdministrador =>
-            string.Equals(
-                rolUsuario,
-                "ADMINISTRADOR",
-                StringComparison.OrdinalIgnoreCase);
+            PermisosHabitaciones.PuedeAdministrar(rolUsuario);
 
         // Constructor original para mantener compatibilidad.
         public FormModificarHabitacion(int idHabitacion)
