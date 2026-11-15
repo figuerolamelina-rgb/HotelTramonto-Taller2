@@ -1,0 +1,53 @@
+"""Valida contratos estáticos del runner Windows; no ejecuta PowerShell ni SQL."""
+from pathlib import Path
+import hashlib
+import re
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / 'tools/Probar-HotelTramonto.ps1'
+TEXT = SCRIPT.read_text(encoding='utf-8-sig')
+
+
+class AutomatizacionWindows(unittest.TestCase):
+    def test_manifiesto_coincide_con_archivos_revisados(self):
+        entries = re.findall(r"^\s*'([^']+)'='([A-F0-9]{64})'", TEXT, re.M)
+        self.assertGreaterEqual(len(entries), 40)
+        for name, digest in entries:
+            with self.subTest(file=name):
+                self.assertEqual(digest, hashlib.sha256((ROOT / name).read_text(encoding='utf-8-sig').replace('\r\n', '\n').replace('\r', '\n').encode()).hexdigest().upper())
+
+    def test_lista_sql_cerrada_excluye_original_permisos_y_reversiones(self):
+        block = TEXT.split('$ScriptsAutorizados=@(')[1].split(')')[0]
+        names = re.findall(r"'([^']+)'", block)
+        self.assertEqual(7, len(names))
+        self.assertTrue(all('compatibilidad-servicios/' in n or 'permisos-habitaciones/' in n for n in names))
+        self.assertFalse(any('PermisosMinimos' in n or 'Revertir' in n or 'Procedimientos_Almacenados' in n for n in names))
+        self.assertIn('$ScriptsAutorizados -ccontains $Relativo', TEXT)
+
+    def test_lista_positiva_pruebas_no_contiene_sql_real(self):
+        match = re.search(r"\$FiltroSeguro='([^']+)'", TEXT)
+        self.assertIsNotNone(match)
+        entries = match[1].split('|')
+        self.assertEqual(45, len(entries))
+        self.assertTrue(all(n.startswith('FullyQualifiedName=HotelTramonto.Pruebas.') for n in entries))
+        for excluded in ('ConexionBD_ConectaConHotelTramontoDB',
+                         'UsuarioNegocios_CambiarContrasena_GuardaHashValido',
+                         'UsuarioNegocios_AutenticarConEmailInexistente_RetornaNull'):
+            self.assertNotIn(excluded, match[1])
+        self.assertIn('[int]$cuenta.passed -eq 56', TEXT)
+        self.assertIn("$env:HOTELTRAMONTO_CONFIG=Join-Path $Salida 'conexion-bloqueada-inexistente.json'", TEXT)
+        self.assertIn('$env:HOTELTRAMONTO_CONFIG=$configAnterior', TEXT)
+
+    def test_confirmacion_antecede_instalacion_y_origen_solo_metadatos(self):
+        self.assertLess(TEXT.index("$respuesta=Read-Host"), TEXT.index("foreach ($n in @('01_AgregarCategoria.sql'"))
+        self.assertIn("$respuesta -ceq 'MIGRAR HotelTramontoDB_Pruebas'", TEXT)
+        self.assertIn("$Maestra=Abrir 'master'", TEXT)
+        self.assertIn('$Conexion=Abrir $Pruebas', TEXT)
+        self.assertNotIn('Abrir $Original', TEXT)
+        self.assertNotRegex(TEXT, r'(?i)\b(?:DELETE|UPDATE|INSERT|ALTER|DROP)\s+(?:DATABASE\s+)?HotelTramontoDB\b')
+        self.assertTrue(SCRIPT.read_bytes().startswith(b'\xef\xbb\xbf'))
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

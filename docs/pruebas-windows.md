@@ -111,3 +111,10 @@ El script comprueba cada lote, ausencia de USE, mapa exclusivo de clasificación
 bloqueo del instalador de permisos; no conecta a SQL Server. Las pruebas .NET sin
 SQL usan el filtro de README que excluye tres pruebas existentes con acceso a base,
 incluida una que cambia contraseñas. No ejecutar toda la suite indiscriminadamente.
+
+## Ejecución automatizada
+
+Para evitar ejecutar manualmente cada archivo, seguir
+[Automatización Windows](automatizacion-windows.md). El runner verifica instancia,
+bases y archivos, diagnostica, pide confirmación, migra la copia y genera un informe.
+No instala permisos ni ejecuta pruebas funcionales de escritura histórica.

@@ -111,3 +111,6 @@ Para probar esta rama sin tocar la base original, seguir
 seleccionar `HotelTramontoDB_Pruebas` y no cambian de base automáticamente.
 La plantilla `configuracion/conexion.pruebas.ejemplo.json` apunta a esa copia.
 La instalación de permisos SQL sigue bloqueada y pendiente.
+
+Para ejecutar el recorrido controlado desde un único comando en Windows, ver
+[Automatización de pruebas](docs/automatizacion-windows.md).
