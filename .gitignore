@@ -361,6 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Configuración privada por computadora (la plantilla sí se versiona).
+conexion.local.json
 /base de datos HotelTramonto/SQLQuery15.sql
 /base de datos HotelTramonto/SQLQuery10.sql
 /base de datos HotelTramonto/SQLQuery11.sql

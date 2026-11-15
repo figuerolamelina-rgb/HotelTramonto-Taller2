@@ -294,6 +294,12 @@ namespace HotelTramonto.Presentacion
                 string email = txtEmail.Text.Trim();
                 string contrasena = txtContrasena.Text;
 
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(contrasena))
+                {
+                    MostrarMensaje("Datos incompletos", "Ingresá tu correo electrónico y tu contraseña.", true);
+                    return;
+                }
+
                 UsuarioNegocios negocio = new UsuarioNegocios();
 
                 DataRow? usuario = negocio.Autenticar(email, contrasena);
@@ -321,18 +327,11 @@ namespace HotelTramonto.Presentacion
                 formularioPrincipal.Show();
                 Hide();
             }
-            catch (ArgumentException ex)
-            {
-                MostrarMensaje(
-                    "Datos incompletos",
-                    ex.Message,
-                    true);
-            }
             catch (Exception)
             {
                 MostrarMensaje(
                     "Error de inicio de sesión",
-                    "Ocurrió un error al intentar iniciar sesión.",
+                    "No pudimos iniciar sesión. Intentá nuevamente o consultá al responsable.",
                     true);
             }
         }
