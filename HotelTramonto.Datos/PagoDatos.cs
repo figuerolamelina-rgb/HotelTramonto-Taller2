@@ -138,5 +138,23 @@ namespace HotelTramonto.Datos
 
             return tabla;
         }
+
+        public DataTable ObtenerComprobante(int idPago)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando =
+                new SqlCommand("sp_Pago_ObtenerComprobante", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@id_pago", idPago);
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
+        }
     }
 }

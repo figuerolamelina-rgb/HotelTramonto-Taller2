@@ -125,5 +125,18 @@ namespace HotelTramonto.Negocios
             if (string.IsNullOrWhiteSpace(metodoPago))
                 throw new Exception("Debe indicar el método de pago.");
         }
+        public DataTable ObtenerComprobante(int idPago)
+        {
+            if (idPago <= 0)
+                throw new Exception("El ID del pago no es válido.");
+
+            DataTable comprobante = datos.ObtenerComprobante(idPago);
+
+            if (comprobante.Rows.Count == 0)
+                throw new Exception(
+                    "No se encontró un pago aprobado para generar el comprobante.");
+
+            return comprobante;
+        }
     }
 }

@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using HotelTramonto.Negocios;
+using HotelTramonto.Presentacion.Servicios;
 
 namespace HotelTramonto.Presentacion
 {
@@ -29,7 +30,7 @@ namespace HotelTramonto.Presentacion
         private Button btnRegistrarServicios;
         private Button btnAgregarConsumo;
         private Label lblIdReserva;
-
+        private Button btnGenerarComprobante;
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
         private readonly Color crema = Color.FromArgb(245, 239, 229);
@@ -72,6 +73,7 @@ namespace HotelTramonto.Presentacion
             btnCerrar = new Button();
             btnRegistrarServicios = new Button();
             btnAgregarConsumo = new Button();
+            btnGenerarComprobante = new Button();
 
             Label lblTitulo = new Label
             {
@@ -152,8 +154,7 @@ namespace HotelTramonto.Presentacion
             dgvPagos.MultiSelect = false;
             dgvPagos.RowHeadersVisible = false;
             dgvPagos.ScrollBars = ScrollBars.Both;
-            dgvPagos.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.DisplayedCells;
+            dgvPagos.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             dgvPagos.RowTemplate.Height = 36;
             dgvPagos.ColumnHeadersHeight = 42;
 
@@ -181,13 +182,99 @@ namespace HotelTramonto.Presentacion
 
             dgvPagos.DataBindingComplete += (sender, e) =>
             {
+                // Encabezados de las columnas
+                if (dgvPagos.Columns.Contains("id_pago"))
+                    dgvPagos.Columns["id_pago"].HeaderText = "N.º de pago";
+
+                if (dgvPagos.Columns.Contains("id_reserva"))
+                    dgvPagos.Columns["id_reserva"].HeaderText = "N.º de reserva";
+
+                if (dgvPagos.Columns.Contains("id_usuario"))
+                    dgvPagos.Columns["id_usuario"].HeaderText = "ID usuario";
+
+                if (dgvPagos.Columns.Contains("nombre_usuario"))
+                    dgvPagos.Columns["nombre_usuario"].HeaderText = "Nombre usuario";
+
+                if (dgvPagos.Columns.Contains("apellido_usuario"))
+                    dgvPagos.Columns["apellido_usuario"].HeaderText = "Apellido usuario";
+
                 if (dgvPagos.Columns.Contains("monto"))
                 {
+                    dgvPagos.Columns["monto"].HeaderText = "Importe";
+
                     dgvPagos.Columns["monto"].DefaultCellStyle.Format = "N2";
+
                     dgvPagos.Columns["monto"].DefaultCellStyle.Alignment =
                         DataGridViewContentAlignment.MiddleRight;
                 }
-            };
+
+                if (dgvPagos.Columns.Contains("metodo_pago"))
+                    dgvPagos.Columns["metodo_pago"].HeaderText = "Método de pago";
+
+                if (dgvPagos.Columns.Contains("estado"))
+                    dgvPagos.Columns["estado"].HeaderText = "Estado";
+
+                if (dgvPagos.Columns.Contains("tipo_pago"))
+                    dgvPagos.Columns["tipo_pago"].HeaderText = "Concepto";
+
+                if (dgvPagos.Columns.Contains("fecha_pago"))
+                    dgvPagos.Columns["fecha_pago"].HeaderText = "Fecha de pago";
+
+                // Mostrar conceptos de pago más descriptivos
+                if (dgvPagos.Columns.Contains("tipo_pago"))
+                {
+                    foreach (DataGridViewRow fila in dgvPagos.Rows)
+                    {
+                        string tipo = Convert.ToString(
+                            fila.Cells["tipo_pago"].Value);
+
+                        switch (tipo)
+                        {
+                            case "PAGO_INICIAL":
+                                fila.Cells["tipo_pago"].Value = "Pago inicial";
+                                break;
+
+                            case "SALDO_ALOJAMIENTO":
+                                fila.Cells["tipo_pago"].Value = "Saldo de alojamiento";
+                                break;
+
+                            case "SERVICIOS_ADICIONALES":
+                                fila.Cells["tipo_pago"].Value = "Servicios adicionales";
+                                break;
+                        }
+                    }
+                }
+
+                // Anchos de columnas para mejorar la lectura
+                dgvPagos.Columns["id_pago"].Width = 75;
+                dgvPagos.Columns["id_reserva"].Width = 90;
+                dgvPagos.Columns["id_usuario"].Width = 80;
+                dgvPagos.Columns["nombre_usuario"].Width = 115;
+                dgvPagos.Columns["apellido_usuario"].Width = 115;
+                dgvPagos.Columns["monto"].Width = 110;
+                dgvPagos.Columns["metodo_pago"].Width = 125;
+                dgvPagos.Columns["estado"].Width = 100;
+                dgvPagos.Columns["tipo_pago"].Width = 190;
+                dgvPagos.Columns["fecha_pago"].Width = 150;
+               
+                // Evitar saltos de línea en encabezados y celdas
+                dgvPagos.ColumnHeadersDefaultCellStyle.WrapMode =
+                    DataGridViewTriState.False;
+
+                dgvPagos.DefaultCellStyle.WrapMode =
+                    DataGridViewTriState.False;
+            }; 
+
+            // Botón Generar comprobante
+            EstilizarBotonPago(
+                btnGenerarComprobante,
+                "Generar comprobante PDF",
+                marron);
+
+            btnGenerarComprobante.Location = new Point(995, 96);
+            btnGenerarComprobante.Size = new Size(220, 40);
+            btnGenerarComprobante.Click += btnGenerarComprobante_Click;
+            
             // Título de consumos
             lblTituloConsumos.Text = "CONSUMOS DE LA RESERVA";
             lblTituloConsumos.Location = new Point(35, 370);
@@ -201,7 +288,7 @@ namespace HotelTramonto.Presentacion
             dgvConsumos.Location = new Point(35, 405);
             dgvConsumos.Size = new Size(
                 Math.Max(400, ClientSize.Width - 70),
-                185);
+                175);
 
             dgvConsumos.Anchor =
                 AnchorStyles.Top |
@@ -284,6 +371,7 @@ namespace HotelTramonto.Presentacion
             Controls.Add(dgvPagos);
             Controls.Add(lblTituloConsumos);
             Controls.Add(dgvConsumos);
+            Controls.Add(btnGenerarComprobante);
 
             Controls.Add(lblTotalConsumido);
             Controls.Add(lblTotalPagadoServicios);
@@ -835,6 +923,70 @@ namespace HotelTramonto.Presentacion
                     true);
             }
         }
+        private void btnGenerarComprobante_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Verificar que haya un pago seleccionado
+                if (dgvPagos.SelectedRows.Count == 0)
+                {
+                    MostrarMensaje(
+                        "Seleccionar pago",
+                        "Seleccioná un pago de la grilla para generar el comprobante.");
 
+                    return;
+                }
+
+                // Obtener el ID del pago seleccionado
+                DataGridViewRow filaSeleccionada =
+                    dgvPagos.SelectedRows[0];
+
+                int idPago = Convert.ToInt32(
+                    filaSeleccionada.Cells["id_pago"].Value);
+
+                // Obtener los datos del comprobante
+                DataTable datosComprobante =
+                    negocio.ObtenerComprobante(idPago);
+
+                if (datosComprobante.Rows.Count == 0)
+                {
+                    MostrarMensaje(
+                        "Comprobante no disponible",
+                        "No se encontró un pago aprobado para generar el comprobante.");
+
+                    return;
+                }
+
+                // Elegir dónde guardar el PDF
+                using (SaveFileDialog guardar = new SaveFileDialog())
+                {
+                    guardar.Title = "Guardar comprobante de pago";
+                    guardar.Filter = "Archivo PDF (*.pdf)|*.pdf";
+                    guardar.DefaultExt = "pdf";
+                    guardar.AddExtension = true;
+                    guardar.FileName = $"Comprobante_Pago_{idPago}.pdf";
+
+                    if (guardar.ShowDialog(this) != DialogResult.OK)
+                        return;
+
+                    // Generar el comprobante
+                    ComprobantePagoPdf.Generar(
+                        datosComprobante.Rows[0],
+                        guardar.FileName);
+
+                    MostrarMensaje(
+                        "Comprobante generado",
+                        "El comprobante se generó correctamente.\n\n" +
+                        "Ubicación:\n" + guardar.FileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "Error al generar comprobante",
+                    "No se pudo generar el comprobante.\n\n" + ex.Message,
+                    true);
+            }
+        }
     }
 }
