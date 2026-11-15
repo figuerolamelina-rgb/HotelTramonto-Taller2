@@ -803,10 +803,12 @@ namespace HotelTramonto.Presentacion
             return idReservaSeleccionada;
         }
 
+
         private void MostrarMensaje(
             string titulo,
             string detalle,
-            bool esError = false)
+            bool esError = false,
+            int? idPago = null)
         {
             using (Form mensaje = new Form())
             {
@@ -853,9 +855,31 @@ namespace HotelTramonto.Presentacion
                 Button btnAceptar = CrearBotonDialogo(
                     "Aceptar", dorado, marron);
 
-                btnAceptar.Location = new Point(165, 175);
                 btnAceptar.Size = new Size(110, 35);
                 btnAceptar.DialogResult = DialogResult.OK;
+
+                // Si hay un ID de pago, mostrar también el botón PDF.
+                if (idPago.HasValue && !esError)
+                {
+                    btnAceptar.Location = new Point(265, 175);
+
+                    Button btnComprobante = CrearBotonDialogo(
+                        "Generar comprobante PDF", marron, Color.White);
+
+                    btnComprobante.Location = new Point(35, 175);
+                    btnComprobante.Size = new Size(210, 35);
+
+                    btnComprobante.Click += (s, e) =>
+                    {
+                        GenerarComprobantePago(idPago.Value);
+                    };
+
+                    mensaje.Controls.Add(btnComprobante);
+                }
+                else
+                {
+                    btnAceptar.Location = new Point(165, 175);
+                }
 
                 mensaje.Controls.Add(encabezado);
                 mensaje.Controls.Add(lblTituloMensaje);
@@ -864,6 +888,49 @@ namespace HotelTramonto.Presentacion
 
                 mensaje.AcceptButton = btnAceptar;
                 mensaje.ShowDialog(this);
+            }
+        }
+
+
+        private void GenerarComprobantePago(int idPago)
+        {
+            try
+            {
+                DataTable comprobante = negocio.ObtenerComprobante(idPago);
+
+                if (comprobante == null || comprobante.Rows.Count == 0)
+                {
+                    throw new Exception(
+                        "No se encontraron los datos del comprobante.");
+                }
+
+                using (SaveFileDialog guardar = new SaveFileDialog())
+                {
+                    guardar.Title = "Guardar comprobante de pago";
+                    guardar.Filter = "Archivo PDF (*.pdf)|*.pdf";
+                    guardar.FileName = $"Comprobante_Pago_{idPago}.pdf";
+                    guardar.DefaultExt = "pdf";
+                    guardar.AddExtension = true;
+
+                    if (guardar.ShowDialog(this) != DialogResult.OK)
+                        return;
+
+                    HotelTramonto.Presentacion.Servicios.ComprobantePagoPdf.Generar(
+                        comprobante.Rows[0],
+                        guardar.FileName);
+
+                    MostrarMensaje(
+                        "Comprobante generado",
+                        "El comprobante de pago se generó correctamente.\n\n" +
+                        "Archivo: " + guardar.FileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "Error al generar comprobante",
+                    "No se pudo generar el comprobante PDF.\n\n" + ex.Message,
+                    true);
             }
         }
 
@@ -1160,6 +1227,7 @@ namespace HotelTramonto.Presentacion
                     dgvConsumos.Columns[columna].Visible = false;
             }
         }
+
         private void btnRegistrarSaldo_Click(object sender, EventArgs e)
         {
             try
@@ -1184,14 +1252,32 @@ namespace HotelTramonto.Presentacion
                     idUsuario,
                     metodo);
 
-                dgvPagos.DataSource = negocio.ListarPorReserva(idReserva);
-                CargarConsumosYResumen(
-                idReserva,
-                negocio.ListarPorReserva(idReserva));
+                DataTable pagos = negocio.ListarPorReserva(idReserva);
+
+                dgvPagos.DataSource = pagos;
+
+                CargarConsumosYResumen(idReserva, pagos);
+
+                DataView vista = new DataView(pagos);
+
+                vista.RowFilter =
+                    "tipo_pago = 'SALDO_ALOJAMIENTO' AND estado = 'APROBADO'";
+
+                vista.Sort = "id_pago DESC";
+
+                if (vista.Count == 0)
+                {
+                    throw new Exception(
+                        "No se encontró el pago de saldo registrado.");
+                }
+
+                int idPago = Convert.ToInt32(vista[0]["id_pago"]);
 
                 MostrarMensaje(
                     "Pago registrado",
-                    "El saldo de alojamiento se registró correctamente.");
+                    "El saldo de alojamiento se registró correctamente.",
+                    false,
+                    idPago);
             }
             catch (Exception ex)
             {
@@ -1201,6 +1287,7 @@ namespace HotelTramonto.Presentacion
                     true);
             }
         }
+
 
         private void btnRegistrarServicios_Click(object sender, EventArgs e)
         {
@@ -1247,7 +1334,10 @@ namespace HotelTramonto.Presentacion
                 }
 
                 // Obtener los datos reales del pago
+                int idPago = Convert.ToInt32(vista[0]["id_pago"]);
+
                 decimal monto = Convert.ToDecimal(vista[0]["monto"]);
+
                 string metodoPago = vista[0]["metodo_pago"].ToString();
 
                 string importe = monto.ToString(
@@ -1263,7 +1353,9 @@ namespace HotelTramonto.Presentacion
 
                 MostrarMensaje(
                     "Pago registrado",
-                    detalle);
+                    detalle,
+                    false,
+                    idPago);
             }
             catch (Exception ex)
             {
