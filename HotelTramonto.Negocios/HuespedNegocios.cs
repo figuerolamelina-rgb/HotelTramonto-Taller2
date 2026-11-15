@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using HotelTramonto.Datos;
@@ -8,6 +8,22 @@ namespace HotelTramonto.Negocios
     public class HuespedNegocios
     {
         private readonly HuespedDatos huespedDatos = new HuespedDatos();
+
+        public DataTable HistorialReservas(int idHuesped, string rol)
+        {
+            ExigirPermisoHistorial(rol);
+            if (idHuesped <= 0)
+                throw new ArgumentOutOfRangeException(nameof(idHuesped),
+                    "Seleccioná un huésped válido.");
+            return huespedDatos.HistorialReservas(idHuesped);
+        }
+
+        public static void ExigirPermisoHistorial(string rol)
+        {
+            string normalizado = rol?.Trim().ToUpperInvariant() ?? "";
+            if (normalizado != "ADMINISTRADOR" && normalizado != "RECEPCIONISTA")
+                throw new UnauthorizedAccessException("No tiene permisos para consultar el historial.");
+        }
 
         public void Insertar(
             string nombre,

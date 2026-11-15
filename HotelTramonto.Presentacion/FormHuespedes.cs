@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,9 +17,17 @@ namespace HotelTramonto.Presentacion
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
-        public FormHuespedes()
+        private readonly string rolHistorial;
+        private readonly Button btnHistorial = new Button();
+
+        public FormHuespedes() : this("") { }
+
+        public FormHuespedes(string rol)
         {
+            rolHistorial = rol?.Trim().ToUpperInvariant() ?? "";
             InitializeComponent();
+            Controls.Add(btnHistorial);
+            btnHistorial.Click += ConsultarHistorial;
             AplicarEstilo();
             CargarHuespedes();
         }
@@ -72,6 +80,9 @@ namespace HotelTramonto.Presentacion
             EstilizarBoton(btnActualizar, "Actualizar listado", marronClaro, Color.White);
             EstilizarBoton(btnReactivarHuesped, "Reactivar huésped", marronClaro, Color.White);
 
+            EstilizarBoton(btnHistorial, "Historial de reservas", dorado, marron);
+            btnHistorial.Enabled = rolHistorial.Trim().ToUpperInvariant() is "ADMINISTRADOR" or "RECEPCIONISTA";
+
             dgvHuespedes.BackgroundColor = marfil;
             dgvHuespedes.BorderStyle = BorderStyle.None;
             dgvHuespedes.GridColor = Color.FromArgb(222, 211, 194);
@@ -105,6 +116,57 @@ namespace HotelTramonto.Presentacion
 
             Resize += (s, e) => AcomodarControles();
             AcomodarControles();
+        }
+
+        private void ConsultarHistorial(object? sender, EventArgs e)
+        {
+            if (dgvHuespedes.CurrentRow == null)
+            {
+                MostrarMensaje("Huésped no seleccionado", "Seleccioná un huésped para consultar su historial.");
+                return;
+            }
+            try
+            {
+                int id = Convert.ToInt32(dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
+                DataTable historial = new HotelTramonto.Negocios.HuespedNegocios()
+                    .HistorialReservas(id, rolHistorial);
+                using Form ventana = new Form
+                {
+                    Text = "Historial de reservas del huésped #" + id,
+                    StartPosition = FormStartPosition.CenterParent,
+                    Size = new Size(1100, 600),
+                    BackColor = crema,
+                    Font = new Font("Segoe UI", 10F)
+                };
+                Label aviso = new Label
+                {
+                    Dock = DockStyle.Top, Height = 85, Padding = new Padding(12),
+                    Text = historial.Rows.Count == 0 ? "El huésped no tiene reservas definitivas." :
+                        "Una fila por reserva y habitación asociada. Las fechas de entrada/salida son previstas. " +
+                        "Check-in y check-out corresponden a la reserva; no acreditan ocupación real por habitación. " +
+                        "El número y tipo de habitación son los del catálogo actual.",
+                    ForeColor = marron
+                };
+                DataGridView tabla = new DataGridView
+                {
+                    Dock = DockStyle.Fill, DataSource = historial,
+                    ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
+                    RowHeadersVisible = false, BackgroundColor = marfil,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
+                };
+                ventana.Controls.Add(tabla);
+                ventana.Controls.Add(aviso);
+                ventana.ShowDialog(this);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MostrarMensaje("Acceso restringido", "No tiene permisos para consultar el historial.");
+            }
+            catch (Exception)
+            {
+                MostrarMensaje("Historial no disponible",
+                    "No se pudo consultar el historial. Verificá la configuración y la instalación del procedimiento.", true);
+            }
         }
 
         private void EstilizarBoton(
@@ -157,7 +219,9 @@ namespace HotelTramonto.Presentacion
                 margen + (anchoBoton + separacion) * 2,
                 segundaFilaY, anchoBoton, altoBoton);
 
-            int tablaY = segundaFilaY + altoBoton + 18;
+            int terceraFilaY = segundaFilaY + altoBoton + 10;
+            btnHistorial.SetBounds(margen, terceraFilaY, anchoBoton, altoBoton);
+            int tablaY = terceraFilaY + altoBoton + 18;
 
             dgvHuespedes.SetBounds(
                 margen,
