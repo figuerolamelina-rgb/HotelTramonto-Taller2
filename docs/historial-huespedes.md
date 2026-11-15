@@ -12,7 +12,7 @@ de integracion-melina-iara. No se incorporaron otras ramas ni se realizaron merg
    Reservas.fecha_checkin y fecha_checkout. No ejecutar el script de creación
    de tablas sobre una base existente.
 3. Seleccionar esa base en SSMS y revisar/ejecutar únicamente
-   base de datos HotelTramonto/Actualizacion_HistorialHuespedes.sql.
+   base de datos HotelTramonto/pruebas/Instalar_HistorialHuespedes_Pruebas.sql.
    Crea o actualiza dbo.sp_Huesped_HistorialReservas y puede repetirse.
    No cambia tablas ni datos; la consulta solo lee. Requiere permisos de DDL
    del instalador y EXECUTE para el usuario de conexión según la política local.
@@ -97,9 +97,9 @@ habitaciones, pruebas, README y scripts/documentación propios. Form1.cs y
 FormHuespedes.cs no presentan cambios en esa comparación. No se conocen
 conflictos de archivos con esa revisión; cambios futuros requieren otra revisión.
 
-La instalación y el script de pruebas rechazan una base distinta de
-HotelTramontoDB_Pruebas. El procedimiento instalado también verifica ese nombre
-al ejecutarse. No hay USE que cambie silenciosamente la base. El procedimiento
+El instalador separado de pruebas y el script de comprobaciones rechazan una
+base distinta de HotelTramontoDB_Pruebas. La definición del procedimiento no
+restringe el nombre de la base, para permitir su reutilización posterior. No hay USE que cambie silenciosamente la base. El procedimiento
 solo hace SELECT; el script de pruebas escribe exclusivamente en #Historial.
 La protección del nombre no sustituye comprobar la instancia de pruebas.
 
@@ -133,3 +133,52 @@ del filtro. Las tres pruebas SQL permanecen excluidas. La comprobación estátic
 contrastó cada columna usada por el procedimiento con el CREATE TABLE versionado,
 verificó las guardas de base y la ausencia de escrituras en su cuerpo.
 Estas comprobaciones no sustituyen la ejecución SQL ni la prueba visual pendiente.
+
+## Definición reutilizable e integración de permisos
+
+La definición canónica está en
+base de datos HotelTramonto/Actualizacion_HistorialHuespedes.sql.
+No incluye USE ni una restricción DB_NAME dentro del procedimiento: puede
+revisarse para un despliegue posterior en HotelTramontoDB con el mismo esquema.
+Este archivo es DDL reutilizable, no un instalador protegido de pruebas.
+No se ha instalado ni ejecutado en ninguna base; el despliegue definitivo requiere
+una autorización independiente y la revisión de instancia y base por el responsable.
+
+Para pruebas usar exclusivamente
+base de datos HotelTramonto/pruebas/Instalar_HistorialHuespedes_Pruebas.sql:
+mantiene la guarda HotelTramontoDB_Pruebas junto al DDL en un único lote.
+Su definición es equivalente a la canónica; la comprobación estática detecta
+divergencias. El script HistorialHuespedes_Consulta.sql conserva su propia guarda.
+
+Al integrar con correccion-permisos-habitaciones, su lista de permisos mínimos
+debe contemplar este nuevo procedimiento. Después de instalarlo, el responsable
+de seguridad debe conceder EXECUTE al usuario o rol SQL al que pertenece la
+identidad Windows operativa de la aplicación. Ejemplo DOCUMENTAL, no ejecutado:
+
+```sql
+GRANT EXECUTE ON OBJECT::dbo.sp_Huesped_HistorialReservas
+TO [ht_app_compartida];
+```
+
+ht_app_compartida es el rol técnico declarado por el script
+permisos-habitaciones/02_PermisosMinimos.sql de la otra rama (extremo revisado
+1cc34b1888bf85df0c4814d2108674fdf587716e). Comprobar que existe y que la
+identidad Windows operativa pertenece a él; si el DBA utiliza otro principal,
+adaptar el destinatario aprobado. No confundirlo con los textos ADMINISTRADOR
+o RECEPCIONISTA del login de la aplicación.
+El script de permisos de la otra rama conserva un THROW de bloqueo pendiente
+de autorización: esta documentación no autoriza quitarlo ni ejecutar ese script.
+Ambos roles funcionales necesitan que su identidad de conexión disponga del
+permiso. No se requieren permisos de escritura ni SELECT general sobre tablas
+con la cadena de propiedad dbo intacta. Revisar cualquier DENY efectivo antes de
+conceder: un GRANT no lo anula. Comprobar el permiso con la identidad operativa
+en la base de pruebas antes de un despliegue definitivo. No ampliar a dbo,
+db_owner ni EXECUTE sobre todo el esquema para resolver este requisito.
+No se modifica ni fusiona el script de permisos de la otra rama.
+
+Validación de estos ajustes de integración: compilación con 0 errores y
+122 advertencias existentes; 54 pruebas .NET seguras aprobadas, 0 fallidas,
+0 omitidas en el filtro; tres pruebas SQL excluidas. Además,
+python3 tools/verificar_historial_sql.py ejecuta 4 comprobaciones estáticas
+aprobadas. No se ejecutó SQL ni se validó el procedimiento contra un motor.
+No se cambió código C# ni el comportamiento visual en estos ajustes.

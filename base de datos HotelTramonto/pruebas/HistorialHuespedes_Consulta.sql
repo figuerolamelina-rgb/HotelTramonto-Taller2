@@ -1,4 +1,4 @@
--- Solo lectura de datos existentes. Instalar primero Actualizacion_HistorialHuespedes.sql.
+-- Solo lectura de datos existentes. Instalar primero Instalar_HistorialHuespedes_Pruebas.sql.
 -- Ejecutar cada caso en HotelTramontoDB_Pruebas de PRUEBAS. No crea reservas.
 IF DB_NAME() <> N'HotelTramontoDB_Pruebas'
     THROW 51000, 'Base incorrecta.', 1;

@@ -1,23 +1,13 @@
--- Ejecutar únicamente en una base de pruebas revisada, mediante SSMS (detener ante errores).
--- No selecciona otra base automáticamente.
-IF DB_NAME() <> N'HotelTramontoDB_Pruebas'
-    THROW 51000, 'Base incorrecta: seleccione HotelTramontoDB_Pruebas de pruebas.', 1;
-GO
--- El control se repite dentro del lote DDL para impedir su instalación en otra base,
--- incluso si el cliente continúa después de un error del lote anterior.
-IF DB_NAME() <> N'HotelTramontoDB_Pruebas'
-    THROW 51000, 'Base incorrecta: seleccione HotelTramontoDB_Pruebas de pruebas.', 1;
-ELSE
-    EXEC sys.sp_executesql N'
+-- Definición reutilizable para despliegue revisado en la base seleccionada.
+-- No ejecutar como instalador de pruebas: usar pruebas/Instalar_HistorialHuespedes_Pruebas.sql.
+-- No selecciona base ni concede permisos. No ejecutar en producción sin autorización independiente.
 CREATE OR ALTER PROCEDURE dbo.sp_Huesped_HistorialReservas
     @id_huesped INT
 AS
 BEGIN
     SET NOCOUNT ON;
-    IF DB_NAME() <> N''HotelTramontoDB_Pruebas''
-        THROW 51000, ''Este procedimiento solo se permite en HotelTramontoDB_Pruebas.'', 1;
     IF @id_huesped IS NULL OR @id_huesped <= 0
-        THROW 51001, ''El identificador del huésped debe ser positivo.'', 1;
+        THROW 51001, 'El identificador del huésped debe ser positivo.', 1;
 
     SELECT r.id_reserva, h.id_huesped, h.dni, h.nombre, h.apellido,
            r.fecha_creacion, r.fecha_entrada AS entrada_prevista,
@@ -32,5 +22,5 @@ BEGIN
     LEFT JOIN dbo.TiposHabitacion AS t ON t.id_tipoHabitacion = hab.tipo_habitacion
     WHERE r.id_huesped = @id_huesped
     ORDER BY r.fecha_creacion DESC, r.id_reserva DESC, hab.numero, d.id_habitacion;
-END;';
+END;
 GO
