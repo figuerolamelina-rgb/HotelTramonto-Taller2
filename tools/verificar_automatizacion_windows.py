@@ -39,6 +39,20 @@ class AutomatizacionWindows(unittest.TestCase):
         self.assertIn("$env:HOTELTRAMONTO_CONFIG=Join-Path $Salida 'conexion-bloqueada-inexistente.json'", TEXT)
         self.assertIn('$env:HOTELTRAMONTO_CONFIG=$configAnterior', TEXT)
 
+    def test_constructor_usa_indexadores_y_prueba_no_abre_conexion(self):
+        body = TEXT.split('function Crear-CadenaConexion(')[1].split('function Abrir(')[0]
+        for key in ('Data Source', 'Initial Catalog', 'Integrated Security', 'Encrypt',
+                    'TrustServerCertificate', 'Persist Security Info', 'Connect Timeout', 'Application Name'):
+            self.assertIn("$b['" + key + "']=", body)
+        self.assertNotRegex(body, r'\$b\.\w+\s*=')
+        self.assertNotIn('.Open(', body)
+        test = (ROOT / 'tools/Probar-CadenaConexion.ps1').read_text(encoding='utf-8-sig')
+        self.assertNotIn('.Open(', test)
+        self.assertIn('#requires -Version 5.1', test)
+        self.assertIn("$base in @('master','HotelTramontoDB_Pruebas')", test)
+        self.assertLess(TEXT.index("& (Join-Path $PSScriptRoot 'Probar-CadenaConexion.ps1')"),
+                        TEXT.index("$Maestra=Abrir 'master'"))
+
     def test_confirmacion_antecede_instalacion_y_origen_solo_metadatos(self):
         self.assertLess(TEXT.index("$respuesta=Read-Host"), TEXT.index("foreach ($n in @('01_AgregarCategoria.sql'"))
         self.assertIn("$respuesta -ceq 'MIGRAR HotelTramontoDB_Pruebas'", TEXT)

@@ -19,12 +19,23 @@ function Registrar([string]$Nombre, [string]$Detalle) {
     Write-Host ('OK: ' + $Nombre)
 }
 function Exigir([bool]$Condicion, [string]$Mensaje) { if (-not $Condicion) { throw $Mensaje } }
-function Abrir([string]$Base) {
+function Crear-CadenaConexion([string]$Instancia, [string]$Base, [bool]$ConfiarCertificado=$false) {
     $b = New-Object System.Data.SqlClient.SqlConnectionStringBuilder
-    $b.DataSource=$Servidor; $b.InitialCatalog=$Base; $b.IntegratedSecurity=$true
-    $b.Encrypt=$true; $b.TrustServerCertificate=[bool]$ConfiarCertificadoLocal
-    $b.PersistSecurityInfo=$false; $b.ConnectTimeout=15; $b.ApplicationName='HotelTramonto-Pruebas-Controladas'
-    $c = New-Object -TypeName System.Data.SqlClient.SqlConnection -ArgumentList $b.ConnectionString
+    # En PowerShell el adaptador IDictionary puede tratar las propiedades como claves SQL.
+    # Usar siempre el indexador con las palabras clave admitidas por System.Data.SqlClient.
+    $b['Data Source']=$Instancia
+    $b['Initial Catalog']=$Base
+    $b['Integrated Security']=$true
+    $b['Encrypt']=$true
+    $b['TrustServerCertificate']=$ConfiarCertificado
+    $b['Persist Security Info']=$false
+    $b['Connect Timeout']=15
+    $b['Application Name']='HotelTramonto-Pruebas-Controladas'
+    return $b.get_ConnectionString()
+}
+function Abrir([string]$Base) {
+    $cadena=Crear-CadenaConexion $Servidor $Base ([bool]$ConfiarCertificadoLocal)
+    $c = New-Object -TypeName System.Data.SqlClient.SqlConnection -ArgumentList $cadena
     $c.Open()
     return $c
 }
@@ -118,6 +129,7 @@ try {
     Add-Type -AssemblyName System.Data
     $null=Get-Command dotnet -ErrorAction Stop
     $Manifest=@{
+        'tools/Probar-CadenaConexion.ps1'='8EE34317B3A6F6A8427B911E08551F322DF967D3BD7A9157B8ACF3C4BB0C2BE4'
         'HotelTramonto.Datos/ConexionBD.cs'='AFEC5A33A1757C3A34081983CC2A2F622C4E10F129A2BB72E1D987F879E26D29'
         'HotelTramonto.Datos/DetalleReservaDatos.cs'='2FE2BBA8F285392190EEE4F9E2C3C028F5BD4BCE815B9D37F63F57F67E13CF4E'
         'HotelTramonto.Datos/DetalleServicioDatos.cs'='40393E0CFE800E5192D3CAD6866CF04D7A391B6FCA0E07A079C747AE84C2C406'
@@ -193,6 +205,8 @@ try {
         Exigir ((HuellaArchivo $archivo) -eq $item.Value) ('Archivo modificado/no revisado: '+$item.Key)
     }
     Registrar 'Integridad de scripts y pruebas' 'Lista cerrada; no se permite ejecutar archivos arbitrarios.'
+    & (Join-Path $PSScriptRoot 'Probar-CadenaConexion.ps1') | Out-File -LiteralPath (Join-Path $Salida 'cadena-conexion.log') -Encoding utf8
+    Registrar 'Construcción de cadena SQL' 'Cuatro combinaciones y ocho claves verificadas sin abrir conexiones.'
     $Maestra=Abrir 'master' # solo SELECT de metadatos, nunca comandos de escritura
     $t=Tabla $Maestra "SELECT CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor, CONVERT(int,SERVERPROPERTY('ProductMajorVersion')) AS version;"
     Exigir ($t.Rows[0].servidor -ieq $Servidor) ('Instancia inesperada: '+$t.Rows[0].servidor)

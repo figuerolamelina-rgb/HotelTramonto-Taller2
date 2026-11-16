@@ -26,7 +26,7 @@ fijadas deliberadamente. Se toleran los cambios de finales de línea LF/CRLF de 
 
 ## Secuencia y controles
 
-1. Comprueba integridad de 58 archivos revisados: SQL autorizados, fuentes y contratos
+1. Comprueba integridad de 59 archivos revisados: SQL autorizados, fuentes y contratos
    de las dependencias de pruebas. La lista de SQL ejecutables contiene exactamente
    siete archivos; no incluye instaladores de permisos, reversiones ni los SQL originales.
 2. Abre master SOLO para SELECT de metadatos. Verifica ServerName exactamente contra
@@ -100,8 +100,32 @@ manualmente; el runner nunca borra, recrea ni restaura bases. La reversión de d
 ## Validación realizada por el agente
 
 Parser oficial PowerShell: cero errores de sintaxis. Cuatro funciones puras probadas
-con un motor PowerShell hospedado (sin cargar el cuerpo ni funciones SQL), cuatro
+con un motor PowerShell hospedado (sin cargar el cuerpo ni funciones SQL), cinco
 comprobaciones estáticas Python y lista positiva de pruebas C# ejecutada en Linux:
 56 casos aprobados. El runner completo NO se ejecutó en Windows ni en tu SQL Server.
 La sintaxis y las comprobaciones estáticas no demuestran el resultado de las operaciones
 SQL, la conectividad, el certificado o las funciones de Windows PowerShell en tu equipo.
+
+## Corrección del constructor en Windows PowerShell 5.1
+
+SqlConnectionStringBuilder implementa IDictionary y PowerShell puede interpretar
+una asignación como `$b.DataSource = ...` como una clave SQL literal no admitida.
+Crear-CadenaConexion usa ahora exclusivamente indexadores con Data Source,
+Initial Catalog, Integrated Security, Encrypt, TrustServerCertificate,
+Persist Security Info, Connect Timeout y Application Name. Abrir recibe la cadena
+ya validada y sigue siendo el único punto que llama Open para iniciar conexión.
+
+El runner ejecuta primero tools/Probar-CadenaConexion.ps1 y registra su resultado
+en cadena-conexion.log. La prueba extrae SOLO Crear-CadenaConexion mediante AST,
+sin cargar el cuerpo del runner. Comprueba cuatro combinaciones (master/pruebas y
+certificado confiable/no confiable), las ocho opciones, ausencia de credenciales
+y construcción de un objeto SqlConnection que permanece cerrado. No abre ninguna
+conexión ni ejecuta migraciones o permisos. Es compatible con sintaxis 5.1; la
+comprobación completa sobre Windows PowerShell 5.1 se realizará en tu computadora.
+No se cambiaron controles de base original, confirmación, scripts SQL o informes.
+
+La regresión de construcción también pasó las cuatro combinaciones en un motor
+PowerShell hospedado con System.Data.SqlClient real en Linux, sin Open. En ese
+host se sustituyeron únicamente la carga de ensamblado/activación de objetos y
+la ruta del archivo, porque no es Windows PowerShell instalado. El archivo
+Probar-CadenaConexion.ps1 está preparado para ejecutarse nativamente en 5.1.
