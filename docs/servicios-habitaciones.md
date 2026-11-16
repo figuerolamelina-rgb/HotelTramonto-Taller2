@@ -137,23 +137,12 @@ histórica mediante un doble de Datos. No simulan una FK ni prueban concurrencia
 Las comprobaciones estáticas verifican estructura y contratos de scripts;
 no son compilación ni ejecución de T-SQL.
 
-Pendiente contra SQL Server: tests/servicios_habitaciones_sql.py prepara 28 pruebas
-opt-in de integración con pyodbc y un driver ODBC SQL Server ya disponible.
-Usa HOTELTRAMONTO_SQL_TEST_CONNECTION como cadena privada, nunca en el repositorio
-ni como argumento visible. Verifica DB_NAME antes de insertar.
-Usar el runner aislado de docs/verificacion-windows-servicios.md.
-No ejecutar directamente el archivo Python: exige la marca de la copia LocalDB.
-
-La copia necesita un usuario y huésped existentes y tres habitaciones.
-La suite crea servicios y reservas de prueba propios y LOS CONSERVA; no borra
-datos ni modifica consumos anteriores. No ejecutarla en la base original.
-Comprueba una/varias habitaciones, FK, servicio inactivo, estados sin CHECKIN,
-precio cambiado, reintentos y payload distinto, históricos sin habitación,
-dos cobros simultáneos, reintentos simultáneos, consumo/pago/cierre concurrentes.
-Las pruebas de concurrencia usan conexiones independientes y una barrera.
-Un timeout/deadlock inesperado falla la prueba; no cuenta como aprobación.
-La suite ampliada cubre también altas generales, aprobaciones, alojamiento y confirmación; permanece sin ejecutar.
-Repetir corridas de concurrencia en la copia y revisar resultados antes de integrar.
+Pendiente contra SQL Server: tests/HotelTramonto.VerificacionSql prepara 28 pruebas
+de integración C# con Microsoft.Data.SqlClient, sin Python ni LocalDB.
+Se ejecutan exclusivamente en la copia temporal verificada, no sobre las bases
+HotelTramontoDB ni HotelTramontoDB_Pruebas. El ejecutor .NET comprueba guardas sin
+SQL antes de conectar y emite un informe con aprobadas/fallidas/pendientes.
+Ver [verificacion-windows-servicios.md](verificacion-windows-servicios.md).
 
 También queda pendiente probar UI en Windows con ambos roles operativos,
 selección vacía, catálogo actualizado, reserva cerrada, fallo de conexión/reintento,
@@ -178,10 +167,10 @@ Nuevos:
 - base de datos HotelTramonto/servicios-habitaciones/02_Verificar.sql
 - base de datos HotelTramonto/servicios-habitaciones/03_Recuperacion.sql
 - tools/verificar_servicios_habitaciones.py
-- tests/servicios_habitaciones_sql.py
+- tests/HotelTramonto.VerificacionSql (ejecutor .NET)
 - docs/servicios-habitaciones.md
 
-Comprobaciones locales de la versión completa: 72 pruebas .NET aprobadas,
+Comprobaciones locales de la versión completa: 81 pruebas .NET aprobadas,
 19 comprobaciones estáticas aprobadas entre servicios, concurrencia e historial.
 Tres pruebas .NET que acceden a SQL quedaron explícitamente excluidas.
 Las 28 pruebas de integración SQL están preparadas y NO ejecutadas.

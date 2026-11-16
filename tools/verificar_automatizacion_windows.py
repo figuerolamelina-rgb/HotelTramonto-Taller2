@@ -1,78 +1,75 @@
-"""Pruebas locales de las barreras de la automatización; no ejecutan PowerShell ni SQL."""
-import ast
+"""Regresión estática de la alternativa Express/.NET; Python NO se necesita para ejecutarla."""
 import re
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "tools/Probar-ServiciosHabitaciones.ps1"
-SUITE = ROOT / "tests/servicios_habitaciones_sql.py"
+CODE = ROOT / "tests/HotelTramonto.VerificacionSql"
 
 
 class AutomatizacionTests(unittest.TestCase):
     def setUp(self):
-        self.ps = SCRIPT.read_text(encoding="utf-8-sig")
-        self.py = SUITE.read_text()
-        self.tree = ast.parse(self.py)
+        self.ps = (ROOT / "tools/Probar-ServiciosHabitaciones.ps1").read_text(encoding="utf-8-sig")
+        self.seguridad = (CODE / "SeguridadCopia.cs").read_text()
+        self.runner = (CODE / "Ejecutor.cs").read_text()
+        self.cases = (CODE / "CasosSql.cs").read_text()
+        self.sql = (CODE / "Sql.cs").read_text()
 
-    def test_exactly_28_real_cases_and_checked_outcome(self):
-        cases = [n for n in ast.walk(self.tree) if isinstance(n, ast.FunctionDef) and n.name.startswith("test_")]
-        self.assertEqual(28, len(cases))
-        self.assertIn("suite.countTestCases() != 28", self.py)
-        self.assertIn("result.testsRun == 28 and not result.skipped", self.py)
-        self.assertIn("$summary.executed -ne 28", self.ps)
-        self.assertIn("$summary.errors -ne 0", self.ps)
-        self.assertIn("[int]$counters.executed -le 0", self.ps)
-        self.assertIn("tests-dotnet.trx", self.ps)
+    def test_28_cases_and_report(self):
+        self.assertEqual(28, len(re.findall(r'\("\d\d_[^"]+", c =>', self.cases)))
+        self.assertIn("informe.Aprobadas == 28", self.runner)
+        self.assertIn('Estado { get; set; } = "Pendiente"', self.runner)
+        self.assertIn('informe.Pruebas[i].Estado = "Fallida"', self.runner)
 
-    def test_no_source_server_parameter_or_connection(self):
-        parameters = self.ps.split("Set-StrictMode", 1)[0]
-        self.assertNotIn("$Server", parameters)
-        self.assertNotIn("$ConnectionString", parameters)
-        self.assertIn("$builder.DataSource = $script:pipe", self.ps)
-        self.assertIn("$builder.IntegratedSecurity = $true", self.ps)
-        self.assertNotIn("TrustServerCertificate", self.ps)
-        self.assertIn("$metadata.Tables[0].Rows[0].EsLocalDB -ne 1", self.ps)
+    def test_no_extra_programs(self):
+        self.assertNotIn("SqlLocalDB.exe", self.ps)
+        self.assertNotIn("pyodbc", self.ps)
+        self.assertNotIn("ODBC Driver", self.ps)
+        self.assertNotIn("& python", self.ps)
+        self.assertIn("HotelTramonto.VerificacionSql", self.ps)
+        self.assertNotIn("PackageReference", (CODE / "HotelTramonto.VerificacionSql.csproj").read_text())
 
-    def test_named_pipe_guard_rejects_remote_and_existing_names(self):
-        pattern = re.search(r"\$script:pipe -notmatch '([^']+)'", self.ps)[1]
-        self.assertRegex(r"np:\\.\pipe\LOCALDB#12345678\tsql\query", pattern)
-        for value in (r"np:\\remote\pipe\LOCALDB#abc\tsql\query", "localhost", r"(localdb)\MSSQLLocalDB"):
-            self.assertIsNone(re.match(pattern, value))
-        self.assertIn("$script:instance -notmatch '^HT56_[a-f0-9]{32}$'", self.ps)
+    def test_only_generated_copy_and_matching_marker(self):
+        self.assertIn('Prefijo = "HotelTramontoDB_HT56_"', self.seguridad)
+        self.assertIn('Ejecucion.ToString("N")', self.seguridad)
+        self.assertIn("sys.extended_properties", self.seguridad)
+        self.assertIn("LOWER(REPLACE(CONVERT(nvarchar(36),@HT_Run)", self.seguridad)
+        self.assertIn("Solo se admite", self.runner)
+        self.assertIn("lpc:", self.sql)
 
-    def test_explicit_confirmation_precedes_installation(self):
-        prompt = self.ps.index("$answer = Read-Host")
-        self.assertLess(prompt, self.ps.index("foreach ($script in @('01_Instalar.sql'"))
-        self.assertIn("if ($answer -cne 'INSTALAR') { throw", self.ps)
-        self.assertNotRegex(self.ps, r"(?i)\[switch\].*(?:force|yes|confirm)")
-        self.assertIn("Invoke-Migration '00_Diagnostico.sql'", self.ps)
+    def test_confirmation_and_order(self):
+        self.assertLess(self.runner.index('Console.ReadLine() != "INSTALAR"'),
+                        self.runner.index('foreach (string nombre in new[]'))
+        self.assertIn('"01_Instalar.sql", "02_Verificar.sql", "04_ConcurrenciaPagos.sql", "05_VerificarConcurrencia.sql"', self.runner)
+        self.assertNotIn("03_Recuperacion.sql", self.runner)
+        self.assertNotIn("06_SuspenderEscrituras.sql", self.runner)
 
-    def test_disposable_restore_and_cleanup_even_on_failure(self):
-        self.assertIn("Invoke-Checked $localDb @('create', $instance)", self.ps)
-        self.assertIn("$created = $true", self.ps)
-        self.assertIn("RESTORE DATABASE [HotelTramontoDB_Pruebas]", self.ps)
-        self.assertNotRegex(self.ps, r"(?i)\bWITH\s+REPLACE\b")
-        self.assertNotRegex(self.ps, r"(?im)^\s*.*BACKUP DATABASE")
-        self.assertIn("finally {", self.ps)
-        self.assertIn("& $localDb stop $instance -k", self.ps)
-        self.assertIn("& $localDb delete $instance", self.ps)
-        self.assertIn("Remove-Item -LiteralPath $dataDir", self.ps)
-        self.assertNotIn("Remove-Item -LiteralPath $backup", self.ps)
+    def test_restore_never_replaces_files_or_databases(self):
+        # Comments can describe the forbidden option; the SQL issued never contains it.
+        sql_lines = "\n".join(line for line in self.runner.splitlines() if not line.lstrip().startswith("//"))
+        self.assertNotRegex(sql_lines, r"(?i)\bWITH\s+REPLACE\b")
+        self.assertIn("xp_fileexist", self.runner)
+        self.assertIn("sys.master_files", self.runner)
+        self.assertIn("La base ya existe; no se restaura", self.runner)
+        self.assertIn("InstanceDefaultDataPath", self.runner)
 
-    def test_history_compared_before_and_after_and_environment_restored(self):
-        self.assertEqual(2, self.ps.count("Assert-HistoryUnchanged $baseline"))
-        self.assertIn("$current[$key] -cne $before.Rows[$key]", self.ps)
-        self.assertIn("$env:HOTELTRAMONTO_SQL_TEST_CONNECTION = $previousConnection", self.ps)
-        self.assertIn("'HotelTramonto\\Verificaciones\\'", self.ps)
-        self.assertIn("SERVERPROPERTY('IsLocalDB')", self.py)
-        self.assertIn('self.assertEqual(run_id, marker', self.py)
+    def test_cleanup_requires_full_identity_without_killing_sessions(self):
+        self.assertIn("if (!marcada || idCreado is null || fechaCreada is null || propietario is null)", self.runner)
+        self.assertIn("create_date=@p2 AND owner_sid=@p3", self.runner)
+        self.assertIn("sys.dm_exec_sessions", self.runner)
+        self.assertIn("SET SINGLE_USER WITH NO_WAIT", self.runner)
+        self.assertNotIn("ROLLBACK IMMEDIATE", self.runner)
+        self.assertIn("ExigirArchivos(master);", self.runner)
 
-    def test_script_exit_status_and_install_order(self):
-        self.assertIn("$exitCode = $LASTEXITCODE", self.ps)
-        self.assertIn("if ($exitCode -ne 0)", self.ps)
-        self.assertIn("@('01_Instalar.sql', '02_Verificar.sql', '04_ConcurrenciaPagos.sql', '05_VerificarConcurrencia.sql')", self.ps)
-        self.assertNotRegex(self.ps, r"Invoke-Migration '0[36]_")
+    def test_independent_connections_and_history(self):
+        self.assertIn("copia.Abrir()", self.cases)
+        self.assertIn("new Barrier", self.cases)
+        self.assertIn("Task.WhenAll", self.cases)
+        self.assertIn("Pooling = false", self.sql)
+        history = (CODE / "Historicos.cs").read_text()
+        self.assertIn("SHA256.HashData", history)
+        self.assertIn("original.Filas", history)
+        self.assertEqual(2, self.runner.count("historicos.Verificar(Copia)"))
 
 
 if __name__ == "__main__":

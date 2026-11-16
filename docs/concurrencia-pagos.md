@@ -150,16 +150,12 @@ Las comprobaciones estáticas verifican contratos, orden de locks, escritor úni
 compatibilidad con confirmación y preservación de definiciones.
 NO son compilación ni ejecución de T-SQL.
 
-tests/servicios_habitaciones_sql.py prepara 28 pruebas opt-in, con conexiones
-independientes y barreras: dos cobros, altas generales contra cobro especializado,
-aprobaciones distintas del mismo saldo, replay idéntico/distinto, saldo de
-alojamiento, pago inicial 50/100, confirmación, check-in/out, pendientes después
-del cierre, precios y separación histórica.
-No se ejecutó esta suite. Crea y conserva fixtures propios únicamente en copia
-desechable, con un usuario activo, huésped y tres habitaciones disponibles.
-La ejecución se realiza mediante tools/Probar-ServiciosHabitaciones.ps1.
-El runner configura la conexión local y una marca de ejecución; Python rechaza
-bases que no sean esa copia LocalDB. No ejecutar contra la base original.
+tests/HotelTramonto.VerificacionSql convierte las 28 pruebas a C#/.NET 10.
+Las ejecuta solo en una base temporal con GUID y marca verificados de SQL Express.
+No requiere Python, LocalDB, pyodbc ni ODBC. Ver el comando y los controles en
+[verificacion-windows-servicios.md](verificacion-windows-servicios.md).
+Las pruebas SQL siguen pendientes: aquí solo se ejecutaron compilación y pruebas
+sin SQL. Cada contendiente usa su propia conexión física.
 
 Pendientes antes de declarar preparación operativa:
 - Ejecutar y revisar esas pruebas T-SQL y la suite multisesión en SQL Server.
@@ -181,7 +177,7 @@ de vida requiere una revisión específica. No se afirma que ese ciclo esté res
 
 - Compilación .NET 10 con EnableWindowsTargeting: 0 errores, 121 advertencias
   de nulabilidad/delegados del código existente.
-- 72 pruebas .NET aprobadas, 0 fallidas, 0 omitidas dentro del filtro seguro.
+- 81 pruebas .NET aprobadas, 0 fallidas, 0 omitidas dentro del filtro seguro.
   Tres pruebas SQL de README se excluyeron expresamente.
 - 19 comprobaciones estáticas del modelo y concurrencia aprobadas: 8 de servicios/habitación, 7 de
   concurrencia de pagos y 4 de regresión del historial.
@@ -194,50 +190,25 @@ Las pruebas de confirmación y de pago inicial preparado incluyen ambos modos;
 el redondeo se comprueba sin SQL en la suite .NET.
 
 
-## Automatización Windows y revisión final
+## Automatización Express/.NET actual
 
-Los 27 archivos de la implementación previa están conservados. Se agregan
-Probar-ServiciosHabitaciones.ps1, verificar_automatizacion_windows.py y la guía
-verificacion-windows-servicios.md: 30 archivos en total.
-La usuaria confirmó que Servicios.categoria ya está instalada y verificada en
-HotelTramontoDB_Pruebas. No se ejecutó ni duplicó esa migración aquí.
+La automatización LocalDB anterior quedó sustituida por el ejecutor .NET 10,
+conservando las 28 comprobaciones de integración en CasosSql.cs.
+Se usa la instancia autorizada LAPTOP-5TSJJUP8/SQLEXPRESS y una base temporal
+HotelTramontoDB_HT56_<GUID>, jamás las dos bases originales.
+Los scripts SQL protegidos no se editaron: se adaptan en memoria solo para la
+copia identificada por su GUID, bajo las barreras documentadas.
 
 La guía [verificacion-windows-servicios.md](verificacion-windows-servicios.md)
-contiene el comando único, requisitos, aislamiento LocalDB, pausa INSTALAR,
-comparación de históricos y el análisis de check-in sin modificarlo.
-Las 7 comprobaciones estáticas nuevas de la automatización se suman a las 19
-anteriores (26 en total). La sintaxis PowerShell se comprueba con el parser oficial,
-sin ejecutar comandos de SQL. La ejecución completa en Windows queda pendiente.
+contiene el comando para la Terminal de Visual Studio, los requisitos de respaldo,
+la pausa INSTALAR, comparación de once tablas históricas y eliminación sin forzar
+sesiones. No hay nuevos paquetes NuGet: SqlClient se reutiliza desde Datos.
 
-## Archivos nuevos o modificados de la entrega completa
+Los 28 casos SQL NO se ejecutaron. Continúan pendientes hasta que se cree el
+respaldo posterior a categoria y anterior a correcciones 5/6.
+No se modificó ningún procedimiento económico ni sp_Reserva_CheckIn en este ajuste.
 
-- HotelTramonto.Datos/DetalleServicioDatos.cs
-- HotelTramonto.Datos/IDetalleServicioDatos.cs
-- HotelTramonto.Datos/PagoDatos.cs
-- HotelTramonto.Datos/ReservaTemporalDatos.cs
-- HotelTramonto.Entidades/Entidades/DetalleServicio.cs
-- HotelTramonto.Entidades/Entidades/Pago.cs
-- HotelTramonto.Negocios/DetalleServicioNegocios.cs
-- HotelTramonto.Negocios/DiarioOperaciones.cs
-- HotelTramonto.Negocios/FlujoReservaNegocios.cs
-- HotelTramonto.Negocios/PagoNegocios.cs
-- HotelTramonto.Presentacion/FormNuevaReserva.cs
-- HotelTramonto.Presentacion/FormPagos.cs
-- HotelTramonto.Presentacion/FormRegistrarConsumos.cs
-- HotelTramonto.Pruebas/DiarioOperacionesTests.cs
-- HotelTramonto.Pruebas/ServiciosHabitacionTests.cs
-- base de datos HotelTramonto/servicios-habitaciones/00_Diagnostico.sql
-- base de datos HotelTramonto/servicios-habitaciones/01_Instalar.sql
-- base de datos HotelTramonto/servicios-habitaciones/02_Verificar.sql
-- base de datos HotelTramonto/servicios-habitaciones/03_Recuperacion.sql
-- base de datos HotelTramonto/servicios-habitaciones/04_ConcurrenciaPagos.sql
-- base de datos HotelTramonto/servicios-habitaciones/05_VerificarConcurrencia.sql
-- base de datos HotelTramonto/servicios-habitaciones/06_SuspenderEscrituras.sql
-- docs/concurrencia-pagos.md
-- docs/servicios-habitaciones.md
-- docs/verificacion-windows-servicios.md
-- tests/servicios_habitaciones_sql.py
-- tools/Probar-ServiciosHabitaciones.ps1
-- tools/verificar_automatizacion_windows.py
-- tools/verificar_concurrencia_pagos.py
-- tools/verificar_servicios_habitaciones.py
+Validación de la alternativa Express: 81 pruebas .NET sin SQL aprobadas y
+34 comprobaciones internas del ejecutor aprobadas, además de las 26 estáticas
+de scripts/historial/automatización. Los 28 casos SQL están compilados en C#,
+pero no ejecutados. El recorrido requiere un respaldo aún pendiente de crear.
