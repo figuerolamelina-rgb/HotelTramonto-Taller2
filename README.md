@@ -114,3 +114,8 @@ La instalación de permisos SQL sigue bloqueada y pendiente.
 
 Para ejecutar el recorrido controlado desde un único comando en Windows, ver
 [Automatización de pruebas](docs/automatizacion-windows.md).
+
+Para la aceptación final sin repetir migración, ver
+[Resultados y verificador final](docs/resultados-finales-correccion2.md).
+El nuevo comando ejecuta 68 casos .NET y verifica contratos SQL mediante metadatos,
+sin instalar migraciones ni permisos.
