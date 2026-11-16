@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Windows.Forms;
 using HotelTramonto.Negocios;
@@ -24,6 +24,7 @@ namespace HotelTramonto.Presentacion
             this.rolUsuario = rolUsuario?.Trim() ?? string.Empty;
 
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
             AplicarEstilo();
             ConfigurarPermisos();
             CargarHabitaciones();
@@ -418,7 +419,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al cargar las habitaciones",
                     "No se pudieron cargar las habitaciones.\n\nDetalle: "
-                    + ex.Message,
+                    + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -521,7 +522,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al desactivar",
                     "No se pudo desactivar la habitación.\n\nDetalle: "
-                    + ex.Message,
+                    + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -545,7 +546,7 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MostrarMensaje("Error al reactivar", "No se pudo abrir la lista de habitaciones inactivas.\n\n" + ex.Message, true);
+                MostrarMensaje("Error al reactivar", "No se pudo abrir la lista de habitaciones inactivas.\n\n" + RegistroErrores.Mensaje(ex), true);
             }
         }
 

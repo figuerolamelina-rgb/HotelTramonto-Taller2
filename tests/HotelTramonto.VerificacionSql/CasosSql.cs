@@ -3,7 +3,7 @@ using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.VerificacionSql;
 
-public sealed class CasosSql : IDisposable
+public sealed partial class CasosSql : IDisposable
 {
     private readonly CopiaSql copia;
     private readonly SqlConnection db;

@@ -7,6 +7,8 @@ namespace HotelTramonto.Negocios
 {
     public class HuespedNegocios
     {
+        private readonly string? rolOperacion;
+        public HuespedNegocios(string? rol = null) { rolOperacion = rol; }
         private readonly HuespedDatos huespedDatos = new HuespedDatos();
 
         public DataTable HistorialReservas(int idHuesped, string rol)
@@ -33,6 +35,7 @@ namespace HotelTramonto.Negocios
             string? email,
             string nacionalidad)
         {
+            PermisosOperacion.Exigir(rolOperacion);
             ValidarHuesped(nombre, apellido, dni, email, nacionalidad);
 
             huespedDatos.Insertar(
@@ -53,6 +56,7 @@ namespace HotelTramonto.Negocios
             string? email,
             string nacionalidad)
         {
+            PermisosOperacion.Exigir(rolOperacion);
             if (idHuesped <= 0)
                 throw new ArgumentException(
                     "El huésped seleccionado no es válido.");
@@ -71,6 +75,7 @@ namespace HotelTramonto.Negocios
 
         public void Desactivar(int idHuesped)
         {
+            PermisosOperacion.Exigir(rolOperacion);
             if (idHuesped <= 0)
                 throw new ArgumentException(
                     "El huésped seleccionado no es válido.");
@@ -80,11 +85,13 @@ namespace HotelTramonto.Negocios
 
         public DataTable Listar()
         {
+            PermisosOperacion.Exigir(rolOperacion);
             return huespedDatos.Listar();
         }
 
         public DataTable BuscarPorDNI(string dni)
         {
+            PermisosOperacion.Exigir(rolOperacion);
             if (!Validaciones.DNIValido(dni))
                 throw new ArgumentException(
                     "El DNI debe contener entre 7 y 15 dígitos.");
@@ -110,6 +117,7 @@ namespace HotelTramonto.Negocios
 
         public void Reactivar(int idHuesped)
         {
+            PermisosOperacion.Exigir(rolOperacion);
             if (idHuesped <= 0)
                 throw new ArgumentException(
                     "El huésped seleccionado no es válido.");

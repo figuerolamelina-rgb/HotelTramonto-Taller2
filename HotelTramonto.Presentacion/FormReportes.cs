@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using System.Drawing;
@@ -9,7 +9,7 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormReportes : Form
     {
-        private readonly ReporteNegocios negocio = new ReporteNegocios();
+        private readonly ReporteNegocios negocio;
 
         private DateTimePicker dtpDesde;
         private DateTimePicker dtpHasta;
@@ -27,9 +27,12 @@ namespace HotelTramonto.Presentacion
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
-        public FormReportes()
+        public FormReportes(string rol)
         {
+            PermisosOperacion.ExigirReportes(rol);
+            negocio = new ReporteNegocios(rol);
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
             ConfigurarFormulario();
         }
 
@@ -399,7 +402,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al generar el reporte",
-                    "No se pudo generar el reporte.\n\n" + ex.Message,
+                    "No se pudo generar el reporte.\n\n" + RegistroErrores.Mensaje(ex),
                     true);
             }
         }

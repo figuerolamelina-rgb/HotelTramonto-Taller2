@@ -17,7 +17,8 @@ class AutomatizacionTests(unittest.TestCase):
 
     def test_28_cases_and_report(self):
         self.assertEqual(28, len(re.findall(r'\("\d\d_[^"]+", c =>', self.cases)))
-        self.assertIn("informe.Aprobadas == 28", self.runner)
+        self.assertIn("informe.Aprobadas == casos.Length", self.runner)
+        self.assertIn("CasosSql.Todos.Concat(CasosSql.Ciclo)", self.runner)
         self.assertIn('Estado { get; set; } = "Pendiente"', self.runner)
         self.assertIn('informe.Pruebas[i].Estado = "Fallida"', self.runner)
 

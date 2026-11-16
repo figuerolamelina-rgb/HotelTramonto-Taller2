@@ -7,12 +7,15 @@ namespace HotelTramonto.Negocios
 {
     public class DetalleServicioNegocios
     {
+        private readonly string? rol;
+
         private readonly IDetalleServicioDatos datos;
 
-        public DetalleServicioNegocios() : this(new DetalleServicioDatos()) { }
+        public DetalleServicioNegocios(string? rol = null) : this(new DetalleServicioDatos(), rol) { }
 
-        public DetalleServicioNegocios(IDetalleServicioDatos datos)
+        public DetalleServicioNegocios(IDetalleServicioDatos datos, string? rol = null)
         {
+            this.rol = rol;
             this.datos = datos ?? throw new ArgumentNullException(nameof(datos));
         }
 
@@ -23,6 +26,7 @@ namespace HotelTramonto.Negocios
             decimal precioUnitario,
             int idHabitacion, Guid idOperacion)
         {
+            PermisosOperacion.Exigir(rol);
             if (idHabitacion <= 0 || idOperacion == Guid.Empty)
                 throw new ArgumentException("Seleccioná una habitación y una operación válidas.");
             if (idServicio <= 0)
@@ -54,12 +58,14 @@ namespace HotelTramonto.Negocios
 
         public DataTable HabitacionesDeReserva(int idReserva)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReserva <= 0) throw new ArgumentException("La reserva no es válida.");
             return new DetalleReservaDatos().ListarPorReserva(idReserva);
         }
 
         public DataTable ListarPorReserva(int idReserva, int? idHabitacion = null)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReserva <= 0 || idHabitacion <= 0)
                 throw new ArgumentException(
                     "El ID de la reserva no es válido.");

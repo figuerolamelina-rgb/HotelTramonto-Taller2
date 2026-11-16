@@ -10,14 +10,15 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormNuevaReserva : Form
     {
+        private readonly string rolOperacion;
         private readonly int idUsuario;
 
-        private readonly HuespedNegocios huespedNegocios = new HuespedNegocios();
+        private readonly HuespedNegocios huespedNegocios;
         private readonly HabitacionNegocios habitacionNegocios = new HabitacionNegocios();
         private readonly TipoHabitacionNegocios tipoNegocios = new TipoHabitacionNegocios();
-        private readonly ReservaTemporalNegocios temporalNegocios = new ReservaTemporalNegocios();
-        private readonly ReservaNegocios reservaNegocios = new ReservaNegocios();
-        private readonly PagoNegocios pagoNegocios = new PagoNegocios();
+        private readonly ReservaTemporalNegocios temporalNegocios;
+        private readonly ReservaNegocios reservaNegocios;
+        private readonly PagoNegocios pagoNegocios;
 
         private ComboBox cmbHuesped = new ComboBox();
         private ComboBox cmbHabitacion = new ComboBox();
@@ -38,8 +39,14 @@ namespace HotelTramonto.Presentacion
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
-        public FormNuevaReserva(int idUsuario)
+        public FormNuevaReserva(int idUsuario, string rol)
         {
+            PermisosOperacion.Exigir(rol);
+            rolOperacion = rol;
+            huespedNegocios = new HuespedNegocios(rol);
+            temporalNegocios = new ReservaTemporalNegocios(rol);
+            reservaNegocios = new ReservaNegocios(rol);
+            pagoNegocios = new PagoNegocios(rol);
             InitializeComponent();
 
             if (idUsuario <= 0)
@@ -81,7 +88,7 @@ namespace HotelTramonto.Presentacion
             try
             {
                 var operacion = diario.Ejecutar(ClaveReserva, solicitud,
-                    contexto => new FlujoReservaNegocios().Ejecutar(solicitud, contexto));
+                    contexto => new FlujoReservaNegocios(rolOperacion).Ejecutar(solicitud, contexto));
                 if (operacion.Valor.Rows.Count == 0)
                     throw new InvalidOperationException("La reserva no devolvió un resultado.");
                 var fila = operacion.Valor.Rows[0];

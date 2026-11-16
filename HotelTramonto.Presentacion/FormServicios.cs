@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using System.Drawing;
@@ -31,6 +31,7 @@ namespace HotelTramonto.Presentacion
         public FormServicios(string rol)
         {
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
 
             rolUsuario = rol.Trim().ToUpperInvariant();
 
@@ -261,7 +262,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al cargar los servicios",
                     "No se pudieron cargar los servicios.\n\nDetalle: " +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -395,7 +396,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al registrar",
                     "No se pudo registrar el servicio.\n\nDetalle: " +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -435,7 +436,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al modificar",
                     "No se pudo modificar el servicio.\n\nDetalle: " +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -475,7 +476,7 @@ namespace HotelTramonto.Presentacion
                     MostrarMensaje(
                         "Error al reactivar",
                         "No se pudo reactivar el servicio.\n\nDetalle: " +
-                        ex.Message,
+                        RegistroErrores.Mensaje(ex),
                         true);
                 }
 
@@ -504,7 +505,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al desactivar",
                     "No se pudo desactivar el servicio.\n\nDetalle: " +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }

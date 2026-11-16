@@ -8,6 +8,9 @@ namespace HotelTramonto.Negocios
 {
     public class PagoNegocios
     {
+        private readonly string? rol;
+        public PagoNegocios(string? rol = null) { this.rol = rol; }
+
         private readonly PagoDatos datos = new PagoDatos();
 
         public int Insertar(
@@ -19,6 +22,7 @@ namespace HotelTramonto.Negocios
             string estado,
             string tipoPago, Guid idOperacion)
         {
+            PermisosOperacion.Exigir(rol);
             ValidarOperacion(idOperacion);
             if (!idReserva.HasValue && !idReservaTemporal.HasValue)
                 throw new Exception(
@@ -58,6 +62,7 @@ namespace HotelTramonto.Negocios
 
         public void ActualizarEstado(int idPago, string estado)
         {
+            PermisosOperacion.Exigir(rol);
             if (idPago <= 0)
                 throw new Exception("El ID del pago no es válido.");
 
@@ -69,6 +74,7 @@ namespace HotelTramonto.Negocios
 
         public DataTable ListarPorReserva(int idReserva)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReserva <= 0)
                 throw new Exception("El ID de la reserva no es válido.");
 
@@ -80,6 +86,7 @@ namespace HotelTramonto.Negocios
             int idUsuario,
             string metodoPago, Guid idOperacion)
         {
+            PermisosOperacion.Exigir(rol);
             ValidarOperacion(idOperacion);
             ValidarReservaUsuarioMetodo(idReserva, idUsuario, metodoPago);
 
@@ -94,6 +101,7 @@ namespace HotelTramonto.Negocios
             int idUsuario,
             string metodoPago, Guid idOperacion)
         {
+            PermisosOperacion.Exigir(rol);
             ValidarOperacion(idOperacion);
             ValidarReservaUsuarioMetodo(idReserva, idUsuario, metodoPago);
 

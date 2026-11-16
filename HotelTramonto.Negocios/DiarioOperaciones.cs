@@ -135,7 +135,7 @@ public sealed class DiarioOperaciones
     }
 
     private static bool RechazoSinEscritura(int numero) =>
-        numero is >= 51313 and <= 51318 or 51402 or 51404 or >= 51410 and <= 51420;
+        ErroresOperacionSql.Clasificar(numero) == HotelTramonto.Entidades.EstadoResultadoOperacion.RechazoDefinitivo;
 }
 
 public sealed record SolicitudCobro(int IdReserva, int IdUsuario, string Metodo, bool Servicios);

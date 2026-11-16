@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -8,14 +8,17 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormNuevoHuesped : Form
     {
+        private readonly string rolOperacion;
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
         private readonly Color crema = Color.FromArgb(245, 239, 229);
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
-        public FormNuevoHuesped()
+        public FormNuevoHuesped(string rol)
         {
+            PermisosOperacion.Exigir(rol);
+            rolOperacion = rol;
             InitializeComponent();
             AplicarEstilo();
         }
@@ -221,7 +224,7 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                HuespedNegocios negocio = new HuespedNegocios();
+                HuespedNegocios negocio = new HuespedNegocios(rolOperacion);
 
                 negocio.Insertar(
                     txtNombre.Text,

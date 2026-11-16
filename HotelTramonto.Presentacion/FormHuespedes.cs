@@ -20,12 +20,18 @@ namespace HotelTramonto.Presentacion
         private readonly string rolHistorial;
         private readonly Button btnHistorial = new Button();
 
-        public FormHuespedes() : this("") { }
+        public FormHuespedes()
+        {
+            rolHistorial = "";
+            InitializeComponent(); // Constructor del diseñador: no consulta Datos.
+        }
 
         public FormHuespedes(string rol)
         {
+            HotelTramonto.Negocios.PermisosOperacion.Exigir(rol);
             rolHistorial = rol?.Trim().ToUpperInvariant() ?? "";
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
             Controls.Add(btnHistorial);
             btnHistorial.Click += ConsultarHistorial;
             AplicarEstilo();
@@ -128,7 +134,7 @@ namespace HotelTramonto.Presentacion
             try
             {
                 int id = Convert.ToInt32(dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
-                DataTable historial = new HotelTramonto.Negocios.HuespedNegocios()
+                DataTable historial = new HotelTramonto.Negocios.HuespedNegocios(rolHistorial)
                     .HistorialReservas(id, rolHistorial);
                 using Form ventana = new Form
                 {
@@ -154,6 +160,7 @@ namespace HotelTramonto.Presentacion
                     RowHeadersVisible = false, BackgroundColor = marfil,
                     AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
                 };
+                PresentacionTablas.Conectar(ventana);
                 ventana.Controls.Add(tabla);
                 ventana.Controls.Add(aviso);
                 ventana.ShowDialog(this);
@@ -162,10 +169,9 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje("Acceso restringido", "No tiene permisos para consultar el historial.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                MostrarMensaje("Historial no disponible",
-                    "No se pudo consultar el historial. Verificá la configuración y la instalación del procedimiento.", true);
+                MostrarMensaje("Historial no disponible", RegistroErrores.Mensaje(ex), true);
             }
         }
 
@@ -393,7 +399,7 @@ namespace HotelTramonto.Presentacion
             try
             {
                 HotelTramonto.Negocios.HuespedNegocios negocio =
-                    new HotelTramonto.Negocios.HuespedNegocios();
+                    new HotelTramonto.Negocios.HuespedNegocios(rolHistorial);
 
                 dgvHuespedes.DataSource = negocio.Listar();
 
@@ -454,7 +460,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al cargar los huéspedes",
-                    "No se pudieron cargar los huéspedes.\n\nDetalle: " + ex.Message,
+                    "No se pudieron cargar los huéspedes.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -466,7 +472,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnNuevoHuesped_Click(object sender, EventArgs e)
         {
-            using (FormNuevoHuesped formulario = new FormNuevoHuesped())
+            using (FormNuevoHuesped formulario = new FormNuevoHuesped(rolHistorial))
             {
                 if (formulario.ShowDialog() == DialogResult.OK)
                 {
@@ -492,7 +498,7 @@ namespace HotelTramonto.Presentacion
                     dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
 
                 using (FormModificarHuesped formulario =
-                    new FormModificarHuesped(idHuesped))
+                    new FormModificarHuesped(idHuesped, rolHistorial))
                 {
                     if (formulario.ShowDialog() == DialogResult.OK)
                     {
@@ -504,7 +510,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al modificar el huésped",
-                    "No se pudo modificar el huésped.\n\nDetalle: " + ex.Message,
+                    "No se pudo modificar el huésped.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -544,7 +550,7 @@ namespace HotelTramonto.Presentacion
                 int idHuesped = Convert.ToInt32(
                     dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
 
-                new HotelTramonto.Negocios.HuespedNegocios()
+                new HotelTramonto.Negocios.HuespedNegocios(rolHistorial)
                     .Desactivar(idHuesped);
 
                 MostrarMensaje(
@@ -557,7 +563,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al desactivar",
-                    "No se pudo desactivar el huésped.\n\nDetalle: " + ex.Message,
+                    "No se pudo desactivar el huésped.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -597,7 +603,7 @@ namespace HotelTramonto.Presentacion
                 int idHuesped = Convert.ToInt32(
                     dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
 
-                new HotelTramonto.Negocios.HuespedNegocios()
+                new HotelTramonto.Negocios.HuespedNegocios(rolHistorial)
                     .Reactivar(idHuesped);
 
                 MostrarMensaje(
@@ -610,7 +616,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al reactivar",
-                    "No se pudo reactivar el huésped.\n\nDetalle: " + ex.Message,
+                    "No se pudo reactivar el huésped.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -744,7 +750,7 @@ namespace HotelTramonto.Presentacion
             try
             {
                 HotelTramonto.Negocios.HuespedNegocios negocio =
-                    new HotelTramonto.Negocios.HuespedNegocios();
+                    new HotelTramonto.Negocios.HuespedNegocios(rolHistorial);
 
                 DataTable resultado = negocio.BuscarPorDNI(dni);
 
@@ -764,7 +770,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al buscar el huésped",
-                    "No se pudo realizar la búsqueda.\n\nDetalle: " + ex.Message,
+                    "No se pudo realizar la búsqueda.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }

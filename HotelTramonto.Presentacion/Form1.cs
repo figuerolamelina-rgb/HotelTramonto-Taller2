@@ -28,6 +28,10 @@ namespace HotelTramonto.Presentacion
                 rolUsuario == "GERENTE";
 
             btnReportes.Visible = puedeVerReportes;
+            bool operativo = PermisosOperacion.PuedeOperar(rolUsuario);
+            btnPagos.Visible = operativo;
+            btnReservas.Visible = operativo;
+            btnHuespedes.Visible = operativo;
             btnServicios.Visible = esAdministrador;
 
             btnNuevoUsuario.Visible = esAdministrador;
@@ -736,7 +740,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnReservas_Click(object sender, EventArgs e)
         {
-            using (FormReservas formulario = new FormReservas(idUsuario))
+            using (FormReservas formulario = new FormReservas(idUsuario, rolUsuario))
             {
                 formulario.ShowDialog();
             }
@@ -752,7 +756,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnPagos_Click(object sender, EventArgs e)
         {
-            using (FormPagos formulario = new FormPagos(idUsuario))
+            using (FormPagos formulario = new FormPagos(idUsuario, rolUsuario))
             {
                 formulario.ShowDialog();
             }
@@ -760,7 +764,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnReportes_Click(object sender, EventArgs e)
         {
-            using (FormReportes formulario = new FormReportes())
+            using (FormReportes formulario = new FormReportes(rolUsuario))
             {
                 formulario.ShowDialog(this);
             }

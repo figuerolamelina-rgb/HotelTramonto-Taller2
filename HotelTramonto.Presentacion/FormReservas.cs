@@ -1,4 +1,4 @@
-﻿
+
 using HotelTramonto.Entidades;
 using HotelTramonto.Negocios;
 using System;
@@ -12,6 +12,7 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormReservas : Form
     {
+        private readonly string rolOperacion;
         private readonly int idUsuario;
 
         private readonly Color marron = Color.FromArgb(74, 48, 39);
@@ -25,9 +26,12 @@ namespace HotelTramonto.Presentacion
         private Panel pnlFiltros;
         private Label lblTituloFiltros;
 
-        public FormReservas(int idUsuario)
+        public FormReservas(int idUsuario, string rol)
         {
+            PermisosOperacion.Exigir(rol);
+            rolOperacion = rol;
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
 
             this.idUsuario = idUsuario;
 
@@ -519,7 +523,7 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                ReservaNegocios negocio = new ReservaNegocios();
+                ReservaNegocios negocio = new ReservaNegocios(rolOperacion);
                 dgvReservas.DataSource = negocio.Listar();
 
                 dgvReservas.ReadOnly = true;
@@ -550,7 +554,7 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                    "Error al cargar las reservas:\n" + ex.Message,
+                    "Error al cargar las reservas:\n" + RegistroErrores.Mensaje(ex),
                     "Error",
                     MessageBoxIcon.Error);
             }
@@ -594,7 +598,7 @@ namespace HotelTramonto.Presentacion
 
             try
             {
-                ReservaNegocios negocio = new ReservaNegocios();
+                ReservaNegocios negocio = new ReservaNegocios(rolOperacion);
                 negocio.Cancelar(idReserva);
 
                 MostrarMensaje(
@@ -606,7 +610,7 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                    "No se pudo cancelar la reserva:\n" + ex.Message,
+                    "No se pudo cancelar la reserva:\n" + RegistroErrores.Mensaje(ex),
                     "Error al cancelar",
                     MessageBoxIcon.Error);
             }
@@ -630,7 +634,7 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                ReservaNegocios negocio = new ReservaNegocios();
+                ReservaNegocios negocio = new ReservaNegocios(rolOperacion);
 
                 if (cmbEstado.SelectedItem == null)
                 {
@@ -655,7 +659,7 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                    "Error al filtrar las reservas:\n" + ex.Message,
+                    "Error al filtrar las reservas:\n" + RegistroErrores.Mensaje(ex),
                     "Error de filtro",
                     MessageBoxIcon.Error);
             }
@@ -674,7 +678,7 @@ namespace HotelTramonto.Presentacion
 
             try
             {
-                ReservaNegocios negocio = new ReservaNegocios();
+                ReservaNegocios negocio = new ReservaNegocios(rolOperacion);
 
                 dgvReservas.DataSource = negocio.ListarPorFechas(
                     dtpFechaDesde.Value.Date,
@@ -683,7 +687,7 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                    "Error al filtrar las reservas por fechas:\n" + ex.Message,
+                    "Error al filtrar las reservas por fechas:\n" + RegistroErrores.Mensaje(ex),
                     "Error de filtro",
                     MessageBoxIcon.Error);
             }
@@ -705,7 +709,7 @@ namespace HotelTramonto.Presentacion
                 int idReserva = Convert.ToInt32(
                     dgvReservas.CurrentRow.Cells["id_reserva"].Value);
 
-                ReservaNegocios negocio = new ReservaNegocios();
+                ReservaNegocios negocio = new ReservaNegocios(rolOperacion);
                 DataTable resultado = negocio.ConsultarSaldo(idReserva);
 
                 if (resultado.Rows.Count > 0)
@@ -757,7 +761,7 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                    "Error al consultar el saldo:\n" + ex.Message,
+                    "Error al consultar el saldo:\n" + RegistroErrores.Mensaje(ex),
                     "Error al consultar saldo",
                     MessageBoxIcon.Error);
             }
@@ -779,7 +783,7 @@ namespace HotelTramonto.Presentacion
                 int idReserva = Convert.ToInt32(
                     dgvReservas.CurrentRow.Cells["id_reserva"].Value);
 
-                ReservaNegocios negocio = new ReservaNegocios();
+                ReservaNegocios negocio = new ReservaNegocios(rolOperacion);
                 negocio.CheckIn(idReserva);
 
                 MostrarMensaje(
@@ -791,7 +795,7 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                    "Error al registrar el check-in:\n" + ex.Message,
+                    "Error al registrar el check-in:\n" + RegistroErrores.Mensaje(ex),
                     "Error de check-in",
                     MessageBoxIcon.Error);
             }
@@ -813,7 +817,7 @@ namespace HotelTramonto.Presentacion
                 int idReserva = Convert.ToInt32(
                     dgvReservas.CurrentRow.Cells["id_reserva"].Value);
 
-                ReservaNegocios negocio = new ReservaNegocios();
+                ReservaNegocios negocio = new ReservaNegocios(rolOperacion);
                 negocio.CheckOut(idReserva);
 
                 MostrarMensaje(
@@ -825,7 +829,7 @@ namespace HotelTramonto.Presentacion
             catch (Exception ex)
             {
                 MostrarMensaje(
-                    "Error al registrar el check-out:\n" + ex.Message,
+                    "Error al registrar el check-out:\n" + RegistroErrores.Mensaje(ex),
                     "Error de check-out",
                     MessageBoxIcon.Error);
             }
@@ -833,7 +837,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnNuevaReserva_Click(object sender, EventArgs e)
         {
-            using (FormNuevaReserva formulario = new FormNuevaReserva(idUsuario))
+            using (FormNuevaReserva formulario = new FormNuevaReserva(idUsuario, rolOperacion))
             {
                 if (formulario.ShowDialog(this) == DialogResult.OK)
                 {

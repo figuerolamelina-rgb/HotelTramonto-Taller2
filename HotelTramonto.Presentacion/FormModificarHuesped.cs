@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -8,8 +8,9 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormModificarHuesped : Form
     {
+        private readonly string rolOperacion;
         private readonly int idHuesped;
-        private readonly HuespedNegocios negocio = new HuespedNegocios();
+        private readonly HuespedNegocios negocio;
 
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
@@ -17,8 +18,11 @@ namespace HotelTramonto.Presentacion
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
-        public FormModificarHuesped(int idHuesped)
+        public FormModificarHuesped(int idHuesped, string rol)
         {
+            PermisosOperacion.Exigir(rol);
+            rolOperacion = rol;
+            negocio = new HuespedNegocios(rol);
             InitializeComponent();
 
             if (idHuesped <= 0)

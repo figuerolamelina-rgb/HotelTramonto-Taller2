@@ -78,7 +78,7 @@ public class DiarioOperacionesTests
             Assert.IsTrue(contexto.CreacionIniciada);
             Assert.IsNull(contexto.Referencia);
             Assert.ThrowsExactly<InvalidOperationException>(() =>
-                new FlujoReservaNegocios().Ejecutar(solicitud, contexto));
+                new FlujoReservaNegocios("RECEPCIONISTA").Ejecutar(solicitud, contexto));
             return true;
         });
     }
@@ -135,7 +135,7 @@ public class DiarioOperacionesTests
     [TestMethod]
     public void AprobacionesYAltasSinOperacion_NoLleganASQL()
     {
-        var pagos = new PagoNegocios();
+        var pagos = new PagoNegocios("RECEPCIONISTA");
         Assert.ThrowsExactly<ArgumentException>(() => pagos.RegistrarServicios(1, 1, "EFECTIVO", Guid.Empty));
         Assert.ThrowsExactly<ArgumentException>(() => pagos.RegistrarSaldoAlojamiento(1, 1, "EFECTIVO", Guid.Empty));
         Assert.ThrowsExactly<ArgumentException>(() => pagos.Insertar(null, 1, 1, 10m, "EFECTIVO", "APROBADO", "PAGO_INICIAL", Guid.Empty));

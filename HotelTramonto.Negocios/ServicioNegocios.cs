@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using HotelTramonto.Datos;
@@ -142,8 +142,9 @@ namespace HotelTramonto.Negocios
             datos.Reactivar(idServicio);
         }
 
-        public DataTable ListarParaConsumo()
+        public DataTable ListarParaConsumo(string? rol = null)
         {
+            PermisosOperacion.Exigir(rol);
             DataTable servicios = datos.Listar();
 
             // Los servicios incluidos en el alojamiento

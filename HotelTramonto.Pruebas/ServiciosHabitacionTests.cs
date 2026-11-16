@@ -31,7 +31,7 @@ public class ServiciosHabitacionTests
     {
         var datos = new Datos();
         Assert.ThrowsExactly<ArgumentException>(() =>
-            new DetalleServicioNegocios(datos).Insertar(servicio, reserva, cantidad, 20m, habitacion, Guid.NewGuid()));
+            new DetalleServicioNegocios(datos, "RECEPCIONISTA").Insertar(servicio, reserva, cantidad, 20m, habitacion, Guid.NewGuid()));
         Assert.AreEqual(0, datos.Solicitudes.Count);
     }
 
@@ -42,25 +42,25 @@ public class ServiciosHabitacionTests
         {
             var datos = new Datos();
             Assert.ThrowsExactly<ArgumentException>(() =>
-                new DetalleServicioNegocios(datos).Insertar(1, 1, 1, precio, 1, Guid.NewGuid()));
+                new DetalleServicioNegocios(datos, "RECEPCIONISTA").Insertar(1, 1, 1, precio, 1, Guid.NewGuid()));
             Assert.AreEqual(0, datos.Solicitudes.Count);
         }
         Assert.ThrowsExactly<ArgumentException>(() =>
-            new DetalleServicioNegocios(new Datos()).Insertar(1, 1, 2, 99999999.99m, 1, Guid.NewGuid()));
+            new DetalleServicioNegocios(new Datos(), "RECEPCIONISTA").Insertar(1, 1, 2, 99999999.99m, 1, Guid.NewGuid()));
     }
 
     [TestMethod]
     public void OperacionVacia_SeRechaza()
     {
         Assert.ThrowsExactly<ArgumentException>(() =>
-            new DetalleServicioNegocios(new Datos()).Insertar(1, 1, 1, 20m, 1, Guid.Empty));
+            new DetalleServicioNegocios(new Datos(), "RECEPCIONISTA").Insertar(1, 1, 1, 20m, 1, Guid.Empty));
     }
 
     [TestMethod]
     public void Reintento_ConservaOperacionYDatosParaValidacionSQL()
     {
         var datos = new Datos();
-        var negocio = new DetalleServicioNegocios(datos);
+        var negocio = new DetalleServicioNegocios(datos, "RECEPCIONISTA");
         Guid operacion = Guid.NewGuid();
         negocio.Insertar(2, 3, 4, 25.50m, 5, operacion);
         negocio.Insertar(2, 3, 4, 25.50m, 5, operacion);
@@ -76,7 +76,7 @@ public class ServiciosHabitacionTests
         datos.Tabla.Columns.Add("id_habitacion", typeof(int));
         datos.Tabla.Columns.Add("precio_unitario", typeof(decimal));
         datos.Tabla.Rows.Add(DBNull.Value, 12.50m);
-        var negocio = new DetalleServicioNegocios(datos);
+        var negocio = new DetalleServicioNegocios(datos, "RECEPCIONISTA");
         var tabla = negocio.ListarPorReserva(1);
         Assert.IsNull(datos.Filtro);
         Assert.IsTrue(tabla.Rows[0].IsNull("id_habitacion"));

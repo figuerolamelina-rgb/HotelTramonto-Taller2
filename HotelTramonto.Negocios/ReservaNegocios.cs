@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using HotelTramonto.Datos;
@@ -7,10 +7,14 @@ namespace HotelTramonto.Negocios
 {
     public class ReservaNegocios
     {
+        private readonly string? rol;
+        public ReservaNegocios(string? rol = null) { this.rol = rol; }
+
         private readonly ReservaDatos reservaDatos = new ReservaDatos();
 
         public void Cancelar(int idReserva)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReserva <= 0)
                 throw new ArgumentException("La reserva seleccionada no es válida.");
 
@@ -19,11 +23,13 @@ namespace HotelTramonto.Negocios
 
         public DataTable Listar()
         {
+            PermisosOperacion.Exigir(rol);
             return reservaDatos.Listar();
         }
 
         public DataTable ListarPorHuesped(int idHuesped)
         {
+            PermisosOperacion.Exigir(rol);
             if (idHuesped <= 0)
                 throw new ArgumentException("Seleccione un huésped válido.");
 
@@ -32,6 +38,7 @@ namespace HotelTramonto.Negocios
 
         public DataTable ListarPorFechas(DateTime fechaDesde, DateTime fechaHasta)
         {
+            PermisosOperacion.Exigir(rol);
             if (fechaDesde.Date > fechaHasta.Date)
                 throw new ArgumentException("La fecha desde no puede ser posterior a la fecha hasta.");
 
@@ -40,6 +47,7 @@ namespace HotelTramonto.Negocios
 
         public DataTable ListarPorEstado(string estado)
         {
+            PermisosOperacion.Exigir(rol);
             if (string.IsNullOrWhiteSpace(estado))
                 throw new ArgumentException("Seleccione un estado.");
 
@@ -48,6 +56,7 @@ namespace HotelTramonto.Negocios
 
         public DataTable ConsultarSaldo(int idReserva)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReserva <= 0)
                 throw new ArgumentException("La reserva seleccionada no es válida.");
 
@@ -56,6 +65,7 @@ namespace HotelTramonto.Negocios
 
         public DataTable CheckIn(int idReserva)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReserva <= 0)
                 throw new ArgumentException("La reserva seleccionada no es válida.");
 
@@ -64,6 +74,7 @@ namespace HotelTramonto.Negocios
 
         public DataTable CheckOut(int idReserva)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReserva <= 0)
                 throw new ArgumentException("La reserva seleccionada no es válida.");
 
@@ -72,6 +83,7 @@ namespace HotelTramonto.Negocios
 
         public DataTable ConfirmarReserva(int idReservaTemporal, int cantidadPersonas)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReservaTemporal <= 0)
                 throw new ArgumentException("La reserva temporal seleccionada no es válida.");
 

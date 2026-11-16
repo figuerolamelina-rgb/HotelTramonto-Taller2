@@ -9,7 +9,8 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormPagos : Form
     {
-        private readonly PagoNegocios negocio = new PagoNegocios();
+        private readonly string rolOperacion;
+        private readonly PagoNegocios negocio;
         private readonly int idUsuario;
 
         private NumericUpDown numIdReserva;
@@ -21,8 +22,7 @@ namespace HotelTramonto.Presentacion
         private Label lblTotalPagadoServicios;
         private Label lblPendienteServicios;
 
-        private readonly DetalleServicioNegocios detalleNegocio =
-            new DetalleServicioNegocios();
+        private readonly DetalleServicioNegocios detalleNegocio;
         private Button btnConsultar;
         private Button btnRegistrarSaldo;
         private Button btnCerrar;
@@ -36,9 +36,14 @@ namespace HotelTramonto.Presentacion
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
-        public FormPagos(int idUsuario)
+        public FormPagos(int idUsuario, string rol)
         {
+            PermisosOperacion.Exigir(rol);
+            rolOperacion = rol;
+            negocio = new PagoNegocios(rol);
+            detalleNegocio = new DetalleServicioNegocios(rol);
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
 
             if (idUsuario <= 0)
                 throw new ArgumentException("El usuario autenticado no es válido.");
@@ -95,6 +100,12 @@ namespace HotelTramonto.Presentacion
             numIdReserva.Location = new Point(150, 100);
             numIdReserva.Size = new Size(120, 32);
             numIdReserva.Minimum = 1;
+            numIdReserva.ValueChanged += (s, e) =>
+            {
+                dgvPagos.DataSource = null;
+                dgvConsumos.DataSource = null;
+                lblTotalConsumido.Text = lblTotalPagadoServicios.Text = lblPendienteServicios.Text = "Consultar la reserva seleccionada";
+            };
             numIdReserva.Maximum = 1000000;
             numIdReserva.Font = new Font("Segoe UI", 10F);
             numIdReserva.BackColor = marfil;
@@ -601,7 +612,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al consultar",
                     "No se pudo consultar la información de la reserva.\n\n" +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -719,6 +730,11 @@ namespace HotelTramonto.Presentacion
                         $"¿Reanudar cobro de {(servicios ? "servicios" : "alojamiento")} de la reserva #{solicitud.IdReserva}, método {solicitud.Metodo}?"))
                         EjecutarCobro(solicitud);
                 }
+                catch (Microsoft.Data.SqlClient.SqlException ex) when (
+                    HotelTramonto.Datos.ErroresOperacionSql.Clasificar(ex.Number) == HotelTramonto.Entidades.EstadoResultadoOperacion.RechazoDefinitivo)
+                {
+                    MostrarMensaje("Pago rechazado", HotelTramonto.Datos.ErroresOperacionSql.Mensaje(ex.Number), true);
+                }
                 catch (Exception)
                 {
                     MostrarMensaje("Cobro pendiente",
@@ -757,8 +773,14 @@ namespace HotelTramonto.Presentacion
             try
             {
                 if (!MostrarSelectorMetodoPago(out string metodo)) return;
-                if (!MostrarConfirmacion("Confirmar pago", "¿Confirmás que recibiste o verificaste el pago?")) return;
+                if (!MostrarConfirmacion("Confirmar pago",
+                    $"Reserva N.º {numIdReserva.Value}.\nConcepto: {(servicios ? "servicios adicionales" : "saldo de alojamiento")}.\nMétodo: {metodo}.\nSe cobrará el saldo completo actualizado.\n¿Confirmás que recibiste o verificaste el pago?")) return;
                 EjecutarCobro(new SolicitudCobro((int)numIdReserva.Value, idUsuario, metodo, servicios));
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (
+                HotelTramonto.Datos.ErroresOperacionSql.Clasificar(ex.Number) == HotelTramonto.Entidades.EstadoResultadoOperacion.RechazoDefinitivo)
+            {
+                MostrarMensaje("Pago rechazado", HotelTramonto.Datos.ErroresOperacionSql.Mensaje(ex.Number), true);
             }
             catch (Exception)
             {
@@ -777,7 +799,7 @@ namespace HotelTramonto.Presentacion
                 int idReserva = (int)numIdReserva.Value;
 
                 using (FormRegistrarConsumos formulario =
-                    new FormRegistrarConsumos(idReserva))
+                    new FormRegistrarConsumos(idReserva, rolOperacion))
                 {
                     formulario.ShowDialog(this);
                     DataTable pagos = negocio.ListarPorReserva(idReserva);
@@ -792,7 +814,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al abrir consumos",
                     "No se pudo abrir el registro de consumos.\n\n" +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }

@@ -6,6 +6,8 @@ namespace HotelTramonto.Negocios;
 
 public sealed class FlujoReservaNegocios
 {
+    private readonly string? rol;
+    public FlujoReservaNegocios(string? rol = null) { this.rol = rol; }
     public static decimal CalcularPagoInicial(decimal total, string modalidad)
     {
         if (total <= 0 || total > 99999999.99m || decimal.Round(total, 2) != total)
@@ -20,12 +22,13 @@ public sealed class FlujoReservaNegocios
 
     public DataTable Ejecutar(SolicitudReserva solicitud, DiarioOperaciones.Contexto contexto)
     {
+        PermisosOperacion.Exigir(rol);
         if (contexto.Referencia == null)
         {
             if (contexto.CreacionIniciada)
                 throw new InvalidOperationException("El resultado del alta temporal es incierto. Requiere conciliación antes de continuar.");
             contexto.MarcarCreacion();
-            int temporal = new ReservaTemporalNegocios().Insertar(solicitud.IdHuesped, solicitud.IdHabitacion,
+            int temporal = new ReservaTemporalNegocios(rol).Insertar(solicitud.IdHuesped, solicitud.IdHabitacion,
                 solicitud.Entrada, solicitud.Salida, solicitud.Modalidad);
             contexto.GuardarReferencia(temporal); // Antes del pago, incluso frente a un cierre posterior.
         }
@@ -34,9 +37,9 @@ public sealed class FlujoReservaNegocios
         var confirmada = datos.ConsultarConfirmacion(idTemporal);
         if (confirmada.Rows.Count > 0) return confirmada;
 
-        new PagoNegocios().Insertar(null, idTemporal, solicitud.IdUsuario, solicitud.PagoInicial,
+        new PagoNegocios(rol).Insertar(null, idTemporal, solicitud.IdUsuario, solicitud.PagoInicial,
             solicitud.Metodo, "APROBADO", "PAGO_INICIAL", contexto.Id);
-        try { return new ReservaNegocios().ConfirmarReserva(idTemporal, solicitud.Personas); }
+        try { return new ReservaNegocios(rol).ConfirmarReserva(idTemporal, solicitud.Personas); }
         catch (SqlException ex) when (ex.Number == 50002)
         {
             // Otro reintento pudo confirmar después de la consulta anterior.

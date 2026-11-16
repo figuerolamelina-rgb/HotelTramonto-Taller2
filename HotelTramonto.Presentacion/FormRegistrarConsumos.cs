@@ -10,13 +10,14 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormRegistrarConsumos : Form
     {
+        private readonly string rolOperacion;
         private readonly int idReserva;
+        private SolicitudConsumo? consumoPendiente;
 
         private readonly ServicioNegocios servicioNegocio =
             new ServicioNegocios();
 
-        private readonly DetalleServicioNegocios detalleNegocio =
-            new DetalleServicioNegocios();
+        private readonly DetalleServicioNegocios detalleNegocio;
 
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
@@ -41,14 +42,18 @@ namespace HotelTramonto.Presentacion
 
         private decimal precioSeleccionado = 0;
 
-        public FormRegistrarConsumos(int idReserva)
+        public FormRegistrarConsumos(int idReserva, string rol)
         {
+            PermisosOperacion.Exigir(rol);
+            rolOperacion = rol;
+            detalleNegocio = new DetalleServicioNegocios(rol);
             if (idReserva <= 0)
                 throw new ArgumentException("El ID de reserva no es válido.");
 
             this.idReserva = idReserva;
 
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
             ConfigurarFormulario();
             CargarHabitaciones();
             CargarProductos();
@@ -64,6 +69,8 @@ namespace HotelTramonto.Presentacion
             Font = new Font("Segoe UI", 10F);
             StartPosition = FormStartPosition.CenterParent;
             MinimumSize = new Size(950, 650);
+            AutoScroll = true;
+            AutoScrollMinSize = new Size(1070, 660);
             Size = new Size(1100, 720);
 
             Label lblTitulo = new Label
@@ -293,7 +300,7 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                tablaProductos = servicioNegocio.ListarParaConsumo();
+                tablaProductos = servicioNegocio.ListarParaConsumo(rolOperacion);
 
                 cmbCategoria.Items.Clear();
                 cmbCategoria.Items.Add("Todas");
@@ -312,7 +319,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error",
-                    "No se pudieron cargar los productos.\n\n" + ex.Message,
+                    "No se pudieron cargar los productos.\n\n" + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -394,6 +401,11 @@ namespace HotelTramonto.Presentacion
 
         private void btnAgregar_Click(object sender, EventArgs e)
         {
+            if (consumoPendiente != null)
+            {
+                EjecutarConsumo(consumoPendiente);
+                return;
+            }
             if (cmbProducto.SelectedItem is not DataRowView producto)
             {
                 MostrarMensaje(
@@ -443,6 +455,8 @@ namespace HotelTramonto.Presentacion
             try
             {
                 var solicitud = DiarioOperaciones.Actual().Leer<SolicitudConsumo>(ClaveConsumo);
+                consumoPendiente = solicitud;
+                if (solicitud != null) BloquearSolicitud(true);
                 if (solicitud != null && MostrarConfirmacion("Consumo pendiente",
                     $"¿Reanudar consumo guardado de habitación #{solicitud.IdHabitacion}, servicio #{solicitud.IdServicio}, " +
                     $"cantidad {solicitud.Cantidad}, precio {solicitud.Precio:C2}?"))
@@ -456,6 +470,7 @@ namespace HotelTramonto.Presentacion
 
         private void EjecutarConsumo(SolicitudConsumo solicitud)
         {
+            consumoPendiente = solicitud;
             BloquearSolicitud(true);
             btnAgregar.Enabled = false;
             try
@@ -469,6 +484,7 @@ namespace HotelTramonto.Presentacion
                 });
                 MostrarMensaje("Consumo registrado", "El consumo se registró correctamente.");
                 diario.Confirmar(ClaveConsumo, resultado.Id);
+                consumoPendiente = null;
                 BloquearSolicitud(false);
                 nudCantidad.Value = 1;
                 CargarConsumos();
@@ -476,9 +492,10 @@ namespace HotelTramonto.Presentacion
             }
             catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number >= 51313 && ex.Number <= 51318)
             {
+                consumoPendiente = null;
                 BloquearSolicitud(false);
                 CargarProductos();
-                MostrarMensaje("Consumo rechazado", "Revisá habitación, estado de reserva y precio del catálogo.", true);
+                MostrarMensaje("Consumo rechazado", HotelTramonto.Datos.ErroresOperacionSql.Mensaje(ex.Number), true);
             }
             catch (Exception)
             {
@@ -545,7 +562,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al consultar consumos",
                     "No se pudieron consultar los consumos.\n\n" +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }

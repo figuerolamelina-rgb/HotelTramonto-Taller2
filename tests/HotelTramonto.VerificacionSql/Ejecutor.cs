@@ -24,7 +24,7 @@ public sealed class Informe
     public int Pendientes => Pruebas.Count(p => p.Estado == "Pendiente");
 }
 
-public sealed class Ejecutor(string raiz, string backup)
+public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = false)
 {
     private readonly IdentidadCopia identidad = new(Guid.NewGuid());
     private CopiaSql Copia => new(identidad);
@@ -41,7 +41,9 @@ public sealed class Ejecutor(string raiz, string backup)
 
     public int Ejecutar()
     {
-        var informe = new Informe { Ejecucion = identidad.Ejecucion, BaseTemporal = identidad.Nombre };
+        var casos = cicloReserva ? CasosSql.Todos.Concat(CasosSql.Ciclo).ToArray() : CasosSql.Todos;
+        var informe = new Informe { Ejecucion = identidad.Ejecucion, BaseTemporal = identidad.Nombre,
+            Pruebas = casos.Select(c => new ResultadoCaso(c.Nombre)).ToList() };
         Directory.CreateDirectory(DirectorioInformes); // Antes de cualquier SQL.
         try
         {
@@ -57,7 +59,7 @@ public sealed class Ejecutor(string raiz, string backup)
             Migrar("00_Diagnostico.sql");
             var historicos = Historicos.Capturar(Copia);
             Console.WriteLine($"Destino ÚNICO: {identidad.Nombre}, ejecución {identidad.Ejecucion:D}.");
-            Console.WriteLine("Se instalará 01 -> 02 -> 04 -> 05 SOLO en la copia temporal.");
+            Console.WriteLine("Se instalará 01 -> 02 -> 04 -> 05 SOLO en la copia temporal; --backup-ciclo agrega 07 -> 08.");
             Console.WriteLine("HotelTramontoDB y HotelTramontoDB_Pruebas no se abrirán ni modificarán.");
             Console.Write("Escribí INSTALAR para autorizar la migración de esta copia: ");
             if (Console.ReadLine() != "INSTALAR")
@@ -65,12 +67,13 @@ public sealed class Ejecutor(string raiz, string backup)
             informe.Etapa = "Instalación";
             foreach (string nombre in new[] { "01_Instalar.sql", "02_Verificar.sql", "04_ConcurrenciaPagos.sql", "05_VerificarConcurrencia.sql" })
                 Migrar(nombre);
+            if (cicloReserva) { Migrar("07_CicloReserva.sql"); Migrar("08_VerificarCicloReserva.sql"); }
             try { historicos.Verificar(Copia); }
             catch { informe.Historicos = "FALLIDA: se detectó un cambio histórico"; throw; }
-            informe.Etapa = "28 pruebas SQL";
-            for (int i = 0; i < CasosSql.Todos.Length; i++)
+            informe.Etapa = $"{casos.Length} pruebas SQL";
+            for (int i = 0; i < casos.Length; i++)
             {
-                var (nombre, accion) = CasosSql.Todos[i];
+                var (nombre, accion) = casos[i];
                 try
                 {
                     using var caso = new CasosSql(Copia);
@@ -90,6 +93,7 @@ public sealed class Ejecutor(string raiz, string backup)
             informe.Historicos = "Once tablas: filas y columnas preexistentes intactas";
             Migrar("02_Verificar.sql");
             Migrar("05_VerificarConcurrencia.sql");
+            if (cicloReserva) Migrar("08_VerificarCicloReserva.sql");
             informe.Etapa = "Completada";
         }
         catch (Exception ex) { informe.Error = Describir(ex); }
@@ -113,7 +117,7 @@ public sealed class Ejecutor(string raiz, string backup)
             Console.WriteLine("Informes privados: " + DirectorioInformes);
             if (informe.Error != null) Console.WriteLine("Error: " + informe.Error);
         }
-        return informe.Error == null && informe.Aprobadas == 28 && informe.Fallidas == 0 &&
+        return informe.Error == null && informe.Aprobadas == casos.Length && informe.Fallidas == 0 &&
             informe.Pendientes == 0 && informe.Limpieza.StartsWith("Eliminada:", StringComparison.Ordinal) ? 0 : 1;
     }
 
