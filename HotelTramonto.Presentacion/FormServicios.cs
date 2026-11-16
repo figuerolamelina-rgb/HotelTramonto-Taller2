@@ -12,7 +12,8 @@ namespace HotelTramonto.Presentacion
     {
         private readonly string rolUsuario;
         private readonly ServicioNegocios negocio = new ServicioNegocios();
-
+        private readonly HabitacionNegocios habitacionNegocio =
+    new HabitacionNegocios();
         private DataTable tablaServicios;
         private int idServicioSeleccionado = 0;
         private bool mostrandoInactivos = false;
@@ -88,7 +89,21 @@ namespace HotelTramonto.Presentacion
             EstilizarBoton(btnDesactivar, marronClaro, marfil);
             EstilizarBoton(btnLimpiar, marronClaro, marfil);
             EstilizarBoton(btnVerInactivos, marronClaro, marfil);
-           
+
+            Button btnRegistrarConsumos = new Button
+            {
+                Name = "btnRegistrarConsumos",
+                Text = "Registrar consumos",
+                Location = new Point(835, 215),
+                Size = new Size(175, 40),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+
+            EstilizarBoton(btnRegistrarConsumos, dorado, marron);
+
+            btnRegistrarConsumos.Click += btnRegistrarConsumos_Click;
+
+            Controls.Add(btnRegistrarConsumos);
             btnVerInactivos.Location = new Point(835, 165);
             btnVerInactivos.Size = new Size(145, 40);
             btnNuevo.Location = new Point(35, 165);
@@ -181,6 +196,7 @@ namespace HotelTramonto.Presentacion
             dgvServicios.AlternatingRowsDefaultCellStyle.BackColor =
                 Color.FromArgb(248, 243, 235);
         }
+
 
         private void EstilizarBoton(
             Button boton,
@@ -733,5 +749,13 @@ namespace HotelTramonto.Presentacion
             CargarServicios();
         }
 
+        private void btnRegistrarConsumos_Click(object sender, EventArgs e)
+        {
+            using (FormRegistrarConsumos formulario =
+                new FormRegistrarConsumos())
+            {
+                formulario.ShowDialog(this);
+            }
+        }
     }
 }

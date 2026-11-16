@@ -10,7 +10,13 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormRegistrarConsumos : Form
     {
-        private readonly int idReserva;
+        private int idReserva;
+
+        private readonly HabitacionNegocios habitacionNegocio =
+            new HabitacionNegocios();
+
+        private ComboBox cmbHabitacion;
+        private Label lblHabitacion;
 
         private readonly ServicioNegocios servicioNegocio =
             new ServicioNegocios();
@@ -39,6 +45,18 @@ namespace HotelTramonto.Presentacion
 
         private decimal precioSeleccionado = 0;
 
+        public FormRegistrarConsumos()
+        {
+            idReserva = 0;
+
+            InitializeComponent();
+            ConfigurarFormulario();
+            CargarProductos();
+
+            CargarHabitaciones();
+            btnAgregar.Enabled = false;
+        }
+
         public FormRegistrarConsumos(int idReserva)
         {
             if (idReserva <= 0)
@@ -48,6 +66,10 @@ namespace HotelTramonto.Presentacion
 
             InitializeComponent();
             ConfigurarFormulario();
+
+            lblHabitacion.Visible = false;
+            cmbHabitacion.Visible = false;
+
             CargarProductos();
             CargarConsumos();
         }
@@ -71,13 +93,29 @@ namespace HotelTramonto.Presentacion
                 Location = new Point(30, 20)
             };
 
+            lblHabitacion = CrearEtiqueta("Habitación", 35, 75);
+
+            cmbHabitacion = new ComboBox
+            {
+                Location = new Point(140, 70),
+                Size = new Size(300, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = marfil,
+                ForeColor = marron
+            };
+
+            cmbHabitacion.SelectedIndexChanged +=
+                cmbHabitacion_SelectedIndexChanged;
+
             lblReserva = new Label
             {
-                Text = "Reserva N.º: " + idReserva,
-                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                Text = idReserva > 0
+                    ? "Reserva N.º: " + idReserva
+                    : "Seleccioná una habitación",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = marron,
                 AutoSize = true,
-                Location = new Point(35, 75)
+                Location = new Point(470, 75)
             };
 
             Label lblCategoria = CrearEtiqueta("Categoría", 35, 120);
@@ -194,6 +232,8 @@ namespace HotelTramonto.Presentacion
 
             Controls.Add(lblTitulo);
             Controls.Add(lblReserva);
+            Controls.Add(lblHabitacion);
+            Controls.Add(cmbHabitacion);
             Controls.Add(lblCategoria);
             Controls.Add(cmbCategoria);
             Controls.Add(lblProducto);
@@ -272,7 +312,46 @@ namespace HotelTramonto.Presentacion
                     true);
             }
         }
+        private void CargarHabitaciones()
+        {
+            try
+            {
+                DataTable habitaciones =
+                    habitacionNegocio.ListarConReservaCheckIn();
 
+                if (!habitaciones.Columns.Contains("descripcion"))
+                    habitaciones.Columns.Add("descripcion", typeof(string));
+
+                foreach (DataRow fila in habitaciones.Rows)
+                {
+                    fila["descripcion"] =
+                        "Habitación " + fila["numero"] +
+                        " - Piso " + fila["piso"] +
+                        " - " + fila["nombre_huesped"] +
+                        " " + fila["apellido_huesped"];
+                }
+
+                cmbHabitacion.DataSource = null;
+                cmbHabitacion.DisplayMember = "descripcion";
+                cmbHabitacion.ValueMember = "id_habitacion";
+                cmbHabitacion.DataSource = habitaciones;
+                cmbHabitacion.SelectedIndex = -1;
+
+                if (habitaciones.Rows.Count == 0)
+                {
+                    MostrarMensaje(
+                        "Sin habitaciones ocupadas",
+                        "No hay habitaciones con reservas que tengan check-in realizado.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "Error al cargar habitaciones",
+                    "No se pudieron cargar las habitaciones.\n\n" + ex.Message,
+                    true);
+            }
+        }
         private void FiltrarProductos()
         {
             if (tablaProductos == null)
@@ -350,6 +429,14 @@ namespace HotelTramonto.Presentacion
 
         private void btnAgregar_Click(object sender, EventArgs e)
         {
+            if (idReserva <= 0)
+            {
+                MostrarMensaje(
+                    "Habitación requerida",
+                    "Primero seleccioná una habitación con una reserva activa.");
+                return;
+            }
+
             if (cmbProducto.SelectedItem is not DataRowView producto)
             {
                 MostrarMensaje(
@@ -411,6 +498,12 @@ namespace HotelTramonto.Presentacion
 
         private void CargarConsumos()
         {
+            if (idReserva <= 0)
+            {
+                dgvConsumos.DataSource = null;
+                return;
+            }
+
             try
             {
                 tablaConsumos =
@@ -587,6 +680,32 @@ namespace HotelTramonto.Presentacion
                 mensaje.CancelButton = btnNo;
 
                 return mensaje.ShowDialog(this) == DialogResult.Yes;
+            }
+        }
+
+        private void cmbHabitacion_SelectedIndexChanged(
+    object sender,
+    EventArgs e)
+        {
+            if (cmbHabitacion.SelectedItem is DataRowView habitacion)
+            {
+                idReserva = Convert.ToInt32(habitacion["id_reserva"]);
+
+                lblReserva.Text = "Reserva N.º: " + idReserva;
+
+                btnAgregar.Enabled = true;
+
+                CargarConsumos();
+            }
+            else
+            {
+                idReserva = 0;
+
+                lblReserva.Text = "Seleccioná una habitación";
+
+                btnAgregar.Enabled = false;
+
+                dgvConsumos.DataSource = null;
             }
         }
     }

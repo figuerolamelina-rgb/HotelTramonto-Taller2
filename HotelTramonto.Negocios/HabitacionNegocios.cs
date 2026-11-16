@@ -49,7 +49,10 @@ namespace HotelTramonto.Negocios
         {
             return habitacionDatos.Listar();
         }
-
+        public DataTable ListarConReservaCheckIn()
+        {
+            return habitacionDatos.ListarConReservaCheckIn();
+        }
 
         public DataTable BuscarPorId(int idHabitacion)
         {
