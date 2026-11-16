@@ -98,3 +98,37 @@ En Linux puede compilarse la solución agregando `-p:EnableWindowsTargeting=true
 a restore/build. Las pruebas sin SQL corren en .NET normal. La interfaz Windows
 Forms requiere `Microsoft.WindowsDesktop.App` en Windows: no se validaron aquí
 pantallas, autenticación integrada contra SQL ni procedimientos ejecutados en SQL Server.
+
+## Corrección 2: autorización de habitaciones
+
+Ver [implementación, límites y pruebas](docs/correccion-2-habitaciones.md).
+Los scripts nuevos de diagnóstico y permisos están en
+`base de datos HotelTramonto/permisos-habitaciones`; deben revisarse y probarse
+antes de ejecutarlos. No separan empleados ante SQL cuando comparten identidad Windows.
+
+Para probar esta rama sin tocar la base original, seguir
+[Pruebas en Windows](docs/pruebas-windows.md). Los once scripts nuevos requieren
+seleccionar `HotelTramontoDB_Pruebas` y no cambian de base automáticamente.
+La plantilla `configuracion/conexion.pruebas.ejemplo.json` apunta a esa copia.
+La instalación de permisos SQL sigue bloqueada y pendiente.
+
+Para ejecutar el recorrido controlado desde un único comando en Windows, ver
+[Automatización de pruebas](docs/automatizacion-windows.md).
+
+Para la aceptación final sin repetir migración, ver
+[Resultados y verificador final](docs/resultados-finales-correccion2.md).
+El nuevo comando ejecuta 68 casos .NET y verifica contratos SQL mediante metadatos,
+sin instalar migraciones ni permisos.
+
+## Integración de correcciones 2 a 6
+
+Ver [preparación del PR y aceptación Windows](docs/preparacion-pr-correcciones56.md).
+Se conservan las herramientas de corrección 2 y el runner independiente de 28
+pruebas SQL en copia temporal de correcciones 5/6. Los dos recorridos tienen
+objetivos y requisitos distintos; no ejecutar migraciones indiscriminadamente.
+
+La suite .NET combinada se ejecuta con el filtro seguro indicado arriba.
+Para Express/.NET sin Python ni LocalDB, ver
+[verificación de servicios y habitaciones](docs/verificacion-windows-servicios.md).
+La revisión de permisos incluye dos consultas adicionales (historial y
+recuperación de confirmación); sus scripts complementarios no se aplican automáticamente.

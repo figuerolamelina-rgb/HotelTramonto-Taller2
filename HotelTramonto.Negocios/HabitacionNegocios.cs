@@ -7,21 +7,14 @@ namespace HotelTramonto.Negocios
 {
     public class HabitacionNegocios
     {
-        private readonly HabitacionDatos habitacionDatos =
-            new HabitacionDatos();
+        private readonly IHabitacionDatos habitacionDatos;
 
-        // Solo el administrador puede gestionar habitaciones.
-        private static void ValidarAdministrador(string rolUsuario)
+        public HabitacionNegocios() : this(new HabitacionDatos()) { }
+
+        public HabitacionNegocios(IHabitacionDatos habitacionDatos)
         {
-            if (string.IsNullOrWhiteSpace(rolUsuario) ||
-                !string.Equals(
-                    rolUsuario.Trim(),
-                    "ADMINISTRADOR",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException(
-                    "No tenés permisos para modificar habitaciones.");
-            }
+            this.habitacionDatos = habitacionDatos
+                ?? throw new ArgumentNullException(nameof(habitacionDatos));
         }
 
         public void Insertar(
@@ -31,7 +24,7 @@ namespace HotelTramonto.Negocios
             string estado,
             string rolUsuario)
         {
-            ValidarAdministrador(rolUsuario);
+            PermisosHabitaciones.ExigirAdministrador(rolUsuario);
 
             ValidarDatos(tipoHabitacion, piso, numero, estado);
 
@@ -50,7 +43,7 @@ namespace HotelTramonto.Negocios
             string estado,
             string rolUsuario)
         {
-            ValidarAdministrador(rolUsuario);
+            PermisosHabitaciones.ExigirAdministrador(rolUsuario);
 
             if (idHabitacion <= 0)
                 throw new ArgumentException(
@@ -70,7 +63,7 @@ namespace HotelTramonto.Negocios
             int idHabitacion,
             string rolUsuario)
         {
-            ValidarAdministrador(rolUsuario);
+            PermisosHabitaciones.ExigirAdministrador(rolUsuario);
 
             if (idHabitacion <= 0)
                 throw new ArgumentException(
@@ -145,7 +138,7 @@ namespace HotelTramonto.Negocios
             int idHabitacion,
             string rolUsuario)
         {
-            ValidarAdministrador(rolUsuario);
+            PermisosHabitaciones.ExigirAdministrador(rolUsuario);
 
             if (idHabitacion <= 0)
                 throw new ArgumentException(
