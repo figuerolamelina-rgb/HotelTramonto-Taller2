@@ -26,7 +26,7 @@ fijadas deliberadamente. Se toleran los cambios de finales de línea LF/CRLF de 
 
 ## Secuencia y controles
 
-1. Comprueba integridad de 59 archivos revisados: SQL autorizados, fuentes y contratos
+1. Comprueba integridad de 60 archivos revisados: SQL autorizados, fuentes y contratos
    de las dependencias de pruebas. La lista de SQL ejecutables contiene exactamente
    siete archivos; no incluye instaladores de permisos, reversiones ni los SQL originales.
 2. Abre master SOLO para SELECT de metadatos. Verifica ServerName exactamente contra
@@ -129,3 +129,15 @@ PowerShell hospedado con System.Data.SqlClient real en Linux, sin Open. En ese
 host se sustituyeron únicamente la carga de ensamblado/activación de objetos y
 la ruta del archivo, porque no es Windows PowerShell instalado. El archivo
 Probar-CadenaConexion.ps1 está preparado para ejecutarse nativamente en 5.1.
+
+## Referencia real de habitaciones activas
+
+Se corrigió únicamente sp_Habitacion_Listar en Procedimientos_Almacenados.sql para
+incluir WHERE H.activo = 1, según el cuerpo real confirmado por las integrantes.
+No se aplica este archivo a la instancia: el runner lo usa solo como referencia.
+ConsultarDisponibilidad se conserva sin cambios. El manifiesto incluye la nueva
+huella y la prueba Probar-LecturasSql.ps1. Antes de conectarse, esa prueba extrae
+solo Canon del runner, compara el cuerpo real proporcionado, exige rechazo del
+filtro ausente/invertido y verifica la huella de la consulta de disponibilidad.
+La comparación estricta contra los procedimientos instalados se mantiene intacta.
+No se ejecuta SQL al realizar esta prueba; su log es lecturas-sql.log.

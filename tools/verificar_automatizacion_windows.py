@@ -53,6 +53,20 @@ class AutomatizacionWindows(unittest.TestCase):
         self.assertLess(TEXT.index("& (Join-Path $PSScriptRoot 'Probar-CadenaConexion.ps1')"),
                         TEXT.index("$Maestra=Abrir 'master'"))
 
+    def test_referencia_de_habitaciones_exige_activas_y_test_sin_sql(self):
+        sql = (ROOT / 'base de datos HotelTramonto/Procedimientos_Almacenados.sql').read_text(encoding='utf-8-sig')
+        block = re.search(r'(?ims)^CREATE OR ALTER PROCEDURE sp_Habitacion_Listar\b.*?(?=^GO\s*$)', sql)[0]
+        self.assertEqual(1, len(re.findall(r'WHERE H\.activo = 1', block)))
+        self.assertIn('ORDER BY H.numero;', block)
+        test = (ROOT / 'tools/Probar-LecturasSql.ps1').read_text(encoding='utf-8-sig')
+        self.assertNotIn('.Open(', test)
+        self.assertNotIn('SqlConnection', test)
+        self.assertIn('$sinFiltro', test)
+        self.assertIn('$inactivas', test)
+        self.assertRegex(test, r"\$huella -cne '[A-F0-9]{64}'")
+        self.assertLess(TEXT.index("& (Join-Path $PSScriptRoot 'Probar-LecturasSql.ps1')"), TEXT.index("$Maestra=Abrir 'master'"))
+        self.assertIn("'Lectura SQL diferente de la revisada: '+$nombre", TEXT)
+
     def test_confirmacion_antecede_instalacion_y_origen_solo_metadatos(self):
         self.assertLess(TEXT.index("$respuesta=Read-Host"), TEXT.index("foreach ($n in @('01_AgregarCategoria.sql'"))
         self.assertIn("$respuesta -ceq 'MIGRAR HotelTramontoDB_Pruebas'", TEXT)

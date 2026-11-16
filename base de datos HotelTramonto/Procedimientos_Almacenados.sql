@@ -486,6 +486,7 @@ BEGIN
     FROM Habitaciones H
     INNER JOIN TiposHabitacion T
         ON H.tipo_habitacion = T.id_tipoHabitacion
+    WHERE H.activo = 1
     ORDER BY H.numero;
 END;
 GO

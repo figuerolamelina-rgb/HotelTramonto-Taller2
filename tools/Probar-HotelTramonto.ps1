@@ -129,6 +129,7 @@ try {
     Add-Type -AssemblyName System.Data
     $null=Get-Command dotnet -ErrorAction Stop
     $Manifest=@{
+        'tools/Probar-LecturasSql.ps1'='33FD5474D7EC4B99E34DD4A030546F803300EE62151F620D9A8D56E54AF713B6'
         'tools/Probar-CadenaConexion.ps1'='8EE34317B3A6F6A8427B911E08551F322DF967D3BD7A9157B8ACF3C4BB0C2BE4'
         'HotelTramonto.Datos/ConexionBD.cs'='AFEC5A33A1757C3A34081983CC2A2F622C4E10F129A2BB72E1D987F879E26D29'
         'HotelTramonto.Datos/DetalleReservaDatos.cs'='2FE2BBA8F285392190EEE4F9E2C3C028F5BD4BCE815B9D37F63F57F67E13CF4E'
@@ -180,7 +181,7 @@ try {
         'HotelTramonto.Pruebas/PermisosHabitacionesTests.cs'='2094C66401D9EED7DBA43BD203C361AA7631FD92EA47EFD20CB56C7EAC72D153'
         'HotelTramonto.Pruebas/Test1.cs'='4552B893873D4957606737134B326772E10405442E651E2DCFE40BB797984BF5'
         'HotelTramonto.slnx'='38DF1D0077777EA6791B0426B1A31CF069A9F6CDA5FF03703C15FCC144A97836'
-        'base de datos HotelTramonto/Procedimientos_Almacenados.sql'='9FBCAAE48CFA59E57A7F6C371896974078C937CC94FCB8CB7F97DD26A9B0458B'
+        'base de datos HotelTramonto/Procedimientos_Almacenados.sql'='6AC5C5C431DBEFFF7622EB44598D6DC49F0109DB47CE908C85B05FE1CB42120F'
         'base de datos HotelTramonto/compatibilidad-servicios/00_DiagnosticoYRespaldo.sql'='F77089D67BE7DC8CD62747ABC76BCC5B637C2EA23B9270D368FDC950E94A9ADA'
         'base de datos HotelTramonto/compatibilidad-servicios/01_AgregarCategoria.sql'='00C5558A8740532C03FC7DE88D993DAAB21DA580D7E9EE69E42F91C413A047CB'
         'base de datos HotelTramonto/compatibilidad-servicios/02_ClasificarServicios.sql'='C7C9471A6FE33C28DE1ED61CA3C3CDCB626DE344F47FB7A33BD88BA0706A5BE6'
@@ -207,6 +208,8 @@ try {
     Registrar 'Integridad de scripts y pruebas' 'Lista cerrada; no se permite ejecutar archivos arbitrarios.'
     & (Join-Path $PSScriptRoot 'Probar-CadenaConexion.ps1') | Out-File -LiteralPath (Join-Path $Salida 'cadena-conexion.log') -Encoding utf8
     Registrar 'Construcción de cadena SQL' 'Cuatro combinaciones y ocho claves verificadas sin abrir conexiones.'
+    & (Join-Path $PSScriptRoot 'Probar-LecturasSql.ps1') | Out-File -LiteralPath (Join-Path $Salida 'lecturas-sql.log') -Encoding utf8
+    Registrar 'Referencias de lecturas SQL' 'Filtro de habitaciones activas y disponibilidad verificados sin SQL.'
     $Maestra=Abrir 'master' # solo SELECT de metadatos, nunca comandos de escritura
     $t=Tabla $Maestra "SELECT CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor, CONVERT(int,SERVERPROPERTY('ProductMajorVersion')) AS version;"
     Exigir ($t.Rows[0].servidor -ieq $Servidor) ('Instancia inesperada: '+$t.Rows[0].servidor)

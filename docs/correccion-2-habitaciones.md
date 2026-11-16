@@ -212,3 +212,11 @@ ese parámetro. Antes de 01 de esta carpeta, seguir
 `compatibilidad-servicios`. Los cuerpos reales ya fueron recibidos y el ALTER de los tres procedimientos
 está finalizado; la migración no inventa
 categorías para los servicios históricos. No ejecutar aún los permisos SQL.
+
+## Corrección justificada de la referencia versionada
+
+Se agregó WHERE H.activo = 1 únicamente a sp_Habitacion_Listar en el archivo
+Procedimientos_Almacenados.sql, para reflejar la definición instalada confirmada.
+Esta es una excepción explícitamente autorizada a la preservación anterior del
+archivo; no cambia reservas, pagos ni disponibilidad. El runner lee ese archivo
+como referencia y nunca lo instala. No se modificó el procedimiento en SQL Server.
