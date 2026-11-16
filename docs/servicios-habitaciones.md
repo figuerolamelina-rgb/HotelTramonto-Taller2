@@ -170,7 +170,7 @@ Nuevos:
 - tests/HotelTramonto.VerificacionSql (ejecutor .NET)
 - docs/servicios-habitaciones.md
 
-Comprobaciones locales de la versión completa: 86 pruebas .NET aprobadas,
+Comprobaciones locales de la versión completa: 92 pruebas .NET aprobadas,
 19 comprobaciones estáticas aprobadas entre servicios, concurrencia e historial.
 Tres pruebas .NET que acceden a SQL quedaron explícitamente excluidas.
 Las 28 pruebas de integración SQL están preparadas y NO ejecutadas.
@@ -179,3 +179,5 @@ No se cambió ninguna dependencia, proyecto, Designer ni script de otra correcci
 La lista completa de ajustes adicionales y resultados actualizados está en concurrencia-pagos.md.
 
 La automatización final y el orden de instalación están en [verificacion-windows-servicios.md](verificacion-windows-servicios.md).
+
+El catálogo para los 28 casos se crea automáticamente en la copia temporal, incluso con un respaldo de una sola habitación; ver verificacion-windows-servicios.md.

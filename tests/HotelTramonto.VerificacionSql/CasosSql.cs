@@ -9,6 +9,7 @@ public sealed class CasosSql : IDisposable
     private readonly SqlConnection db;
     private readonly int usuario, huesped, servicio, reserva;
     private readonly int[] habitaciones;
+    private int siguienteTemporal;
     public static readonly (string Nombre, Action<CasosSql> Prueba)[] Todos =
     [
         ("01_UnaYVariasHabitaciones", c => c.UnaYVarias()),
@@ -51,12 +52,9 @@ public sealed class CasosSql : IDisposable
                 ?? throw new InvalidOperationException("Falta usuario activo."));
             huesped = Convert.ToInt32(Sql.Escalar(db, "SELECT TOP(1) id_huesped FROM dbo.Huespedes ORDER BY id_huesped")
                 ?? throw new InvalidOperationException("Falta huésped."));
-            habitaciones = Sql.Tabla(db, """
-                SELECT TOP(3) h.id_habitacion FROM dbo.Habitaciones h JOIN dbo.TiposHabitacion t
-                ON t.id_tipoHabitacion=h.tipo_habitacion
-                WHERE h.activo=1 AND t.activo=1 AND h.estado<>'MANTENIMIENTO' ORDER BY h.id_habitacion
-                """).Rows.Cast<DataRow>().Select(r => (int)r[0]).ToArray();
-            Exigir(habitaciones.Length == 3, "Se requieren tres habitaciones activas.");
+            // Ejecutor captura los históricos antes de construir cualquier caso.
+            // Cada caso recibe su propio tipo y tres habitaciones NUEVAS, nunca el catálogo anterior.
+            habitaciones = HabitacionesFixture.Crear(copia).Habitaciones;
             servicio = Convert.ToInt32(Sql.Escalar(db, """
                 INSERT dbo.Servicios(nombre,descripcion,precio,activo,categoria)
                 OUTPUT inserted.id_servicio VALUES(@p0,'Fixture correcciones 5 y 6',25.50,1,'Otros');
@@ -119,8 +117,7 @@ public sealed class CasosSql : IDisposable
 
     private (int Id, decimal Monto) Temporal(string modo)
     {
-        int dias = (int)(BitConverter.ToUInt32(Guid.NewGuid().ToByteArray(), 0) % 1000000);
-        var entrada = new DateTime(2300, 1, 1).AddDays(dias);
+        var entrada = HabitacionesFixture.EntradaTemporal(siguienteTemporal++);
         int id = Convert.ToInt32(Sql.Escalar(db, "EXEC dbo.sp_ReservaTemporal_Insertar @p0,@p1,@p2,@p3,@p4",
             huesped, habitaciones[2], entrada, entrada.AddDays(2), modo));
         decimal precio = Convert.ToDecimal(Sql.Escalar(db, """

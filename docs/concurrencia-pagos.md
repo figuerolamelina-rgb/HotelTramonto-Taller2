@@ -177,7 +177,7 @@ de vida requiere una revisión específica. No se afirma que ese ciclo esté res
 
 - Compilación .NET 10 con EnableWindowsTargeting: 0 errores, 121 advertencias
   de nulabilidad/delegados del código existente.
-- 86 pruebas .NET aprobadas, 0 fallidas, 0 omitidas dentro del filtro seguro.
+- 92 pruebas .NET aprobadas, 0 fallidas, 0 omitidas dentro del filtro seguro.
   Tres pruebas SQL de README se excluyeron expresamente.
 - 19 comprobaciones estáticas del modelo y concurrencia aprobadas: 8 de servicios/habitación, 7 de
   concurrencia de pagos y 4 de regresión del historial.
@@ -208,7 +208,7 @@ Los 28 casos SQL NO se ejecutaron. Continúan pendientes hasta que se cree el
 respaldo posterior a categoria y anterior a correcciones 5/6.
 No se modificó ningún procedimiento económico ni sp_Reserva_CheckIn en este ajuste.
 
-Validación de la alternativa Express: 86 pruebas .NET sin SQL aprobadas y
+Validación de la alternativa Express: 92 pruebas .NET sin SQL aprobadas y
 35 comprobaciones internas del ejecutor aprobadas, además de las 26 estáticas
 de scripts/historial/automatización. Los 28 casos SQL están compilados en C#,
 pero no ejecutados. El recorrido requiere un respaldo aún pendiente de crear.
@@ -216,3 +216,5 @@ pero no ejecutados. El recorrido requiere un respaldo aún pendiente de crear.
 Para error 51438 y representación de cabecera SQL Server, ver
 [diagnostico-definiciones-sql.md](diagnostico-definiciones-sql.md): la comparación
 continúa siendo estricta desde el nombre del procedimiento en adelante.
+
+El catálogo para los 28 casos se crea automáticamente en la copia temporal, incluso con un respaldo de una sola habitación; ver verificacion-windows-servicios.md.

@@ -149,3 +149,40 @@ El ejecutor captura las siete definiciones antes de verificar 05. La comparació
 solo normaliza el prefijo DDL CREATE/ALTER/CREATE OR ALTER; el resto es literal.
 Ver [diagnostico-definiciones-sql.md](diagnostico-definiciones-sql.md) para evidencia,
 límites, pruebas y actualización de la rama local sin merges.
+
+## Fixtures de habitaciones: respaldo con una sola habitación
+
+No hace falta agregar habitaciones al respaldo ni a las bases existentes.
+Después de capturar los históricos y terminar la instalación confirmada, el
+constructor de cada uno de los 28 casos crea un tipo exclusivo y tres habitaciones
+nuevas dentro de la copia marcada HotelTramontoDB_HT56_<GUID>.
+
+El tipo tiene nombre HT56-<GUID>, precio 100.00, capacidad 4 y activo=1.
+Las habitaciones tienen números F + nueve caracteres hexadecimales (VARCHAR(10)),
+estado DISPONIBLE, activo=1 y FK al tipo nuevo. Los IDs los genera SQL mediante
+IDENTITY/OUTPUT; no se resecuencian ni se escriben IDs históricos.
+La unicidad de nombres/números se verifica con NOT EXISTS, UPDLOCK y HOLDLOCK,
+en transacción serializable, con reintentos acotados de colisiones.
+La preparación valida lo insertado y hace COMMIT antes de ejecutar los
+procedimientos probados, que mantienen sus propias transacciones.
+
+Aunque el respaldo contenga solo la habitación 101, ninguna prueba usa o modifica
+esa habitación: dispone de sus tres habitaciones independientes. Tampoco necesita
+que haya tipos anteriores activos ni habitaciones libres. Cada caso tiene su
+propio catálogo para no contaminar disponibilidad, precios o reservas de otros casos.
+Se siguen necesitando un usuario activo y un huésped existentes, usados solo como
+referencias: no se crean cuentas, credenciales ni cambios a usuarios/huéspedes.
+
+No se cambiaron ni quitaron pruebas de integridad, pagos, concurrencia, reservas
+o consumos. La habitación ajena sigue fuera de la reserva de prueba.
+Un fallo de inserción, FK, CHECK, permisos o validación del fixture sigue siendo
+un fallo, no un caso omitido/aprobado. Las filas históricas de once tablas se
+siguen verificando y todos los fixtures desaparecen al eliminar la copia propia.
+
+Puede reutilizarse el MISMO .bak válido: el archivo y las dos bases originales
+no se modifican por el ensayo. No hay que preparar datos manualmente en ellos.
+Validación local de este ajuste: 92 pruebas .NET sin SQL aprobadas, incluidas seis
+nuevas de preparación. La preparación SQL real y los 28 casos deben comprobarse
+en tu próximo ensayo; no se ejecutó SQL en esta tarea.
+
+Las temporales del mismo caso usan intervalos deterministas de dos noches separados por tres días en sus habitaciones nuevas; se evitan solapamientos aleatorios del fixture sin cambiar las reglas de disponibilidad.
