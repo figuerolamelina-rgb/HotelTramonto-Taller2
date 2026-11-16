@@ -12,7 +12,9 @@ Se realizó fetch y comparación de las cinco ramas y de las referencias publica
 | `integracion-melina-iara` | `f6cae70eca93f3df646220b975ad4953ee501c35` | Base del PR, conservada. |
 | `correccion-servicios-habitaciones` | `5d747c946ccfcfa3a99d464564bb79902762574c` | Primer padre y base de las correcciones preservadas. |
 
-La API GitHub respondió `Forbidden`: no fue posible verificar o editar metadatos de borrador, descripción o revisiones. Por Git sí se verificaron ramas, referencias de PR y commits de merge; el PR #11 está en la historia de develop. El usuario informa el PR #13 abierto y en borrador; esta tarea no lo cambia a listo ni hace merge. El push a su rama actualiza su contenido, y su SHA final se informa en la entrega y se comprueba contra `refs/pull/13/head`.
+La API GitHub respondió `Forbidden`. Se utilizó como alternativa de solo lectura la página del PR y su JSON embebido: se verificó **PR 13, estado DRAFT, base `integracion-melina-iara` en `f6cae70`, cabecera `correccion-servicios-habitaciones`**, con el SHA publicado coincidente con Git. No se editaron descripción, revisiones ni estado. Por Git se verificaron además las ramas y los commits de merge; el PR #11 está en la historia de develop. El PR #13 no se convirtió a listo ni se fusionó. Su SHA final se informa en la entrega y se comprueba contra `refs/pull/13/head`.
+
+El merge funcional y código validado quedó publicado como [`a362b161e76c8b2f24127d3a80e991bfe8f1cc0a`](https://github.com/figuerolamelina-rgb/HotelTramonto-Taller2/commit/a362b161e76c8b2f24127d3a80e991bfe8f1cc0a), con padres `5d747c9` y `b607d88`. La confirmación posterior de metadatos se agrega como documentación, sin cambiar el código probado.
 
 ### Último trabajo de Iara incorporado
 
