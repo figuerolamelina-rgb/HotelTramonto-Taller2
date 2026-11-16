@@ -1,14 +1,24 @@
 ﻿
-using System;
-using System.Windows.Forms;
 using HotelTramonto.Negocios;
+using System;
+using System.Data;
 using System.Drawing;
+using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace HotelTramonto.Presentacion
 {
     public partial class FormHabitaciones : Form
     {
         private readonly string rolUsuario;
+
+        private ComboBox cmbEstado;
+        private ComboBox cmbTipo;
+        private ComboBox cmbPiso;
+        private CheckBox chkSoloActivas;
+        private Button btnLimpiarFiltros;
+
+        private DataTable habitacionesOriginales;
 
         public FormHabitaciones() : this("RECEPCIONISTA")
         {
@@ -91,11 +101,131 @@ namespace HotelTramonto.Presentacion
             btnReactivarHabitacion.Location = new Point(630, 100);
             btnReactivarHabitacion.Size = new Size(180, 42);
 
+
+            // ============================================
+            // FILTROS DE HABITACIONES
+            // ============================================
+
+            Label lblFiltro = new Label
+            {
+                Text = "FILTRAR HABITACIONES:",
+                Location = new Point(35, 165),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = marron
+            };
+
+            Label lblEstado = new Label
+            {
+                Text = "Estado:",
+                Location = new Point(35, 200),
+                AutoSize = true,
+                ForeColor = texto
+            };
+
+            cmbEstado = new ComboBox
+            {
+                Location = new Point(95, 195),
+                Size = new Size(170, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+
+            cmbEstado.Items.AddRange(new object[]
+            {
+    "Todos",
+    "Disponibles",
+    "Ocupadas",
+    "Mantenimiento"
+            });
+
+            cmbEstado.SelectedIndex = 0;
+
+            Label lblTipo = new Label
+            {
+                Text = "Tipo:",
+                Location = new Point(290, 200),
+                AutoSize = true,
+                ForeColor = texto
+            };
+
+            cmbTipo = new ComboBox
+            {
+                Location = new Point(335, 195),
+                Size = new Size(160, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+
+            cmbTipo.Items.Add("Todos");
+            cmbTipo.SelectedIndex = 0;
+
+            Label lblPiso = new Label
+            {
+                Text = "Piso:",
+                Location = new Point(520, 200),
+                AutoSize = true,
+                ForeColor = texto
+            };
+
+            cmbPiso = new ComboBox
+            {
+                Location = new Point(565, 195),
+                Size = new Size(110, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+
+            cmbPiso.Items.Add("Todos");
+            cmbPiso.SelectedIndex = 0;
+
+            chkSoloActivas = new CheckBox
+            {
+                Text = "Solo habitaciones activas",
+                Location = new Point(700, 198),
+                AutoSize = true,
+                Checked = true,
+                ForeColor = texto
+            };
+
+            btnLimpiarFiltros = new Button
+            {
+                Text = "Limpiar filtros",
+                Location = new Point(930, 190),
+                Size = new Size(130, 35)
+            };
+
+            EstilizarBotonHabitacion(
+                btnLimpiarFiltros, "Limpiar filtros", marronClaro, marfil);
+
+            Controls.Add(lblFiltro);
+            Controls.Add(lblEstado);
+            Controls.Add(cmbEstado);
+            Controls.Add(lblTipo);
+            Controls.Add(cmbTipo);
+            Controls.Add(lblPiso);
+            Controls.Add(cmbPiso);
+            Controls.Add(chkSoloActivas);
+            Controls.Add(btnLimpiarFiltros);
+
+            cmbEstado.SelectedIndexChanged += (s, e) => AplicarFiltros();
+            cmbTipo.SelectedIndexChanged += (s, e) => AplicarFiltros();
+            cmbPiso.SelectedIndexChanged += (s, e) => AplicarFiltros();
+
+            chkSoloActivas.CheckedChanged += (s, e) => AplicarFiltros();
+
+            btnLimpiarFiltros.Click += (s, e) =>
+            {
+                cmbEstado.SelectedIndex = 0;
+                cmbTipo.SelectedIndex = 0;
+                cmbPiso.SelectedIndex = 0;
+                chkSoloActivas.Checked = true;
+
+                AplicarFiltros();
+            };
+
             // Tabla de habitaciones
-            dgvHabitaciones.Location = new Point(35, 170);
+            dgvHabitaciones.Location = new Point(35, 245);
             dgvHabitaciones.Size = new Size(
                 ClientSize.Width - 70,
-                ClientSize.Height - 205);
+                ClientSize.Height - 280);
 
             dgvHabitaciones.Anchor =
                 AnchorStyles.Top |
@@ -334,13 +464,18 @@ namespace HotelTramonto.Presentacion
             return confirmado;
         }
 
+
         private void CargarHabitaciones()
         {
             try
             {
                 HabitacionNegocios negocio = new HabitacionNegocios();
-                dgvHabitaciones.DataSource = negocio.Listar();
-                ActualizarBotones();
+
+                // Guardar los datos originales para filtrar sin consultar SQL nuevamente.
+                habitacionesOriginales = negocio.Listar();
+
+                CargarOpcionesFiltros();
+                AplicarFiltros();
             }
             catch (Exception ex)
             {
@@ -350,6 +485,143 @@ namespace HotelTramonto.Presentacion
                     + ex.Message,
                     true);
             }
+        }
+
+
+        private void CargarOpcionesFiltros()
+        {
+            cmbTipo.Items.Clear();
+            cmbPiso.Items.Clear();
+
+            cmbTipo.Items.Add("Todos");
+            cmbPiso.Items.Add("Todos");
+
+            List<string> tipos = new List<string>();
+            List<string> pisos = new List<string>();
+
+            foreach (DataRow fila in habitacionesOriginales.Rows)
+            {
+                string tipo = fila["tipo"]?.ToString()?.Trim() ?? "";
+                string piso = fila["piso"]?.ToString()?.Trim() ?? "";
+
+                if (!string.IsNullOrWhiteSpace(tipo) &&
+                    !tipos.Contains(tipo))
+                {
+                    tipos.Add(tipo);
+                }
+
+                if (!string.IsNullOrWhiteSpace(piso) &&
+                    !pisos.Contains(piso))
+                {
+                    pisos.Add(piso);
+                }
+            }
+
+            tipos.Sort();
+            pisos.Sort();
+
+            foreach (string tipo in tipos)
+                cmbTipo.Items.Add(tipo);
+
+            foreach (string piso in pisos)
+                cmbPiso.Items.Add(piso);
+
+            cmbTipo.SelectedIndex = 0;
+            cmbPiso.SelectedIndex = 0;
+        }
+
+
+        private void AplicarFiltros()
+        {
+            if (habitacionesOriginales == null)
+                return;
+
+            DataTable filtrada = habitacionesOriginales.Clone();
+
+            string estadoSeleccionado =
+                cmbEstado.SelectedItem?.ToString() ?? "Todos";
+
+            string tipoSeleccionado =
+                cmbTipo.SelectedItem?.ToString() ?? "Todos";
+
+            string pisoSeleccionado =
+                cmbPiso.SelectedItem?.ToString() ?? "Todos";
+
+            bool soloActivas = chkSoloActivas.Checked;
+
+            foreach (DataRow fila in habitacionesOriginales.Rows)
+            {
+                bool activa = Convert.ToBoolean(fila["activo"]);
+
+                string estado = fila["estado"]?.ToString()?.Trim() ?? "";
+                string tipo = fila["tipo"]?.ToString()?.Trim() ?? "";
+                string piso = fila["piso"]?.ToString()?.Trim() ?? "";
+
+                // Filtro de habitaciones activas.
+                if (soloActivas && !activa)
+                    continue;
+
+                // Filtro de estado.
+                if (estadoSeleccionado == "Disponibles")
+                {
+                    if (!activa ||
+                        !estado.Equals("DISPONIBLE",
+                            StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+                else if (estadoSeleccionado == "Ocupadas")
+                {
+                    if (!estado.Equals("OCUPADA",
+                            StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+                else if (estadoSeleccionado == "Mantenimiento")
+                {
+                    if (!estado.Equals("MANTENIMIENTO",
+                            StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+
+                // Filtro de tipo.
+                if (tipoSeleccionado != "Todos" &&
+                    !tipo.Equals(tipoSeleccionado,
+                        StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Filtro de piso.
+                if (pisoSeleccionado != "Todos" &&
+                    piso != pisoSeleccionado)
+                    continue;
+
+                filtrada.ImportRow(fila);
+            }
+
+            dgvHabitaciones.DataSource = filtrada;
+
+            ConfigurarColumnasHabitaciones();
+            ActualizarBotones();
+        }
+
+
+        private void ConfigurarColumnasHabitaciones()
+        {
+            if (dgvHabitaciones.Columns.Count == 0)
+                return;
+
+            dgvHabitaciones.Columns["id_habitacion"].Visible = false;
+            dgvHabitaciones.Columns["tipo_habitacion"].Visible = false;
+
+            dgvHabitaciones.Columns["tipo"].HeaderText = "Tipo de habitación";
+            dgvHabitaciones.Columns["piso"].HeaderText = "Piso";
+            dgvHabitaciones.Columns["numero"].HeaderText = "N.º de habitación";
+            dgvHabitaciones.Columns["estado"].HeaderText = "Estado";
+            dgvHabitaciones.Columns["activo"].HeaderText = "Activa";
+
+            dgvHabitaciones.Columns["tipo"].DisplayIndex = 0;
+            dgvHabitaciones.Columns["piso"].DisplayIndex = 1;
+            dgvHabitaciones.Columns["numero"].DisplayIndex = 2;
+            dgvHabitaciones.Columns["estado"].DisplayIndex = 3;
+            dgvHabitaciones.Columns["activo"].DisplayIndex = 4;
         }
 
 

@@ -521,6 +521,8 @@ namespace HotelTramonto.Presentacion
             {
                 ReservaNegocios negocio = new ReservaNegocios();
                 dgvReservas.DataSource = negocio.Listar();
+                
+                ConfigurarColumnasReservas();
 
                 dgvReservas.ReadOnly = true;
                 dgvReservas.SelectionMode =
@@ -555,6 +557,57 @@ namespace HotelTramonto.Presentacion
                     MessageBoxIcon.Error);
             }
         }
+
+
+
+        private void ConfigurarColumnasReservas()
+        {
+            if (dgvReservas.Columns.Count == 0)
+                return;
+
+            // Ocultar identificadores internos
+            if (dgvReservas.Columns.Contains("id_huesped"))
+                dgvReservas.Columns["id_huesped"].Visible = false;
+
+            if (dgvReservas.Columns.Contains("id_usuario"))
+                dgvReservas.Columns["id_usuario"].Visible = false;
+
+            // Encabezados visibles
+            CambiarEncabezado("id_reserva", "N.º de reserva");
+            CambiarEncabezado("nombre_huesped", "Nombre del huésped");
+            CambiarEncabezado("apellido_huesped", "Apellido del huésped");
+            CambiarEncabezado("nombre_usuario", "Nombre del usuario");
+            CambiarEncabezado("apellido_usuario", "Apellido del usuario");
+            CambiarEncabezado("fecha_entrada", "Entrada");
+            CambiarEncabezado("fecha_salida", "Salida");
+            CambiarEncabezado("estado", "Estado");
+            CambiarEncabezado("total", "Importe total");
+            CambiarEncabezado("observaciones", "Observaciones");
+
+            // Formato del importe
+            if (dgvReservas.Columns.Contains("total"))
+            {
+                dgvReservas.Columns["total"].DefaultCellStyle.Format = "N2";
+                dgvReservas.Columns["total"].DefaultCellStyle.Alignment =
+                    DataGridViewContentAlignment.MiddleRight;
+            }
+
+            // Ancho de observaciones
+            if (dgvReservas.Columns.Contains("observaciones"))
+            {
+                dgvReservas.Columns["observaciones"].Width = 240;
+                dgvReservas.Columns["observaciones"].MinimumWidth = 180;
+            }
+        }
+
+        private void CambiarEncabezado(string nombreColumna, string encabezado)
+        {
+            if (dgvReservas.Columns.Contains(nombreColumna))
+            {
+                dgvReservas.Columns[nombreColumna].HeaderText = encabezado;
+            }
+        }
+
 
         private void btnActualizar_Click(object sender, EventArgs e)
         {
@@ -650,6 +703,7 @@ namespace HotelTramonto.Presentacion
                 else
                 {
                     dgvReservas.DataSource = negocio.ListarPorEstado(estado);
+                    ConfigurarColumnasReservas();
                 }
             }
             catch (Exception ex)
@@ -679,6 +733,8 @@ namespace HotelTramonto.Presentacion
                 dgvReservas.DataSource = negocio.ListarPorFechas(
                     dtpFechaDesde.Value.Date,
                     dtpFechaHasta.Value.Date);
+
+                ConfigurarColumnasReservas();
             }
             catch (Exception ex)
             {
