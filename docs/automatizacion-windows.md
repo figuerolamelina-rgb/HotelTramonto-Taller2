@@ -26,7 +26,7 @@ fijadas deliberadamente. Se toleran los cambios de finales de línea LF/CRLF de 
 
 ## Secuencia y controles
 
-1. Comprueba integridad de 61 archivos revisados: SQL autorizados, fuentes y contratos
+1. Comprueba integridad de 62 archivos revisados: SQL autorizados, fuentes y contratos
    de las dependencias de pruebas. La lista de SQL ejecutables contiene exactamente
    siete archivos; no incluye instaladores de permisos, reversiones ni los SQL originales.
 2. Abre master SOLO para SELECT de metadatos. Verifica ServerName exactamente contra
@@ -100,7 +100,7 @@ manualmente; el runner nunca borra, recrea ni restaura bases. La reversión de d
 ## Validación realizada por el agente
 
 Parser oficial PowerShell: cero errores de sintaxis. Cuatro funciones puras probadas
-con un motor PowerShell hospedado (sin cargar el cuerpo ni funciones SQL), siete
+con un motor PowerShell hospedado (sin cargar el cuerpo ni funciones SQL), ocho
 comprobaciones estáticas Python y lista positiva de pruebas C# ejecutada en Linux:
 56 casos aprobados. El runner completo NO se ejecutó en Windows ni en tu SQL Server.
 La sintaxis y las comprobaciones estáticas no demuestran el resultado de las operaciones
@@ -184,3 +184,38 @@ otra base, petición contra la copia y cuatro secuencias transitorias. No abre S
 La prueba se ejecuta antes de conectarse y deja deteccion-sesiones.log. La regresión
 se verificó en PowerShell hospedado; el comportamiento real de DMV en la instancia
 Windows sigue pendiente de la siguiente ejecución local.
+
+## Corrección de ejecución dotnet y logs
+
+La función anterior DotNet entraba en conflicto con el nombre dotnet: PowerShell
+resuelve nombres sin distinguir mayúsculas y podía invocar la función recursivamente.
+Los argumentos se reinterpretaron como nombres de logs; eso explica la solución
+vacía dentro de Informes y restore.log vacío antes del error de ruta. El fallo no
+demuestra un problema con la solución: el restore manual funcionó.
+
+Invoke-HotelDotNet resuelve exclusivamente dotnet.exe de tipo Application y usa
+System.Diagnostics.Process con ruta absoluta, WorkingDirectory en la raíz,
+UseShellExecute=false y argumentos escapados para Windows. No invoca cmd.exe,
+no depende del directorio de quien llama ni de LASTEXITCODE. Los únicos nombres
+admitidos son restore.log, build.log y tests.log, dentro de la carpeta de informe.
+Los logs incluyen directorio, argumentos, stdout, stderr y ExitCode. Ambos canales
+se leen simultáneamente para evitar bloqueos; escribir en stderr con código cero
+no se considera automáticamente un fallo. Un código no cero se propaga con las
+últimas 40 líneas y la ruta al log completo. Los errores de inicio también se registran.
+
+Probar-ProcesoDotNet.ps1, antes de SQL, compila un pequeño ejecutable de prueba en
+una carpeta temporal, sin usar el dotnet real del proyecto. Verifica seis casos:
+restore, build con buffers extensos, test con espacios/comillas/barras/argumento vacío,
+fallo con código 7 y mensaje real, ejecutable ausente y nombre de log inválido.
+Comprueba el directorio del hijo, el del llamador, los argumentos recibidos y que
+no aparezca una solución en Informes ni cambie la solución centinela. Conserva el
+resultado en proceso-dotnet.log; la carpeta temporal de prueba se limpia al terminar.
+Requiere que la política local permita compilar/ejecutar ese fixture temporal.
+
+Validación del agente: sintaxis PowerShell y seis casos con un proceso nativo
+simulado en Linux, mediante motor PowerShell hospedado. Se adaptaron solo cmdlets
+de infraestructura del host y la compilación/ruta del fixture; se ejecutó la función
+real de procesos. La ejecución nativa con Windows PowerShell 5.1 queda pendiente.
+No se abrió SQL, no se ejecutaron migraciones ni se cambiaron cuentas o permisos.
+Las protecciones de base, sesiones, confirmación e informes permanecen activas.
+Actualizar toda la rama, incluido Probar-ProcesoDotNet.ps1, antes de reintentar.

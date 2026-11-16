@@ -197,16 +197,81 @@ function Versiones([string]$Archivo) {
     }
     return $map
 }
-function DotNet([string[]]$Argumentos, [string]$Log) {
-    & dotnet @Argumentos 2>&1 | Out-File (Join-Path $Salida $Log) -Encoding utf8
-    if ($LASTEXITCODE -ne 0) { throw ('dotnet falló; revisar '+$Log) }
+function Convertir-ArgumentoWindows([AllowEmptyString()][string]$Valor) {
+    # Reglas de argumentos de Windows: duplicar barras ante comillas y al cerrar.
+    $texto=New-Object Text.StringBuilder
+    [void]$texto.Append([char]34)
+    $barras=0
+    foreach ($caracter in $Valor.ToCharArray()) {
+        if ($caracter -eq [char]92) { $barras++; continue }
+        if ($caracter -eq [char]34) {
+            [void]$texto.Append(('\' * (2*$barras+1)))
+            [void]$texto.Append([char]34)
+        } else {
+            [void]$texto.Append(('\' * $barras))
+            [void]$texto.Append($caracter)
+        }
+        $barras=0
+    }
+    [void]$texto.Append(('\' * (2*$barras)))
+    [void]$texto.Append([char]34)
+    return $texto.ToString()
+}
+function Invoke-HotelDotNet {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)][AllowEmptyString()][string[]]$Argumentos,
+        [Parameter(Mandatory=$true)][ValidateSet('restore.log','build.log','tests.log')][string]$Log,
+        [string]$Ejecutable
+    )
+    $directorio=[IO.Path]::GetFullPath($Raiz)
+    if (-not [IO.Directory]::Exists($directorio)) { throw ('No existe la raíz: '+$directorio) }
+    $carpeta=[IO.Path]::GetFullPath($Salida)
+    [void][IO.Directory]::CreateDirectory($carpeta)
+    $rutaLog=[IO.Path]::Combine($carpeta,$Log)
+    $argsNativos=(@($Argumentos | ForEach-Object { Convertir-ArgumentoWindows $_ })) -join ' '
+    $cabecera='Directorio: '+$directorio+"`r`nArgumentos: "+$argsNativos+"`r`n"
+    [IO.File]::WriteAllText($rutaLog,$cabecera,[Text.Encoding]::UTF8)
+    $proceso=New-Object Diagnostics.Process
+    try {
+        if ([string]::IsNullOrWhiteSpace($Ejecutable)) {
+            # No usar & dotnet: PowerShell ignora mayúsculas y resolvía la antigua
+            # función DotNet recursivamente en lugar del ejecutable.
+            $Ejecutable=(Get-Command -Name dotnet.exe -CommandType Application -ErrorAction Stop).Source
+        }
+        if (-not [IO.Path]::IsPathRooted($Ejecutable)) { throw 'Se requiere una ruta absoluta al ejecutable.' }
+        $proceso.StartInfo.FileName=$Ejecutable
+        $proceso.StartInfo.WorkingDirectory=$directorio
+        $proceso.StartInfo.Arguments=$argsNativos
+        $proceso.StartInfo.UseShellExecute=$false
+        $proceso.StartInfo.RedirectStandardOutput=$true
+        $proceso.StartInfo.RedirectStandardError=$true
+        $proceso.StartInfo.CreateNoWindow=$true
+        if (-not $proceso.Start()) { throw 'No se pudo iniciar el proceso.' }
+        # Leer ambos canales simultáneamente para no bloquear por buffers llenos.
+        $stdout=$proceso.StandardOutput.ReadToEndAsync()
+        $stderr=$proceso.StandardError.ReadToEndAsync()
+        $proceso.WaitForExit()
+        $salidaNormal=$stdout.GetAwaiter().GetResult()
+        $salidaError=$stderr.GetAwaiter().GetResult()
+        $codigo=$proceso.ExitCode
+        [IO.File]::AppendAllText($rutaLog,"`r`nSTDOUT:`r`n"+$salidaNormal+"`r`nSTDERR:`r`n"+$salidaError+"`r`nExitCode: "+$codigo+"`r`n",[Text.Encoding]::UTF8)
+        if ($codigo -ne 0) {
+            $detalle=(@(($salidaNormal+"`n"+$salidaError) -split '\r?\n' | Select-Object -Last 40)) -join "`n"
+            throw ('dotnet '+$Argumentos[0]+' falló (código '+$codigo+'). Log: '+$rutaLog+"`n"+$detalle)
+        }
+    } catch {
+        [IO.File]::AppendAllText($rutaLog,"`r`nERROR: "+$_.Exception.Message+"`r`n",[Text.Encoding]::UTF8)
+        throw
+    } finally { $proceso.Dispose() }
 }
 $NumeroArchivo=0
 try {
     Exigir ($env:OS -eq 'Windows_NT') 'Ejecutar en Windows con Windows PowerShell 5.1.'
     Add-Type -AssemblyName System.Data
-    $null=Get-Command dotnet -ErrorAction Stop
+    $null=Get-Command dotnet.exe -CommandType Application -ErrorAction Stop
     $Manifest=@{
+        'tools/Probar-ProcesoDotNet.ps1'='29B09582C3C8267F7E11B1193894B2D4B4EC0BE9333F38941729A70D2617BD65'
         'tools/Probar-SesionesSql.ps1'='6D4FF42FFDD13BBBFE4A43AD42905EA7C6A05295A915C6F426817904F5A2440A'
         'tools/Probar-LecturasSql.ps1'='33FD5474D7EC4B99E34DD4A030546F803300EE62151F620D9A8D56E54AF713B6'
         'tools/Probar-CadenaConexion.ps1'='C5C2E5C64C637F2FC4F8E03F4BDB1C501E3E0166A9F0A343C55F1E79D2153C0C'
@@ -291,6 +356,8 @@ try {
     Registrar 'Referencias de lecturas SQL' 'Filtro de habitaciones activas y disponibilidad verificados sin SQL.'
     & (Join-Path $PSScriptRoot 'Probar-SesionesSql.ps1') | Out-File -LiteralPath (Join-Path $Salida 'deteccion-sesiones.log') -Encoding utf8
     Registrar 'Lógica de detección de sesiones' 'Quince casos puros aprobados antes de abrir SQL.'
+    & (Join-Path $PSScriptRoot 'Probar-ProcesoDotNet.ps1') | Out-File -LiteralPath (Join-Path $Salida 'proceso-dotnet.log') -Encoding utf8
+    Registrar 'Ejecución de procesos dotnet' 'Seis casos simulados de argumentos, directorios y logs aprobados sin SQL.'
     $Maestra=Abrir 'master' # solo SELECT de metadatos, nunca comandos de escritura
     $t=Tabla $Maestra "SELECT CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor, CONVERT(int,SERVERPROPERTY('ProductMajorVersion')) AS version;"
     Exigir ($t.Rows[0].servidor -ieq $Servidor) ('Instancia inesperada: '+$t.Rows[0].servidor)
@@ -392,17 +459,14 @@ WHERE c.column_id IS NULL OR TYPE_NAME(c.user_type_id)<>r.tipo OR c.max_length<>
     Exigir ($tipos.Rows.Count -eq 0) 'Tipos, nulabilidad o columnas calculadas diferentes de los contratos revisados.'
     $previas=Huellas
     Registrar 'Diagnóstico previo y huellas de datos' 'Todas las tablas dbo comparables; no se guardan filas ni hashes de usuarios.'
-    Push-Location $Raiz
+    Invoke-HotelDotNet -Argumentos @('restore','HotelTramonto.slnx') -Log 'restore.log'
+    Invoke-HotelDotNet -Argumentos @('build','HotelTramonto.slnx','--no-restore') -Log 'build.log'
+    $configAnterior=$env:HOTELTRAMONTO_CONFIG
+    $env:HOTELTRAMONTO_CONFIG=Join-Path $Salida 'conexion-bloqueada-inexistente.json'
+    Exigir (-not (Test-Path -LiteralPath $env:HOTELTRAMONTO_CONFIG)) 'La configuración de bloqueo no debe existir.'
     try {
-        DotNet -Argumentos @('restore','HotelTramonto.slnx') -Log 'restore.log'
-        DotNet -Argumentos @('build','HotelTramonto.slnx','--no-restore') -Log 'build.log'
-        $configAnterior=$env:HOTELTRAMONTO_CONFIG
-        $env:HOTELTRAMONTO_CONFIG=Join-Path $Salida 'conexion-bloqueada-inexistente.json'
-        Exigir (-not (Test-Path -LiteralPath $env:HOTELTRAMONTO_CONFIG)) 'La configuración de bloqueo no debe existir.'
-        try {
-        DotNet -Argumentos @('test','HotelTramonto.Pruebas/HotelTramonto.Pruebas.csproj','--no-build','--no-restore','--filter',$FiltroSeguro,'--logger','trx;LogFileName=seguras.trx','--results-directory',$Salida) -Log 'tests.log'
-        } finally { $env:HOTELTRAMONTO_CONFIG=$configAnterior }
-    } finally { Pop-Location }
+        Invoke-HotelDotNet -Argumentos @('test','HotelTramonto.Pruebas/HotelTramonto.Pruebas.csproj','--no-build','--no-restore','--filter',$FiltroSeguro,'--logger','trx;LogFileName=seguras.trx','--results-directory',$Salida) -Log 'tests.log'
+    } finally { $env:HOTELTRAMONTO_CONFIG=$configAnterior }
     [xml]$trx=Get-Content -LiteralPath (Join-Path $Salida 'seguras.trx') -Raw
     $cuenta=$trx.SelectSingleNode("//*[local-name()='Counters']")
     Exigir (($null -ne $cuenta) -and ([int]$cuenta.total -eq 56) -and ([int]$cuenta.passed -eq 56) -and ([int]$cuenta.failed -eq 0)) 'Las 56 pruebas seguras no completaron satisfactoriamente.'

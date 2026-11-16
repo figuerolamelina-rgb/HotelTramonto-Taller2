@@ -83,6 +83,24 @@ class AutomatizacionWindows(unittest.TestCase):
         self.assertIn("Sesion 80 'otra' 'runner-A' 123", test)
         self.assertIn("Sesion 52 'conexion-nueva'", test)
 
+    def test_dotnet_proceso_explicito_directorio_logs_y_sin_recursion(self):
+        self.assertNotIn('function DotNet(', TEXT)
+        body = TEXT.split('function Invoke-HotelDotNet {')[1].split('$NumeroArchivo=0')[0]
+        self.assertIn('dotnet.exe -CommandType Application', body)
+        self.assertIn('$proceso.StartInfo.WorkingDirectory=$directorio', body)
+        self.assertIn('$proceso.StartInfo.UseShellExecute=$false', body)
+        self.assertIn('$proceso.StandardOutput.ReadToEndAsync()', body)
+        self.assertIn('$proceso.StandardError.ReadToEndAsync()', body)
+        self.assertIn('$codigo=$proceso.ExitCode', body)
+        self.assertIn("ValidateSet('restore.log','build.log','tests.log')", body)
+        self.assertNotIn('$LASTEXITCODE', body)
+        self.assertIn('Invoke-HotelDotNet -Argumentos', TEXT)
+        test = (ROOT / 'tools/Probar-ProcesoDotNet.ps1').read_text(encoding='utf-8-sig')
+        self.assertNotIn('.Open(', test)
+        self.assertIn('function DotNet { throw', test)
+        self.assertIn('ERROR REAL SIMULADO', test)
+        self.assertIn("Log 'HotelTramonto.slnx'", test)
+
     def test_confirmacion_antecede_instalacion_y_origen_solo_metadatos(self):
         self.assertLess(TEXT.index("$respuesta=Read-Host"), TEXT.index("foreach ($n in @('01_AgregarCategoria.sql'"))
         self.assertIn("$respuesta -ceq 'MIGRAR HotelTramontoDB_Pruebas'", TEXT)
