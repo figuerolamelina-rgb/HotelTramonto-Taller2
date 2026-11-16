@@ -8,6 +8,7 @@ namespace HotelTramonto.Negocios
     public class HuespedNegocios
     {
         private readonly HuespedDatos huespedDatos = new HuespedDatos();
+        private readonly ReservaDatos reservaDatos = new ReservaDatos();
 
         public void Insertar(
             string nombre,
@@ -99,6 +100,15 @@ namespace HotelTramonto.Negocios
                     "El huésped seleccionado no es válido.");
 
             huespedDatos.Reactivar(idHuesped);
+        }
+
+        public DataTable ObtenerHistorial(int idHuesped)
+        {
+            if (idHuesped <= 0)
+                throw new ArgumentException(
+                    "El huésped seleccionado no es válido.");
+
+            return reservaDatos.ListarPorHuesped(idHuesped);
         }
 
     }

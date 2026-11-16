@@ -16,7 +16,7 @@ namespace HotelTramonto.Presentacion
         private readonly Color crema = Color.FromArgb(245, 239, 229);
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
-
+        private Button btnVerHistorial;
         public FormHuespedes()
         {
             InitializeComponent();
@@ -72,6 +72,17 @@ namespace HotelTramonto.Presentacion
             EstilizarBoton(btnActualizar, "Actualizar listado", marronClaro, Color.White);
             EstilizarBoton(btnReactivarHuesped, "Reactivar huésped", marronClaro, Color.White);
 
+            btnVerHistorial = new Button();
+
+            EstilizarBoton(
+                btnVerHistorial,
+                "Ver historial",
+                dorado,
+                marron);
+
+            btnVerHistorial.Click += btnVerHistorial_Click;
+
+            Controls.Add(btnVerHistorial);
             dgvHuespedes.BackgroundColor = marfil;
             dgvHuespedes.BorderStyle = BorderStyle.None;
             dgvHuespedes.GridColor = Color.FromArgb(222, 211, 194);
@@ -157,7 +168,15 @@ namespace HotelTramonto.Presentacion
                 margen + (anchoBoton + separacion) * 2,
                 segundaFilaY, anchoBoton, altoBoton);
 
-            int tablaY = segundaFilaY + altoBoton + 18;
+            int terceraFilaY = segundaFilaY + altoBoton + 10;
+
+            btnVerHistorial.SetBounds(
+                margen,
+                terceraFilaY,
+                anchoBoton,
+                altoBoton);
+
+            int tablaY = terceraFilaY + altoBoton + 18;
 
             dgvHuespedes.SetBounds(
                 margen,
@@ -743,5 +762,49 @@ namespace HotelTramonto.Presentacion
                 dgvHuespedes.Columns["activo"].Visible = false;
         }
 
+        private void btnVerHistorial_Click(object sender, EventArgs e)
+        {
+            if (dgvHuespedes.CurrentRow == null ||
+                dgvHuespedes.CurrentRow.IsNewRow)
+            {
+                MostrarMensaje(
+                    "Huésped no seleccionado",
+                    "Seleccioná un huésped para consultar su historial.");
+
+                return;
+            }
+
+            try
+            {
+                int idHuesped = Convert.ToInt32(
+                    dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
+
+                string nombre = Convert.ToString(
+                    dgvHuespedes.CurrentRow.Cells["nombre"].Value);
+
+                string apellido = Convert.ToString(
+                    dgvHuespedes.CurrentRow.Cells["apellido"].Value);
+
+                string dni = Convert.ToString(
+                    dgvHuespedes.CurrentRow.Cells["dni"].Value);
+
+                using (FormHistorialHuespedes formulario =
+                    new FormHistorialHuespedes(
+                        idHuesped,
+                        nombre,
+                        apellido,
+                        dni))
+                {
+                    formulario.ShowDialog(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "Error al consultar el historial",
+                    "No se pudo abrir el historial.\n\n" + ex.Message,
+                    true);
+            }
+        }
     }
 }
