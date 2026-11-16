@@ -3,7 +3,7 @@ using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.Datos
 {
-    public class HabitacionDatos
+    public class HabitacionDatos : IHabitacionDatos
     {
         public void Insertar(
             int tipoHabitacion,

@@ -28,10 +28,7 @@ namespace HotelTramonto.Presentacion
         private readonly string rolUsuario = string.Empty;
 
         private bool EsAdministrador =>
-            string.Equals(
-                rolUsuario,
-                "ADMINISTRADOR",
-                StringComparison.OrdinalIgnoreCase);
+            PermisosHabitaciones.PuedeAdministrar(rolUsuario);
 
         // Constructor para el diseñador de Windows Forms.
         public FormNuevaHabitacion()

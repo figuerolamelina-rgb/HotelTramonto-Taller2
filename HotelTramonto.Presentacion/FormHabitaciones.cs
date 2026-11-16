@@ -12,10 +12,7 @@ namespace HotelTramonto.Presentacion
         private readonly string rolUsuario;
 
         private bool EsAdministrador =>
-            string.Equals(
-                rolUsuario,
-                "ADMINISTRADOR",
-                StringComparison.OrdinalIgnoreCase);
+            PermisosHabitaciones.PuedeAdministrar(rolUsuario);
 
         // Constructor para el diseñador de Windows Forms.
         public FormHabitaciones() : this(string.Empty)
@@ -536,62 +533,19 @@ namespace HotelTramonto.Presentacion
             if (!TienePermisoDeGestion())
                 return;
 
-            if (dgvHabitaciones.CurrentRow == null ||
-                dgvHabitaciones.CurrentRow.IsNewRow)
-            {
-                MostrarMensaje(
-                    "Habitación no seleccionada",
-                    "Seleccioná una habitación de la tabla para continuar.");
-
-                return;
-            }
-
-            int idHabitacion = Convert.ToInt32(
-                dgvHabitaciones.CurrentRow
-                    .Cells["id_habitacion"].Value);
-
-            bool activa = Convert.ToBoolean(
-                dgvHabitaciones.CurrentRow
-                    .Cells["activo"].Value);
-
-            if (activa)
-            {
-                MostrarMensaje(
-                    "Habitación ya activa",
-                    "La habitación seleccionada ya se encuentra activa.");
-
-                return;
-            }
-
-            bool confirmacion = MostrarConfirmacion(
-                "Confirmar reactivación",
-                "¿Desea reactivar la habitación seleccionada?");
-
-            if (!confirmacion)
-                return;
-
             try
             {
-                HabitacionNegocios negocio =
-                    new HabitacionNegocios();
-
-                negocio.Reactivar(
-                    idHabitacion,
-                    rolUsuario);
-
-                MostrarMensaje(
-                    "Habitación reactivada",
-                    "La habitación se reactivó correctamente.");
-
+                // La tabla principal contiene solo activas. Elegir la habitación
+                // en el formulario de inactivas, con el mismo rol autenticado.
+                using (FormReactivarHabitacion formulario = new FormReactivarHabitacion(rolUsuario))
+                {
+                    formulario.ShowDialog(this);
+                }
                 CargarHabitaciones();
             }
             catch (Exception ex)
             {
-                MostrarMensaje(
-                    "Error al reactivar",
-                    "No se pudo reactivar la habitación.\n\nDetalle: "
-                    + ex.Message,
-                    true);
+                MostrarMensaje("Error al reactivar", "No se pudo abrir la lista de habitaciones inactivas.\n\n" + ex.Message, true);
             }
         }
 
@@ -607,13 +561,13 @@ namespace HotelTramonto.Presentacion
             }
 
             btnNuevaHabitacion.Enabled = true;
+            btnReactivarHabitacion.Enabled = true;
 
             if (dgvHabitaciones.CurrentRow == null ||
                 dgvHabitaciones.CurrentRow.IsNewRow)
             {
                 btnModificarHabitacion.Enabled = false;
                 btnDesactivarHabitacion.Enabled = false;
-                btnReactivarHabitacion.Enabled = false;
                 return;
             }
 
@@ -623,7 +577,7 @@ namespace HotelTramonto.Presentacion
 
             btnModificarHabitacion.Enabled = activa;
             btnDesactivarHabitacion.Enabled = activa;
-            btnReactivarHabitacion.Enabled = !activa;
+            // Reactivar usa su propia lista; no depende de seleccionar una activa.
         }
 
         private void dgvHabitaciones_SelectionChanged(
