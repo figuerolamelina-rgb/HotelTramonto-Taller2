@@ -142,3 +142,10 @@ verificación independiente: el usuario que restaura no representa al recepcioni
   multisesión específicas; no está resuelto por esta automatización.
 - Un respaldo con procedimientos personalizados puede ser rechazado: se prefiere
   revisión antes de ejecutar código que pudiera acceder a otras bases.
+
+## Diagnóstico del error 51438
+
+El ejecutor captura las siete definiciones antes de verificar 05. La comparación
+solo normaliza el prefijo DDL CREATE/ALTER/CREATE OR ALTER; el resto es literal.
+Ver [diagnostico-definiciones-sql.md](diagnostico-definiciones-sql.md) para evidencia,
+límites, pruebas y actualización de la rama local sin merges.

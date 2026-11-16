@@ -170,7 +170,7 @@ Nuevos:
 - tests/HotelTramonto.VerificacionSql (ejecutor .NET)
 - docs/servicios-habitaciones.md
 
-Comprobaciones locales de la versión completa: 81 pruebas .NET aprobadas,
+Comprobaciones locales de la versión completa: 86 pruebas .NET aprobadas,
 19 comprobaciones estáticas aprobadas entre servicios, concurrencia e historial.
 Tres pruebas .NET que acceden a SQL quedaron explícitamente excluidas.
 Las 28 pruebas de integración SQL están preparadas y NO ejecutadas.

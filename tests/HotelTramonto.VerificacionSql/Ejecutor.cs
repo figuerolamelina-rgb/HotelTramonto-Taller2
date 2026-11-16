@@ -224,6 +224,8 @@ public sealed class Ejecutor(string raiz, string backup)
 
     private void Migrar(string nombre)
     {
+        if (nombre == "05_VerificarConcurrencia.sql")
+            DiagnosticoDefiniciones.Guardar(Copia, raiz, DirectorioInformes);
         string original = File.ReadAllText(Path.Combine(CarpetaSql, nombre));
         using var db = Copia.Abrir();
         using var cmd = new SqlCommand(identidad.Adaptar(original), db) { CommandTimeout = 300 };

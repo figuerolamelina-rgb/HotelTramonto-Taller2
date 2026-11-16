@@ -50,6 +50,7 @@ public static class OfflineChecks
         foreach (string nombre in ContratosBase.Procedimientos)
             Exigir(ContratosBase.Esperado(raiz, nombre).Contains("PROCEDURE", StringComparison.Ordinal),
                 "Contrato de procedimiento base " + nombre);
+        Exigir(DefinicionesAuditadas.ManifiestoCoincide(raiz), "Los siete manifiestos 04/05 coinciden literalmente.");
         Exigir(CasosSql.Todos.Length == 28 && CasosSql.Todos.Select(c => c.Nombre).Distinct().Count() == 28,
             "Exactamente 28 pruebas distintas.");
         string proyecto = Path.Combine(raiz, "tests", "HotelTramonto.VerificacionSql", "HotelTramonto.VerificacionSql.csproj");

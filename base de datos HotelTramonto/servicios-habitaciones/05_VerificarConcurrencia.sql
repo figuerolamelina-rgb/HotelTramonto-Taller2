@@ -27,7 +27,11 @@ WHERE id_reserva_temporal IS NOT NULL AND tipo_pago='PAGO_INICIAL' AND estado='A
 GROUP BY id_reserva_temporal HAVING COUNT(*)>1;
 -- Comprobar permisos efectivos de la identidad operativa por separado; no conceder DML directo.
 
-IF HASHBYTES('SHA2_256',OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_Insertar'))) <> HASHBYTES('SHA2_256',N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_Insertar
+-- SQL Server puede conservar CREATE/ALTER con otra representacion de cabecera.
+-- Se normaliza SOLO el verbo DDL y el espacio anterior a PROCEDURE.
+-- Nombre, parametros y cuerpo quedan literalmente iguales, incluidos CR/LF y literales.
+DECLARE @audit TABLE(nombre sysname PRIMARY KEY, definicion nvarchar(max) NOT NULL);
+INSERT @audit(nombre,definicion) VALUES(N'sp_Pago_Insertar',CAST(N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_Insertar
  @id_reserva INT=NULL, @id_reserva_temporal INT=NULL, @id_usuario INT,
  @monto DECIMAL(10,2), @metodo_pago VARCHAR(30), @estado VARCHAR(20),
  @tipo_pago VARCHAR(30), @id_operacion UNIQUEIDENTIFIER=NULL
@@ -146,11 +150,8 @@ BEGIN
   IF XACT_STATE()<>0 ROLLBACK;
   THROW;
  END CATCH;
-END;')
- OR OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_Insertar')) IS NULL
- THROW 51438, 'Definicion no coincide con la version auditada: sp_Pago_Insertar.', 1;
-
-IF HASHBYTES('SHA2_256',OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_ActualizarEstado'))) <> HASHBYTES('SHA2_256',N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_ActualizarEstado
+END;' AS nvarchar(max)));
+INSERT @audit(nombre,definicion) VALUES(N'sp_Pago_ActualizarEstado',CAST(N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_ActualizarEstado
  @id_pago INT, @estado VARCHAR(20)
 AS
 BEGIN
@@ -256,11 +257,8 @@ BEGIN
   IF XACT_STATE()<>0 ROLLBACK;
   THROW;
  END CATCH;
-END;')
- OR OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_ActualizarEstado')) IS NULL
- THROW 51438, 'Definicion no coincide con la version auditada: sp_Pago_ActualizarEstado.', 1;
-
-IF HASHBYTES('SHA2_256',OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_RegistrarServicios'))) <> HASHBYTES('SHA2_256',N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_RegistrarServicios
+END;' AS nvarchar(max)));
+INSERT @audit(nombre,definicion) VALUES(N'sp_Pago_RegistrarServicios',CAST(N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_RegistrarServicios
  @id_reserva INT,@id_usuario INT,@metodo_pago VARCHAR(30),@id_operacion UNIQUEIDENTIFIER=NULL
 AS
 BEGIN
@@ -268,11 +266,8 @@ BEGIN
  EXEC dbo.sp_Pago_Insertar @id_reserva=@id_reserva,@id_reserva_temporal=NULL,
   @id_usuario=@id_usuario,@monto=NULL,@metodo_pago=@metodo_pago,@estado=''APROBADO'',
   @tipo_pago=''SERVICIOS_ADICIONALES'',@id_operacion=@id_operacion;
-END;')
- OR OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_RegistrarServicios')) IS NULL
- THROW 51438, 'Definicion no coincide con la version auditada: sp_Pago_RegistrarServicios.', 1;
-
-IF HASHBYTES('SHA2_256',OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_RegistrarSaldoAlojamiento'))) <> HASHBYTES('SHA2_256',N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_RegistrarSaldoAlojamiento
+END;' AS nvarchar(max)));
+INSERT @audit(nombre,definicion) VALUES(N'sp_Pago_RegistrarSaldoAlojamiento',CAST(N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_RegistrarSaldoAlojamiento
  @id_reserva INT,@id_usuario INT,@metodo_pago VARCHAR(30),@id_operacion UNIQUEIDENTIFIER=NULL
 AS
 BEGIN
@@ -280,11 +275,8 @@ BEGIN
  EXEC dbo.sp_Pago_Insertar @id_reserva=@id_reserva,@id_reserva_temporal=NULL,
   @id_usuario=@id_usuario,@monto=NULL,@metodo_pago=@metodo_pago,@estado=''APROBADO'',
   @tipo_pago=''SALDO_ALOJAMIENTO'',@id_operacion=@id_operacion;
-END;')
- OR OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Pago_RegistrarSaldoAlojamiento')) IS NULL
- THROW 51438, 'Definicion no coincide con la version auditada: sp_Pago_RegistrarSaldoAlojamiento.', 1;
-
-IF HASHBYTES('SHA2_256',OBJECT_DEFINITION(OBJECT_ID('dbo.sp_DetalleServicio_Insertar'))) <> HASHBYTES('SHA2_256',N'CREATE OR ALTER PROCEDURE dbo.sp_DetalleServicio_Insertar
+END;' AS nvarchar(max)));
+INSERT @audit(nombre,definicion) VALUES(N'sp_DetalleServicio_Insertar',CAST(N'CREATE OR ALTER PROCEDURE dbo.sp_DetalleServicio_Insertar
  @id_servicios INT, @id_reserva INT, @cantidad INT,
  @precio_unitario DECIMAL(10,2), @id_habitacion INT, @id_operacion UNIQUEIDENTIFIER
 AS
@@ -343,11 +335,8 @@ BEGIN
   IF XACT_STATE()<>0 ROLLBACK;
   THROW;
  END CATCH;
-END;')
- OR OBJECT_DEFINITION(OBJECT_ID('dbo.sp_DetalleServicio_Insertar')) IS NULL
- THROW 51438, 'Definicion no coincide con la version auditada: sp_DetalleServicio_Insertar.', 1;
-
-IF HASHBYTES('SHA2_256',OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Reserva_CheckOut'))) <> HASHBYTES('SHA2_256',N'CREATE OR ALTER PROCEDURE dbo.sp_Reserva_CheckOut
+END;' AS nvarchar(max)));
+INSERT @audit(nombre,definicion) VALUES(N'sp_Reserva_CheckOut',CAST(N'CREATE OR ALTER PROCEDURE dbo.sp_Reserva_CheckOut
     @id_reserva INT
 AS
 BEGIN
@@ -441,11 +430,8 @@ BEGIN
         IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
         THROW;
     END CATCH;
-END;')
- OR OBJECT_DEFINITION(OBJECT_ID('dbo.sp_Reserva_CheckOut')) IS NULL
- THROW 51438, 'Definicion no coincide con la version auditada: sp_Reserva_CheckOut.', 1;
-
-IF HASHBYTES('SHA2_256',OBJECT_DEFINITION(OBJECT_ID('dbo.sp_ReservaTemporal_ConsultarConfirmacion'))) <> HASHBYTES('SHA2_256',N'CREATE OR ALTER PROCEDURE dbo.sp_ReservaTemporal_ConsultarConfirmacion
+END;' AS nvarchar(max)));
+INSERT @audit(nombre,definicion) VALUES(N'sp_ReservaTemporal_ConsultarConfirmacion',CAST(N'CREATE OR ALTER PROCEDURE dbo.sp_ReservaTemporal_ConsultarConfirmacion
  @id_reserva_temporal INT
 AS
 BEGIN
@@ -458,9 +444,41 @@ BEGIN
    AND p.tipo_pago=''PAGO_INICIAL'' AND p.estado=''APROBADO''),0) AS saldo_alojamiento
  FROM dbo.ReservasTemporales t JOIN dbo.Reservas r ON r.id_reserva=t.id_reserva
  WHERE t.id_reserva_temporal=@id_reserva_temporal AND t.estado=''CONFIRMADA'';
-END;')
- OR OBJECT_DEFINITION(OBJECT_ID('dbo.sp_ReservaTemporal_ConsultarConfirmacion')) IS NULL
- THROW 51438, 'Definicion no coincide con la version auditada: sp_ReservaTemporal_ConsultarConfirmacion.', 1;
+END;' AS nvarchar(max)));
+
+DECLARE @nombre sysname,@esperado nvarchar(max),@observado nvarchar(max),
+ @posE int,@posO int,@prefE nvarchar(max),@prefO nvarchar(max),
+ @canonE nvarchar(max),@canonO nvarchar(max),@mensaje nvarchar(2048);
+DECLARE definiciones CURSOR LOCAL FAST_FORWARD FOR SELECT nombre,definicion FROM @audit ORDER BY nombre;
+OPEN definiciones;
+FETCH NEXT FROM definiciones INTO @nombre,@esperado;
+WHILE @@FETCH_STATUS=0
+BEGIN
+ SET @observado=OBJECT_DEFINITION(OBJECT_ID(N'dbo.'+@nombre,N'P'));
+ SET @posE=CHARINDEX(N'PROCEDURE',UPPER(@esperado));
+ SET @posO=CHARINDEX(N'PROCEDURE',UPPER(@observado));
+ SET @prefE=UPPER(REPLACE(REPLACE(REPLACE(REPLACE(LEFT(@esperado,CASE WHEN @posE>0 THEN @posE-1 ELSE 0 END),N' ',N''),NCHAR(9),N''),NCHAR(13),N''),NCHAR(10),N''));
+ SET @prefO=UPPER(REPLACE(REPLACE(REPLACE(REPLACE(LEFT(@observado,CASE WHEN @posO>0 THEN @posO-1 ELSE 0 END),N' ',N''),NCHAR(9),N''),NCHAR(13),N''),NCHAR(10),N''));
+ IF @observado IS NULL OR @posE<=0 OR @posO<=0
+  OR @prefE COLLATE Latin1_General_100_BIN2 NOT IN (N'CREATE',N'ALTER',N'CREATEORALTER')
+  OR @prefO COLLATE Latin1_General_100_BIN2 NOT IN (N'CREATE',N'ALTER',N'CREATEORALTER')
+ BEGIN
+  SET @mensaje=N'Definicion ausente o cabecera no auditada: '+@nombre;
+  THROW 51438,@mensaje,1;
+ END;
+ SET @canonE=CAST(N'CREATE PROCEDURE' AS nvarchar(max))+SUBSTRING(@esperado,@posE+9,DATALENGTH(@esperado)/2);
+ SET @canonO=CAST(N'CREATE PROCEDURE' AS nvarchar(max))+SUBSTRING(@observado,@posO+9,DATALENGTH(@observado)/2);
+ IF DATALENGTH(@canonE)<>DATALENGTH(@canonO)
+  OR HASHBYTES('SHA2_256',CONVERT(varbinary(max),@canonE))<>
+     HASHBYTES('SHA2_256',CONVERT(varbinary(max),@canonO))
+ BEGIN
+  SET @mensaje=N'Definicion no coincide con la version auditada: '+@nombre;
+  THROW 51438,@mensaje,1;
+ END;
+ FETCH NEXT FROM definiciones INTO @nombre,@esperado;
+END;
+CLOSE definiciones;
+DEALLOCATE definiciones;
 
 -- Pendientes heredados que no pertenecen al flujo inicial temporal soportado.
 SELECT id_pago,id_reserva,id_reserva_temporal,monto,tipo_pago,estado FROM dbo.Pagos
