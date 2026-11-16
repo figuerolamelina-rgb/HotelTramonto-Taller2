@@ -5,13 +5,17 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MSTest" Version="4.0.2" />
+	  <PackageReference Include="MSTest" Version="4.5.1" />
+	  <PackageReference Include="MSTest.TestAdapter" Version="4.5.1" />
+	  <PackageReference Include="MSTest.TestFramework" Version="4.5.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HotelTramonto.Datos\HotelTramonto.Datos.csproj" />
     <ProjectReference Include="..\HotelTramonto.Negocios\HotelTramonto.Negocios.csproj" />
   </ItemGroup>
 

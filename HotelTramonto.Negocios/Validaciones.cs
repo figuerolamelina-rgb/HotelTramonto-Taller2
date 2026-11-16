@@ -1,4 +1,8 @@
 ﻿
+using System;
+using System.Linq;
+using System.Net.Mail;
+
 namespace HotelTramonto.Negocios
 {
     public class Validaciones
@@ -10,16 +14,34 @@ namespace HotelTramonto.Negocios
 
         public static bool DNIValido(string? dni)
         {
-            return !string.IsNullOrWhiteSpace(dni)
-                && dni.Trim().Length >= 7
-                && dni.Trim().Length <= 15;
+            if (string.IsNullOrWhiteSpace(dni))
+                return false;
+
+            dni = dni.Trim();
+
+            return dni.Length >= 7
+                && dni.Length <= 15
+                && dni.All(char.IsDigit);
         }
 
         public static bool EmailValido(string? email)
         {
-            return !string.IsNullOrWhiteSpace(email)
-                && email.Contains("@")
-                && email.Contains(".");
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var direccion = new MailAddress(email.Trim());
+
+                return direccion.Address == email.Trim()
+                    && direccion.Host.Contains(".")
+                    && !direccion.Host.StartsWith(".")
+                    && !direccion.Host.EndsWith(".");
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
 
         public static bool FechasReservaValidas(
@@ -32,6 +54,21 @@ namespace HotelTramonto.Negocios
         public static bool MontoValido(decimal monto)
         {
             return monto > 0;
+        }
+
+        public static bool HuespedValido(
+            string? nombre,
+            string? apellido,
+            string? dni,
+            string? email,
+            string? nacionalidad)
+        {
+            return TextoObligatorio(nombre)
+                && TextoObligatorio(apellido)
+                && DNIValido(dni)
+                && (string.IsNullOrWhiteSpace(email)
+                    || EmailValido(email))
+                && TextoObligatorio(nacionalidad);
         }
     }
 }

@@ -7,6 +7,7 @@ namespace HotelTramonto.Datos
 {
     public class UsuarioDatos
     {
+
         public void Insertar(
             int idRol,
             string nombre,
@@ -35,14 +36,25 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@dni", dni);
             comando.Parameters.AddWithValue("@email", email.Trim());
             comando.Parameters.AddWithValue("@contrasena", contrasena);
-            comando.Parameters.AddWithValue("@telefono",
+            comando.Parameters.AddWithValue(
+                "@telefono",
                 string.IsNullOrWhiteSpace(telefono)
                     ? DBNull.Value
                     : telefono);
 
-            conexion.Open();
-            comando.ExecuteNonQuery();
+            try
+            {
+                conexion.Open();
+                comando.ExecuteNonQuery();
+            }
+            catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627)
+            {
+                throw new InvalidOperationException(
+                    "No se pudo registrar el usuario porque ya existe una cuenta con alguno de los datos ingresados. Verificá el DNI y el correo electrónico.",
+                    ex);
+            }
         }
+
 
         public void Modificar(
             int idUsuario,
@@ -94,6 +106,22 @@ namespace HotelTramonto.Datos
             comando.ExecuteNonQuery();
         }
 
+
+        public void Reactivar(int idUsuario)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando = new SqlCommand(
+                "dbo.sp_Usuario_Reactivar", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@id_usuario", idUsuario);
+
+            conexion.Open();
+            comando.ExecuteNonQuery();
+        }
+
+
         public DataTable Listar()
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
@@ -144,6 +172,23 @@ namespace HotelTramonto.Datos
 
             conexion.Open();
             comando.ExecuteNonQuery();
+        }
+        public DataTable BuscarPorEmail(string email)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando =
+                new SqlCommand("dbo.sp_Usuario_BuscarPorEmail", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@email", email.Trim());
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
         }
     }
 }
