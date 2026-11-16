@@ -1,10 +1,25 @@
-﻿using System.Data;
+using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.Datos
 {
     public class HuespedDatos
     {
+        public DataTable HistorialReservas(int idHuesped)
+        {
+            if (idHuesped <= 0)
+                throw new ArgumentOutOfRangeException(nameof(idHuesped));
+
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+            using SqlCommand comando = new SqlCommand("dbo.sp_Huesped_HistorialReservas", conexion);
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.Add("@id_huesped", SqlDbType.Int).Value = idHuesped;
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+            return tabla;
+        }
+
         public void Insertar(
             string nombre,
             string apellido,

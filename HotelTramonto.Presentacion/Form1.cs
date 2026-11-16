@@ -744,7 +744,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnHuespedes_Click(object sender, EventArgs e)
         {
-            using (FormHuespedes formulario = new FormHuespedes())
+            using (FormHuespedes formulario = new FormHuespedes(rolUsuario))
             {
                 formulario.ShowDialog();
             }
