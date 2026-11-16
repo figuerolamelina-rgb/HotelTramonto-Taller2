@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using System.Drawing;
@@ -52,6 +52,47 @@ namespace HotelTramonto.Presentacion
             CargarHabitaciones();
             ConfigurarEventos();
             ActualizarTotal();
+            Shown += (s, e) => ReanudarReservaPendiente();
+        }
+
+        private string ClaveReserva => "reserva-nueva:" + idUsuario;
+
+        private void ReanudarReservaPendiente()
+        {
+            try
+            {
+                var solicitud = DiarioOperaciones.Actual().Leer<SolicitudReserva>(ClaveReserva);
+                if (solicitud != null && MostrarConfirmacion("Reserva pendiente",
+                    $"¿Reanudar la solicitud guardada para la habitación #{solicitud.IdHabitacion}, " +
+                    $"entrada {solicitud.Entrada:d}, pago {solicitud.PagoInicial:C2}?"))
+                    EjecutarReserva(solicitud);
+            }
+            catch (Exception)
+            {
+                MostrarMensaje("Operación pendiente",
+                    "No se pudo reanudar. Conservá el diario y revisá el estado antes de registrar otro pago.", true);
+            }
+        }
+
+        private void EjecutarReserva(SolicitudReserva solicitud)
+        {
+            var diario = DiarioOperaciones.Actual();
+            btnGuardar.Enabled = false;
+            try
+            {
+                var operacion = diario.Ejecutar(ClaveReserva, solicitud,
+                    contexto => new FlujoReservaNegocios().Ejecutar(solicitud, contexto));
+                if (operacion.Valor.Rows.Count == 0)
+                    throw new InvalidOperationException("La reserva no devolvió un resultado.");
+                var fila = operacion.Valor.Rows[0];
+                MostrarMensaje("Reserva confirmada",
+                    $"Reserva N.º {fila["id_reserva"]}\nTotal: {fila["total_alojamiento"]}\n" +
+                    $"Pago inicial: {fila["pago_inicial"]}\nSaldo: {fila["saldo_alojamiento"]}");
+                diario.Confirmar(ClaveReserva, operacion.Id);
+                DialogResult = DialogResult.OK;
+                Close();
+            }
+            finally { btnGuardar.Enabled = true; }
         }
 
         private void ConfigurarFormulario()
@@ -611,9 +652,7 @@ namespace HotelTramonto.Presentacion
 
                 decimal total = precioNoche * noches;
 
-                decimal pagoInicial = modalidad == "PAGO_TOTAL"
-                    ? total
-                    : Math.Round(total / 2m, 2);
+                decimal pagoInicial = FlujoReservaNegocios.CalcularPagoInicial(total, modalidad);
 
                 CultureInfo cultura = CultureInfo.GetCultureInfo("es-AR");
 
@@ -634,50 +673,8 @@ namespace HotelTramonto.Presentacion
                 if (!confirmacion)
                     return;
 
-                int idTemporal = temporalNegocios.Insertar(
-                    idHuesped,
-                    idHabitacion,
-                    entrada,
-                    salida,
-                    modalidad);
-
-                pagoNegocios.Insertar(
-                    null,
-                    idTemporal,
-                    idUsuario,
-                    pagoInicial,
-                    metodo,
-                    "APROBADO",
-                    "PAGO_INICIAL");
-
-                DataTable resultado = reservaNegocios.ConfirmarReserva(
-                    idTemporal,
-                    cantidadPersonas);
-
-                if (resultado.Rows.Count > 0)
-                {
-                    DataRow reserva = resultado.Rows[0];
-
-                    string mensaje =
-                        $"Número de reserva: {reserva["id_reserva"]}\n" +
-                        $"Total: {Convert.ToDecimal(reserva["total_alojamiento"]).ToString("C2", cultura)}\n" +
-                        $"Pago inicial: {Convert.ToDecimal(reserva["pago_inicial"]).ToString("C2", cultura)}\n" +
-                        $"Saldo pendiente: {Convert.ToDecimal(reserva["saldo_alojamiento"]).ToString("C2", cultura)}";
-
-                    MostrarMensaje(
-                        "¡Reserva confirmada!",
-                        mensaje);
-
-                    DialogResult = DialogResult.OK;
-                    Close();
-                }
-                else
-                {
-                    MostrarMensaje(
-                        "Reserva sin información",
-                        "No se obtuvo información de la reserva confirmada.",
-                        true);
-                }
+                EjecutarReserva(new SolicitudReserva(idHuesped, idHabitacion, entrada, salida,
+                    modalidad, cantidadPersonas, idUsuario, pagoInicial, metodo));
             }
             catch (Exception ex)
             {

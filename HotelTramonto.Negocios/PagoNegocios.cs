@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using HotelTramonto.Datos;
@@ -17,8 +17,9 @@ namespace HotelTramonto.Negocios
             decimal monto,
             string metodoPago,
             string estado,
-            string tipoPago)
+            string tipoPago, Guid idOperacion)
         {
+            ValidarOperacion(idOperacion);
             if (!idReserva.HasValue && !idReservaTemporal.HasValue)
                 throw new Exception(
                     "Debe indicar una reserva o una reserva temporal.");
@@ -27,13 +28,16 @@ namespace HotelTramonto.Negocios
                 throw new Exception(
                     "El pago no puede asociarse a una reserva y a una reserva temporal al mismo tiempo.");
 
+            if (idReserva <= 0 || idReservaTemporal <= 0)
+                throw new ArgumentException("La reserva no es válida.");
+
             if (idUsuario <= 0)
                 throw new Exception("El usuario no es válido.");
 
-            if (monto <= 0)
+            if (monto <= 0 || monto > 99999999.99m || decimal.Round(monto, 2) != monto)
                 throw new Exception("El monto debe ser mayor que cero.");
 
-            if (string.IsNullOrWhiteSpace(metodoPago))
+            if (string.IsNullOrWhiteSpace(metodoPago) || metodoPago.Trim().Length > 30)
                 throw new Exception("Debe indicar el método de pago.");
 
             if (string.IsNullOrWhiteSpace(estado))
@@ -49,7 +53,7 @@ namespace HotelTramonto.Negocios
                 monto,
                 metodoPago.Trim(),
                 estado.Trim(),
-                tipoPago.Trim());
+                tipoPago.Trim(), idOperacion);
         }
 
         public void ActualizarEstado(int idPago, string estado)
@@ -74,27 +78,34 @@ namespace HotelTramonto.Negocios
         public DataTable RegistrarSaldoAlojamiento(
             int idReserva,
             int idUsuario,
-            string metodoPago)
+            string metodoPago, Guid idOperacion)
         {
+            ValidarOperacion(idOperacion);
             ValidarReservaUsuarioMetodo(idReserva, idUsuario, metodoPago);
 
             return datos.RegistrarSaldoAlojamiento(
                 idReserva,
                 idUsuario,
-                metodoPago.Trim());
+                metodoPago.Trim(), idOperacion);
         }
 
         public DataTable RegistrarServicios(
             int idReserva,
             int idUsuario,
-            string metodoPago)
+            string metodoPago, Guid idOperacion)
         {
+            ValidarOperacion(idOperacion);
             ValidarReservaUsuarioMetodo(idReserva, idUsuario, metodoPago);
 
             return datos.RegistrarServicios(
                 idReserva,
                 idUsuario,
-                metodoPago.Trim());
+                metodoPago.Trim(), idOperacion);
+        }
+
+        private static void ValidarOperacion(Guid id)
+        {
+            if (id == Guid.Empty) throw new ArgumentException("La operación es obligatoria.");
         }
 
         private void ValidarReservaUsuarioMetodo(
@@ -108,7 +119,7 @@ namespace HotelTramonto.Negocios
             if (idUsuario <= 0)
                 throw new Exception("El usuario no es válido.");
 
-            if (string.IsNullOrWhiteSpace(metodoPago))
+            if (string.IsNullOrWhiteSpace(metodoPago) || metodoPago.Trim().Length > 30)
                 throw new Exception("Debe indicar el método de pago.");
         }
     }

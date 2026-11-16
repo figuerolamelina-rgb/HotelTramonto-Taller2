@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using System.Drawing;
@@ -44,6 +44,7 @@ namespace HotelTramonto.Presentacion
                 throw new ArgumentException("El usuario autenticado no es válido.");
 
             this.idUsuario = idUsuario;
+            Shown += (s, e) => ReanudarCobros();
 
             ConfigurarFormulario();
         }
@@ -674,6 +675,9 @@ namespace HotelTramonto.Presentacion
                    .DefaultCellStyle.Format = "N2";
             }
 
+            if (dgvConsumos.Columns.Contains("numero_habitacion"))
+                dgvConsumos.Columns["numero_habitacion"]!.HeaderText = "Habitación";
+
             // Encabezados más claros
             if (dgvConsumos.Columns.Contains("nombre_servicio"))
                 dgvConsumos.Columns["nombre_servicio"].HeaderText = "Servicio";
@@ -692,7 +696,8 @@ namespace HotelTramonto.Presentacion
             {
         "id_detalle_servicio",
         "id_reserva",
-        "id_servicios"
+        "id_servicios",
+        "id_habitacion"
     };
 
             foreach (string columna in columnasOcultas)
@@ -701,113 +706,69 @@ namespace HotelTramonto.Presentacion
                     dgvConsumos.Columns[columna].Visible = false;
             }
         }
-        private void btnRegistrarSaldo_Click(object sender, EventArgs e)
+        private string ClaveCobro(bool servicios) => (servicios ? "servicios:" : "alojamiento:") + idUsuario;
+
+        private void ReanudarCobros()
         {
-            try
+            foreach (bool servicios in new[] { false, true })
             {
-                int idReserva = (int)numIdReserva.Value;
-
-                if (!MostrarSelectorMetodoPago(out string metodo))
-                    return;
-
-                bool confirmacion = MostrarConfirmacion(
-                    "Confirmar pago",
-                    "¿Confirmás que recibiste o verificaste el pago del saldo pendiente?");
-
-                if (!confirmacion)
-                    return;
-
-                negocio.RegistrarSaldoAlojamiento(
-                    idReserva,
-                    idUsuario,
-                    metodo);
-
-                dgvPagos.DataSource = negocio.ListarPorReserva(idReserva);
-                CargarConsumosYResumen(
-                idReserva,
-                negocio.ListarPorReserva(idReserva));
-
-                MostrarMensaje(
-                    "Pago registrado",
-                    "El saldo de alojamiento se registró correctamente.");
-            }
-            catch (Exception ex)
-            {
-                MostrarMensaje(
-                    "Error al registrar el saldo",
-                    "No se pudo registrar el saldo.\n\n" + ex.Message,
-                    true);
-            }
-        }
-
-        private void btnRegistrarServicios_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                int idReserva = (int)numIdReserva.Value;
-
-                if (!MostrarSelectorMetodoPago(out string metodo))
-                    return;
-
-                bool confirmacion = MostrarConfirmacion(
-                    "Confirmar pago de servicios",
-                    "¿Confirmás que recibiste o verificaste el pago de los servicios adicionales?");
-
-                if (!confirmacion)
-                    return;
-
-                // Registrar el pago
-                negocio.RegistrarServicios(
-                    idReserva,
-                    idUsuario,
-                    metodo);
-
-                // Actualizar la grilla
-                DataTable pagos = negocio.ListarPorReserva(idReserva);
-                dgvPagos.DataSource = pagos;
-                CargarConsumosYResumen(idReserva, pagos);
-
-                // Buscar el último pago aprobado de servicios adicionales
-                DataView vista = new DataView(pagos);
-
-                vista.RowFilter =
-                    "tipo_pago = 'SERVICIOS_ADICIONALES' AND estado = 'APROBADO'";
-
-                vista.Sort = "id_pago DESC";
-
-                if (vista.Count == 0)
+                try
                 {
-                    throw new Exception(
-                        "No se encontró el pago de servicios registrado.");
+                    var solicitud = DiarioOperaciones.Actual().Leer<SolicitudCobro>(ClaveCobro(servicios));
+                    if (solicitud != null && MostrarConfirmacion("Cobro pendiente",
+                        $"¿Reanudar cobro de {(servicios ? "servicios" : "alojamiento")} de la reserva #{solicitud.IdReserva}, método {solicitud.Metodo}?"))
+                        EjecutarCobro(solicitud);
                 }
-
-                // Obtener los datos reales del pago
-                decimal monto = Convert.ToDecimal(vista[0]["monto"]);
-                string metodoPago = vista[0]["metodo_pago"].ToString();
-
-                string importe = monto.ToString(
-                    "C2",
-                    new System.Globalization.CultureInfo("es-AR"));
-
-                // Mostrar confirmación detallada
-                string detalle =
-                    "El pago de servicios adicionales se registró correctamente.\n\n" +
-                    "Reserva: N.º " + idReserva + "\n" +
-                    "Importe: " + importe + "\n" +
-                    "Método de pago: " + metodoPago;
-
-                MostrarMensaje(
-                    "Pago registrado",
-                    detalle);
-            }
-            catch (Exception ex)
-            {
-                MostrarMensaje(
-                    "Error al registrar servicios",
-                    "No se pudo registrar el pago de servicios.\n\n" + ex.Message,
-                    true);
+                catch (Exception)
+                {
+                    MostrarMensaje("Cobro pendiente",
+                        "No se pudo reanudar. Conservá la operación y verificá su estado antes de cobrar otra vez.", true);
+                }
             }
         }
+
+        private void EjecutarCobro(SolicitudCobro solicitud)
+        {
+            var diario = DiarioOperaciones.Actual();
+            btnRegistrarServicios.Enabled = btnRegistrarSaldo.Enabled = false;
+            try
+            {
+                var resultado = diario.Ejecutar(ClaveCobro(solicitud.Servicios), solicitud, contexto =>
+                    solicitud.Servicios
+                        ? negocio.RegistrarServicios(solicitud.IdReserva, solicitud.IdUsuario, solicitud.Metodo, contexto.Id)
+                        : negocio.RegistrarSaldoAlojamiento(solicitud.IdReserva, solicitud.IdUsuario, solicitud.Metodo, contexto.Id));
+                if (resultado.Valor.Rows.Count == 0)
+                    throw new InvalidOperationException("No se recibió el resultado del pago.");
+                var pago = resultado.Valor.Rows[0];
+                numIdReserva.Value = solicitud.IdReserva;
+                var pagos = negocio.ListarPorReserva(solicitud.IdReserva);
+                dgvPagos.DataSource = pagos;
+                CargarConsumosYResumen(solicitud.IdReserva, pagos);
+                MostrarMensaje("Pago registrado",
+                    $"Pago N.º {pago["id_pago"]}\nReserva: {solicitud.IdReserva}\n" +
+                    $"Importe: {pago["monto_pagado"]}\nMétodo: {pago["metodo_pago"]}");
+                diario.Confirmar(ClaveCobro(solicitud.Servicios), resultado.Id);
+            }
+            finally { btnRegistrarServicios.Enabled = btnRegistrarSaldo.Enabled = true; }
+        }
+
+        private void SolicitarCobro(bool servicios)
+        {
+            try
+            {
+                if (!MostrarSelectorMetodoPago(out string metodo)) return;
+                if (!MostrarConfirmacion("Confirmar pago", "¿Confirmás que recibiste o verificaste el pago?")) return;
+                EjecutarCobro(new SolicitudCobro((int)numIdReserva.Value, idUsuario, metodo, servicios));
+            }
+            catch (Exception)
+            {
+                MostrarMensaje("Pago no confirmado",
+                    "No se confirmó el resultado. Si quedó pendiente, reabrí Pagos para reanudar la misma operación.", true);
+            }
+        }
+
+        private void btnRegistrarSaldo_Click(object sender, EventArgs e) => SolicitarCobro(false);
+        private void btnRegistrarServicios_Click(object sender, EventArgs e) => SolicitarCobro(true);
 
         private void btnAgregarConsumo_Click(object sender, EventArgs e)
         {

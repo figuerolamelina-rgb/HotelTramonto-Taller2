@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using Microsoft.Data.SqlClient;
@@ -15,7 +15,7 @@ namespace HotelTramonto.Datos
             decimal monto,
             string metodoPago,
             string estado,
-            string tipoPago)
+            string tipoPago, Guid idOperacion)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
             using SqlCommand comando =
@@ -30,11 +30,15 @@ namespace HotelTramonto.Datos
                 idReservaTemporal.HasValue ? idReservaTemporal.Value : DBNull.Value);
 
             comando.Parameters.AddWithValue("@id_usuario", idUsuario);
-            comando.Parameters.AddWithValue("@monto", monto);
+            SqlParameter importe = comando.Parameters.Add("@monto", SqlDbType.Decimal);
+            importe.Precision = 10;
+            importe.Scale = 2;
+            importe.Value = monto;
             comando.Parameters.AddWithValue("@metodo_pago", metodoPago);
             comando.Parameters.AddWithValue("@estado", estado);
             comando.Parameters.AddWithValue("@tipo_pago", tipoPago);
 
+            comando.Parameters.Add("@id_operacion", SqlDbType.UniqueIdentifier).Value = idOperacion;
             conexion.Open();
 
             object? resultado = comando.ExecuteScalar();
@@ -88,7 +92,7 @@ namespace HotelTramonto.Datos
         public DataTable RegistrarSaldoAlojamiento(
             int idReserva,
             int idUsuario,
-            string metodoPago)
+            string metodoPago, Guid idOperacion)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
             using SqlCommand comando =
@@ -99,6 +103,7 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@id_reserva", idReserva);
             comando.Parameters.AddWithValue("@id_usuario", idUsuario);
             comando.Parameters.AddWithValue("@metodo_pago", metodoPago);
+            comando.Parameters.Add("@id_operacion", SqlDbType.UniqueIdentifier).Value = idOperacion;
 
             using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
 
@@ -112,7 +117,7 @@ namespace HotelTramonto.Datos
         public DataTable RegistrarServicios(
             int idReserva,
             int idUsuario,
-            string metodoPago)
+            string metodoPago, Guid idOperacion)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
             using SqlCommand comando =
@@ -123,6 +128,7 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@id_reserva", idReserva);
             comando.Parameters.AddWithValue("@id_usuario", idUsuario);
             comando.Parameters.AddWithValue("@metodo_pago", metodoPago);
+            comando.Parameters.Add("@id_operacion", SqlDbType.UniqueIdentifier).Value = idOperacion;
 
             using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
 

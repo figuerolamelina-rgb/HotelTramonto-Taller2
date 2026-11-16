@@ -1,4 +1,4 @@
-﻿
+
 namespace HotelTramonto.Entidades
 {
     public class DetalleServicio
@@ -8,6 +8,10 @@ namespace HotelTramonto.Entidades
         public int IdServicio { get; set; }
 
         public int IdReserva { get; set; }
+
+        public int? IdHabitacion { get; set; }
+
+        public Guid? IdOperacion { get; set; }
 
         public int Cantidad { get; set; }
 
