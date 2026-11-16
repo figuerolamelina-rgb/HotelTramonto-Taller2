@@ -67,6 +67,22 @@ class AutomatizacionWindows(unittest.TestCase):
         self.assertLess(TEXT.index("& (Join-Path $PSScriptRoot 'Probar-LecturasSql.ps1')"), TEXT.index("$Maestra=Abrir 'master'"))
         self.assertIn("'Lectura SQL diferente de la revisada: '+$nombre", TEXT)
 
+    def test_sesiones_identidad_exacta_transitorios_y_diagnostico(self):
+        self.assertIn("$b['Pooling']=$false", TEXT)
+        self.assertIn('$AplicacionSql', TEXT)
+        logic = TEXT.split('function Clasificar-Sesiones(')[1].split('function EjecutarArchivo(')[0]
+        for field in ('connection_id', 'session_id', 'program_name', 'host_process_id', 'host_name'):
+            self.assertIn(field, logic)
+        self.assertIn('$limpias -ge 2', logic)
+        self.assertIn('$intento -le 3', logic)
+        self.assertIn('sys.dm_exec_requests', logic)
+        self.assertIn('ConvertTo-Json', logic)
+        self.assertNotRegex(logic, r'(?i)\bKILL\b|Stop-Process')
+        test = (ROOT / 'tools/Probar-SesionesSql.ps1').read_text(encoding='utf-8-sig')
+        self.assertNotIn('.Open(', test)
+        self.assertIn("Sesion 80 'otra' 'runner-A' 123", test)
+        self.assertIn("Sesion 52 'conexion-nueva'", test)
+
     def test_confirmacion_antecede_instalacion_y_origen_solo_metadatos(self):
         self.assertLess(TEXT.index("$respuesta=Read-Host"), TEXT.index("foreach ($n in @('01_AgregarCategoria.sql'"))
         self.assertIn("$respuesta -ceq 'MIGRAR HotelTramontoDB_Pruebas'", TEXT)

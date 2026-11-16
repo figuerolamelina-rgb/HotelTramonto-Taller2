@@ -26,7 +26,7 @@ fijadas deliberadamente. Se toleran los cambios de finales de línea LF/CRLF de 
 
 ## Secuencia y controles
 
-1. Comprueba integridad de 60 archivos revisados: SQL autorizados, fuentes y contratos
+1. Comprueba integridad de 61 archivos revisados: SQL autorizados, fuentes y contratos
    de las dependencias de pruebas. La lista de SQL ejecutables contiene exactamente
    siete archivos; no incluye instaladores de permisos, reversiones ni los SQL originales.
 2. Abre master SOLO para SELECT de metadatos. Verifica ServerName exactamente contra
@@ -100,7 +100,7 @@ manualmente; el runner nunca borra, recrea ni restaura bases. La reversión de d
 ## Validación realizada por el agente
 
 Parser oficial PowerShell: cero errores de sintaxis. Cuatro funciones puras probadas
-con un motor PowerShell hospedado (sin cargar el cuerpo ni funciones SQL), cinco
+con un motor PowerShell hospedado (sin cargar el cuerpo ni funciones SQL), siete
 comprobaciones estáticas Python y lista positiva de pruebas C# ejecutada en Linux:
 56 casos aprobados. El runner completo NO se ejecutó en Windows ni en tu SQL Server.
 La sintaxis y las comprobaciones estáticas no demuestran el resultado de las operaciones
@@ -118,7 +118,7 @@ ya validada y sigue siendo el único punto que llama Open para iniciar conexión
 El runner ejecuta primero tools/Probar-CadenaConexion.ps1 y registra su resultado
 en cadena-conexion.log. La prueba extrae SOLO Crear-CadenaConexion mediante AST,
 sin cargar el cuerpo del runner. Comprueba cuatro combinaciones (master/pruebas y
-certificado confiable/no confiable), las ocho opciones, ausencia de credenciales
+certificado confiable/no confiable), las nueve opciones, ausencia de credenciales
 y construcción de un objeto SqlConnection que permanece cerrado. No abre ninguna
 conexión ni ejecuta migraciones o permisos. Es compatible con sintaxis 5.1; la
 comprobación completa sobre Windows PowerShell 5.1 se realizará en tu computadora.
@@ -141,3 +141,46 @@ solo Canon del runner, compara el cuerpo real proporcionado, exige rechazo del
 filtro ausente/invertido y verifica la huella de la consulta de disponibilidad.
 La comparación estricta contra los procedimientos instalados se mantiene intacta.
 No se ejecuta SQL al realizar esta prueba; su log es lecturas-sql.log.
+
+## Diagnóstico de sesiones y reutilización
+
+La consulta manual posterior y el runner observan momentos distintos. Una conexión
+transitoria puede desaparecer al salir del proceso; una conexión cerrada puede
+permanecer en el pool mientras el proceso sigue vivo. Sin el detalle capturado en
+el momento del bloqueo no puede afirmarse cuál fue la causa del caso original.
+El conteo agregado se sustituyó por observaciones detalladas.
+
+El runner ahora desactiva Pooling, usa un Application Name único por ejecución y
+registra cada conexión propia después de abrirla con su session_id y connection_id
+obtenidos a través de ESA conexión, además del programa y PID. Solo se ignora una
+coincidencia exacta de esos cuatro datos, no todas las conexiones del mismo host,
+programa, proceso o nombre parecido. Un SPID reutilizado con otro connection_id
+sigue siendo ajeno. Otro runner, incluso en el mismo proceso, no se ignora.
+La conexión master propia también queda registrada; normalmente no afecta la copia.
+Dispose cierra únicamente las conexiones abiertas por el runner, sin retención en
+su pool. No usa KILL, no cierra SSMS ni termina procesos o conexiones ajenas.
+
+La consulta incluye sesiones cuyo contexto es la copia y peticiones activas contra
+la copia aunque el contexto inicial de la sesión sea otra base. Se exige visibilidad
+completa de DMV (VIEW SERVER STATE en versiones anteriores o VIEW SERVER PERFORMANCE
+STATE desde SQL Server 2022); no se conceden esos permisos automáticamente.
+
+Cada comprobación admite hasta tres observaciones separadas 400 ms y exige DOS
+observaciones consecutivas sin sesiones ajenas. Una sesión transitoria que desaparece
+puede permitir avanzar después de dos observaciones limpias; una persistente o un
+estado inestable bloquean. Los errores SQL se propagan inmediatamente, sin reintento.
+También se comprueba antes de cada lote. Esto reduce ventanas, pero no bloquea una
+conexión nueva después de observar: mantener la copia sin otros usuarios durante la prueba.
+
+Cada observación genera sesiones-NNN.json con fecha, sesiones propias y ajenas.
+Las ajenas se muestran en consola y en el error con session_id, program_name,
+host_name y host_process_id. El informe final incluye las identidades registradas
+y el número de observaciones. Estos metadatos privados quedan solo en la carpeta
+local del informe; no subirlos a Git.
+
+Probar-SesionesSql.ps1 ejecuta 15 casos puros: vacío, propias, conexión maestra propia,
+SSMS, otro runner, mismo PID no registrado, SPID reutilizado, GUID vacío, PID diferente,
+otra base, petición contra la copia y cuatro secuencias transitorias. No abre SQL.
+La prueba se ejecuta antes de conectarse y deja deteccion-sesiones.log. La regresión
+se verificó en PowerShell hospedado; el comportamiento real de DMV en la instancia
+Windows sigue pendiente de la siguiente ejecución local.

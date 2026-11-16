@@ -19,7 +19,7 @@ foreach ($base in @('master','HotelTramontoDB_Pruebas')) {
             'Data Source'='LAPTOP-5TSJJUP8\SQLEXPRESS'; 'Initial Catalog'=$base
             'Integrated Security'=$true; 'Encrypt'=$true; 'TrustServerCertificate'=$confiar
             'Persist Security Info'=$false; 'Connect Timeout'=15
-            'Application Name'='HotelTramonto-Pruebas-Controladas'
+            'Application Name'='HotelTramonto-Pruebas-Controladas'; 'Pooling'=$false
         }
         foreach ($clave in $esperado.Keys) {
             if ($b[$clave] -cne $esperado[$clave]) { throw ('Valor incorrecto: '+$clave) }
@@ -33,4 +33,4 @@ foreach ($base in @('master','HotelTramontoDB_Pruebas')) {
         $casos++
     }
 }
-Write-Output ('APROBADAS: '+$casos+' combinaciones, ocho claves y conexión cerrada. Sin abrir conexiones SQL.')
+Write-Output ('APROBADAS: '+$casos+' combinaciones, nueve claves y conexión cerrada. Sin abrir conexiones SQL.')

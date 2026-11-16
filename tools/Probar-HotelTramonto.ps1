@@ -14,12 +14,15 @@ $Conexion = $null
 $Maestra = $null
 $Confirmado = $false
 $Fallo = $null
+$AplicacionSql='HotelTramonto-Pruebas-Controladas/' + [Guid]::NewGuid().ToString('N')
+$ConexionesPropias=New-Object 'System.Collections.Generic.List[object]'
+$ObservacionSesion=0
 function Registrar([string]$Nombre, [string]$Detalle) {
     $Pasos.Add([pscustomobject]@{ Prueba=$Nombre; Estado='APROBADA'; Detalle=$Detalle })
     Write-Host ('OK: ' + $Nombre)
 }
 function Exigir([bool]$Condicion, [string]$Mensaje) { if (-not $Condicion) { throw $Mensaje } }
-function Crear-CadenaConexion([string]$Instancia, [string]$Base, [bool]$ConfiarCertificado=$false) {
+function Crear-CadenaConexion([string]$Instancia, [string]$Base, [bool]$ConfiarCertificado=$false, [string]$Aplicacion='HotelTramonto-Pruebas-Controladas') {
     $b = New-Object System.Data.SqlClient.SqlConnectionStringBuilder
     # En PowerShell el adaptador IDictionary puede tratar las propiedades como claves SQL.
     # Usar siempre el indexador con las palabras clave admitidas por System.Data.SqlClient.
@@ -30,14 +33,27 @@ function Crear-CadenaConexion([string]$Instancia, [string]$Base, [bool]$ConfiarC
     $b['TrustServerCertificate']=$ConfiarCertificado
     $b['Persist Security Info']=$false
     $b['Connect Timeout']=15
-    $b['Application Name']='HotelTramonto-Pruebas-Controladas'
+    $b['Application Name']=$Aplicacion
+    $b['Pooling']=$false
     return $b.get_ConnectionString()
 }
 function Abrir([string]$Base) {
-    $cadena=Crear-CadenaConexion $Servidor $Base ([bool]$ConfiarCertificadoLocal)
+    $cadena=Crear-CadenaConexion $Servidor $Base ([bool]$ConfiarCertificadoLocal) $AplicacionSql
     $c = New-Object -TypeName System.Data.SqlClient.SqlConnection -ArgumentList $cadena
-    $c.Open()
-    return $c
+    try {
+        $c.Open()
+        $t=Tabla $c @'
+SELECT s.session_id,CONVERT(varchar(36),c.connection_id) AS connection_id,
+       s.program_name,s.host_process_id
+FROM sys.dm_exec_sessions s JOIN sys.dm_exec_connections c ON c.session_id=s.session_id
+WHERE s.session_id=@@SPID AND c.parent_connection_id IS NULL;
+'@
+        Exigir ($t.Rows.Count -eq 1) 'No se pudo identificar inequívocamente la conexión propia.'
+        $r=$t.Rows[0]
+        Exigir (([string]$r.program_name -ceq $AplicacionSql) -and ([int]$r.host_process_id -eq $PID)) 'Identidad de conexión propia inesperada.'
+        $ConexionesPropias.Add([pscustomobject]@{session_id=[int]$r.session_id;connection_id=[string]$r.connection_id;program_name=[string]$r.program_name;host_process_id=[int]$r.host_process_id})
+        return $c
+    } catch { $c.Dispose(); throw }
 }
 function Consulta([System.Data.SqlClient.SqlConnection]$C, [string]$Sql) {
     $cmd=$C.CreateCommand(); $cmd.CommandText=$Sql; $cmd.CommandTimeout=120
@@ -61,9 +77,70 @@ function Contexto {
     $t=Tabla $Conexion "SELECT DB_NAME() AS db, CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor;"
     Exigir (($t.Rows[0].db -ceq $Pruebas) -and ($t.Rows[0].servidor -ieq $Servidor)) 'Contexto SQL inesperado. Detenido.'
 }
+function Clasificar-Sesiones([object[]]$Sesiones=@(), [object[]]$Registradas=@()) {
+    $propias=@(); $ajenas=@()
+    foreach ($sesion in $Sesiones) {
+        if ($null -eq $sesion) { continue }
+        if (($null -ne $sesion.PSObject.Properties['afecta_copia']) -and ($sesion.afecta_copia -eq 0)) { continue }
+        $esPropia=$false
+        foreach ($registro in $Registradas) {
+            # Nunca ignorar por nombre de programa, host o PID solamente.
+            if (([string]$sesion.connection_id -ne '') -and
+                ([int]$sesion.session_id -eq [int]$registro.session_id) -and
+                ([string]$sesion.connection_id -ieq [string]$registro.connection_id) -and
+                ([string]$sesion.program_name -ceq [string]$registro.program_name) -and
+                ([int]$sesion.host_process_id -eq [int]$registro.host_process_id)) { $esPropia=$true; break }
+        }
+        if ($esPropia) { $propias+= $sesion } else { $ajenas+= $sesion }
+    }
+    return [pscustomobject]@{Propias=@($propias);Ajenas=@($ajenas)}
+}
+function Actualizar-ObservacionesLimpias([int]$Anteriores, [int]$Ajenas) {
+    if ($Ajenas -gt 0) { return 0 }
+    return ($Anteriores+1)
+}
 function SinOtrosClientes {
-    $t=Tabla $Conexion 'SELECT COUNT(*) AS cantidad FROM sys.dm_exec_sessions WHERE database_id=DB_ID() AND session_id<>@@SPID AND is_user_process=1;'
-    Exigir ([int]$t.Rows[0].cantidad -eq 0) 'Hay otras sesiones en la copia. Cerrá conexiones de aplicación/SSMS a la copia y repetí.'
+    # Dos observaciones limpias consecutivas; un error SQL no se reintenta ni se ignora.
+    $limpias=0
+    for ($intento=1; $intento -le 3; $intento++) {
+        Contexto
+        $t=Tabla $Conexion @'
+SELECT s.session_id,s.program_name,s.host_name,ISNULL(s.host_process_id,-1) AS host_process_id,s.status,
+       CONVERT(varchar(36),c.connection_id) AS connection_id,
+       s.database_id AS session_database_id,r.database_id AS request_database_id,
+       1 AS afecta_copia
+FROM sys.dm_exec_sessions s
+LEFT JOIN sys.dm_exec_connections c ON c.session_id=s.session_id
+LEFT JOIN sys.dm_exec_requests r ON r.session_id=s.session_id
+WHERE s.is_user_process=1 AND
+      (s.database_id=DB_ID() OR EXISTS
+       (SELECT 1 FROM sys.dm_exec_requests q WHERE q.session_id=s.session_id AND q.database_id=DB_ID()))
+ORDER BY s.session_id;
+'@
+        $sesiones=@(foreach ($r in $t.Rows) {
+            [pscustomobject]@{session_id=[int]$r.session_id;program_name=[string]$r.program_name;
+                host_name=[string]$r.host_name;host_process_id=[int]$r.host_process_id;status=[string]$r.status;
+                connection_id=[string]$r.connection_id;session_database_id=$r.session_database_id;
+                request_database_id=$r.request_database_id;afecta_copia=1}
+        })
+        $clasificacion=Clasificar-Sesiones -Sesiones $sesiones -Registradas @($ConexionesPropias.ToArray())
+        $script:ObservacionSesion++
+        $archivo=Join-Path $Salida ('sesiones-{0:D3}.json' -f $script:ObservacionSesion)
+        [pscustomobject]@{Fecha=(Get-Date).ToString('o');Intento=$intento;Propias=$clasificacion.Propias;Ajenas=$clasificacion.Ajenas} |
+            ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $archivo -Encoding UTF8
+        $limpias=Actualizar-ObservacionesLimpias $limpias $clasificacion.Ajenas.Count
+        if ($clasificacion.Ajenas.Count -gt 0) {
+            Write-Host ('Sesiones ajenas detectadas. Detalle: '+$archivo)
+            $clasificacion.Ajenas | Format-Table session_id,program_name,host_name,host_process_id,status -AutoSize | Out-Host
+        }
+        if ($limpias -ge 2) { return }
+        if ($intento -lt 3) { Start-Sleep -Milliseconds 400 }
+    }
+    if ($clasificacion.Ajenas.Count -gt 0) {
+        $detalle=($clasificacion.Ajenas | ForEach-Object { 'session_id={0}; program_name={1}; host_name={2}; host_process_id={3}' -f $_.session_id,$_.program_name,$_.host_name,$_.host_process_id }) -join ' | '
+        throw ('Hay sesiones ajenas en la copia. No se migra. '+$detalle+'. Revisar '+$archivo)
+    }
+    throw ('Sesiones transitorias/inestables: no hubo dos observaciones limpias consecutivas. No se migra. Revisar '+$archivo)
 }
 function EjecutarArchivo([string]$Relativo) {
     Exigir ($ScriptsAutorizados -ccontains $Relativo) 'Archivo SQL fuera de la lista autorizada.'
@@ -75,6 +152,7 @@ function EjecutarArchivo([string]$Relativo) {
     foreach ($lote in [regex]::Split($sql,'(?im)^GO\s*$')) {
         if ([string]::IsNullOrWhiteSpace($lote)) { continue }
         Contexto
+        SinOtrosClientes
         $numero++
         $ds=Consulta $Conexion $lote
         $nombre=([IO.Path]::GetFileName($path)) + '-' + $numero + '-' + $script:NumeroArchivo + '.xml'
@@ -129,8 +207,9 @@ try {
     Add-Type -AssemblyName System.Data
     $null=Get-Command dotnet -ErrorAction Stop
     $Manifest=@{
+        'tools/Probar-SesionesSql.ps1'='6D4FF42FFDD13BBBFE4A43AD42905EA7C6A05295A915C6F426817904F5A2440A'
         'tools/Probar-LecturasSql.ps1'='33FD5474D7EC4B99E34DD4A030546F803300EE62151F620D9A8D56E54AF713B6'
-        'tools/Probar-CadenaConexion.ps1'='8EE34317B3A6F6A8427B911E08551F322DF967D3BD7A9157B8ACF3C4BB0C2BE4'
+        'tools/Probar-CadenaConexion.ps1'='C5C2E5C64C637F2FC4F8E03F4BDB1C501E3E0166A9F0A343C55F1E79D2153C0C'
         'HotelTramonto.Datos/ConexionBD.cs'='AFEC5A33A1757C3A34081983CC2A2F622C4E10F129A2BB72E1D987F879E26D29'
         'HotelTramonto.Datos/DetalleReservaDatos.cs'='2FE2BBA8F285392190EEE4F9E2C3C028F5BD4BCE815B9D37F63F57F67E13CF4E'
         'HotelTramonto.Datos/DetalleServicioDatos.cs'='40393E0CFE800E5192D3CAD6866CF04D7A391B6FCA0E07A079C747AE84C2C406'
@@ -207,9 +286,11 @@ try {
     }
     Registrar 'Integridad de scripts y pruebas' 'Lista cerrada; no se permite ejecutar archivos arbitrarios.'
     & (Join-Path $PSScriptRoot 'Probar-CadenaConexion.ps1') | Out-File -LiteralPath (Join-Path $Salida 'cadena-conexion.log') -Encoding utf8
-    Registrar 'Construcción de cadena SQL' 'Cuatro combinaciones y ocho claves verificadas sin abrir conexiones.'
+    Registrar 'Construcción de cadena SQL' 'Cuatro combinaciones y nueve claves verificadas sin abrir conexiones.'
     & (Join-Path $PSScriptRoot 'Probar-LecturasSql.ps1') | Out-File -LiteralPath (Join-Path $Salida 'lecturas-sql.log') -Encoding utf8
     Registrar 'Referencias de lecturas SQL' 'Filtro de habitaciones activas y disponibilidad verificados sin SQL.'
+    & (Join-Path $PSScriptRoot 'Probar-SesionesSql.ps1') | Out-File -LiteralPath (Join-Path $Salida 'deteccion-sesiones.log') -Encoding utf8
+    Registrar 'Lógica de detección de sesiones' 'Quince casos puros aprobados antes de abrir SQL.'
     $Maestra=Abrir 'master' # solo SELECT de metadatos, nunca comandos de escritura
     $t=Tabla $Maestra "SELECT CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor, CONVERT(int,SERVERPROPERTY('ProductMajorVersion')) AS version;"
     Exigir ($t.Rows[0].servidor -ieq $Servidor) ('Instancia inesperada: '+$t.Rows[0].servidor)
@@ -228,6 +309,9 @@ try {
     Exigir ((@($fp | Where-Object { $_.type_desc -eq 'ROWS' }).Count -gt 0) -and (@($fp | Where-Object { $_.type_desc -eq 'LOG' }).Count -gt 0)) 'La copia requiere archivos de datos y log.'
     foreach ($f in $fp) { Exigir (-not (@($fo.physical_name) -icontains $f.physical_name)) 'La copia comparte una ruta de archivo con la original.' }
     Registrar 'Instancia, bases y archivos independientes' 'Solo metadatos leídos en master; ninguna conexión de escritura a la original.'
+    $permisoDmv=if ([int]$t.Rows[0].version -ge 16) { 'VIEW SERVER PERFORMANCE STATE' } else { 'VIEW SERVER STATE' }
+    $visibilidad=Tabla $Maestra ("SELECT HAS_PERMS_BY_NAME(NULL,NULL,'"+$permisoDmv+"') AS permitido;")
+    Exigir ($visibilidad.Rows[0].permitido -eq 1) 'Sin visibilidad completa de sesiones; no se puede verificar exclusividad.'
     $Conexion=Abrir $Pruebas
     Contexto
     SinOtrosClientes
@@ -376,7 +460,7 @@ WHERE c.column_id IS NULL OR TYPE_NAME(c.user_type_id)<>r.tipo OR c.max_length<>
 } finally {
     if ($null -ne $Conexion) { $Conexion.Dispose() }
     if ($null -ne $Maestra) { $Maestra.Dispose() }
-    $informe=[pscustomobject]@{ Fecha=(Get-Date).ToString('o'); Servidor=$Servidor; Base=$Pruebas; ModificacionesConfirmadas=$Confirmado; Exito=($null -eq $Fallo); Pasos=$Pasos.ToArray(); Limitacion='Sin validación visual. No se instalaron permisos. Una falla posterior a un script confirmado puede dejar una migración parcial; no se ejecuta reversión automática.' }
+    $informe=[pscustomobject]@{ Fecha=(Get-Date).ToString('o'); Servidor=$Servidor; Base=$Pruebas; AplicacionSql=$AplicacionSql; ConexionesPropias=$ConexionesPropias.ToArray(); ObservacionesSesiones=$ObservacionSesion; ModificacionesConfirmadas=$Confirmado; Exito=($null -eq $Fallo); Pasos=$Pasos.ToArray(); Limitacion='Sin validación visual. No se instalaron permisos. Una falla posterior a un script confirmado puede dejar una migración parcial; no se ejecuta reversión automática.' }
     $informe | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $Salida 'informe.json') -Encoding UTF8
     $Pasos | Format-Table -AutoSize -Wrap | Out-String -Width 180 | Set-Content (Join-Path $Salida 'informe.txt') -Encoding UTF8
     Write-Host ('Informe: '+$Salida)
