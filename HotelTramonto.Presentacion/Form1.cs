@@ -733,7 +733,7 @@ namespace HotelTramonto.Presentacion
             using (FormHabitaciones formulario =
                 new FormHabitaciones(rolUsuario))
             {
-                formulario.ShowDialog();
+                formulario.ShowDialog(this);
             }
         }
 

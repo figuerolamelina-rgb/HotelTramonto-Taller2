@@ -1,3 +1,6 @@
+> **Versión integrada de Iara y Melina:** ver [informe y aceptación final](docs/integracion-final-iara-melina.md).
+> Las bases permanentes no se usan para pruebas de escritura. Los scripts de `referencias-iara` son referencias originales, no un instalador. El modo `--backup-ciclo-ui` prepara una copia temporal para validar los 36 casos y Windows Forms, y luego intenta su limpieza protegida.
+
 # Hotel Tramonto: ejecución local
 
 Aplicación Windows Forms en .NET 10 con SQL Server y cuatro capas:

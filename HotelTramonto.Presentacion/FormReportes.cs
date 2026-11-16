@@ -17,6 +17,16 @@ namespace HotelTramonto.Presentacion
         private Button btnConsultar;
         private Button btnCerrar;
         private DataGridView dgvReporte;
+        private TabControl tabEstadisticas;
+        private DataGridView dgvResumenReservas;
+        private DataGridView dgvReservasPorTipo;
+        private DataGridView dgvDemandaMensual;
+        // Pestañas del reporte de ingresos.
+        private TabControl tabIngresos;
+        private DataGridView dgvResumenIngresos;
+        private DataGridView dgvIngresosPorMetodo;
+        private DataGridView dgvIngresosPorTipo;
+        private DataGridView dgvPagosTemporales;
         private Label lblEstado;
         private Label lblTitulo;
         private Label lblSubtitulo;
@@ -190,7 +200,72 @@ namespace HotelTramonto.Presentacion
             dgvReporte.DefaultCellStyle.Padding = new Padding(8, 4, 8, 4);
 
             dgvReporte.AlternatingRowsDefaultCellStyle.BackColor = crema;
+            // Pestañas para el reporte de estadísticas de reservas.
+            tabEstadisticas = new TabControl
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 10F),
+                Visible = false
+            };
 
+            dgvResumenReservas = CrearGrillaEstadisticas();
+            dgvReservasPorTipo = CrearGrillaEstadisticas();
+            dgvDemandaMensual = CrearGrillaEstadisticas();
+
+            TabPage paginaResumen = new TabPage("Resumen general");
+            TabPage paginaTipos = new TabPage("Por tipo de habitación");
+            TabPage paginaDemanda = new TabPage("Demanda mensual");
+
+            paginaResumen.BackColor = marfil;
+            paginaTipos.BackColor = marfil;
+            paginaDemanda.BackColor = marfil;
+
+            paginaResumen.Controls.Add(dgvResumenReservas);
+            paginaTipos.Controls.Add(dgvReservasPorTipo);
+            paginaDemanda.Controls.Add(dgvDemandaMensual);
+
+            tabEstadisticas.TabPages.Add(paginaResumen);
+            tabEstadisticas.TabPages.Add(paginaTipos);
+            tabEstadisticas.TabPages.Add(paginaDemanda);
+            // Pestañas para el reporte de ingresos.
+            tabIngresos = new TabControl
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 10F),
+                Visible = false
+            };
+
+            dgvResumenIngresos = CrearGrillaEstadisticas();
+            dgvIngresosPorMetodo = CrearGrillaEstadisticas();
+            dgvIngresosPorTipo = CrearGrillaEstadisticas();
+            dgvPagosTemporales = CrearGrillaEstadisticas();
+
+            TabPage paginaResumenIngresos =
+                new TabPage("Resumen general");
+
+            TabPage paginaMetodo =
+                new TabPage("Por método de pago");
+
+            TabPage paginaTipoPago =
+                new TabPage("Por tipo de pago");
+
+            TabPage paginaTemporales =
+                new TabPage("Reservas temporales");
+
+            paginaResumenIngresos.BackColor = marfil;
+            paginaMetodo.BackColor = marfil;
+            paginaTipoPago.BackColor = marfil;
+            paginaTemporales.BackColor = marfil;
+
+            paginaResumenIngresos.Controls.Add(dgvResumenIngresos);
+            paginaMetodo.Controls.Add(dgvIngresosPorMetodo);
+            paginaTipoPago.Controls.Add(dgvIngresosPorTipo);
+            paginaTemporales.Controls.Add(dgvPagosTemporales);
+
+            tabIngresos.TabPages.Add(paginaResumenIngresos);
+            tabIngresos.TabPages.Add(paginaMetodo);
+            tabIngresos.TabPages.Add(paginaTipoPago);
+            tabIngresos.TabPages.Add(paginaTemporales);
             Panel panelInferior = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -227,14 +302,76 @@ namespace HotelTramonto.Presentacion
             panelInferior.Controls.Add(lblEstado);
             panelInferior.Controls.Add(btnCerrar);
 
+            Panel panelContenido = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = marfil
+            };
+
+            panelContenido.Controls.Add(dgvReporte);
+            panelContenido.Controls.Add(tabEstadisticas);
+            panelContenido.Controls.Add(tabIngresos);
+
             // Orden de acoplamiento.
-            Controls.Add(dgvReporte);
+            Controls.Add(panelContenido);
             Controls.Add(panelInferior);
             Controls.Add(panelFiltros);
             Controls.Add(panelTitulo);
 
             dtpHasta.Value = DateTime.Today;
             dtpDesde.Value = DateTime.Today.AddMonths(-1);
+        }
+        private DataGridView CrearGrillaEstadisticas()
+        {
+            DataGridView grilla = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                BackgroundColor = marfil,
+                BorderStyle = BorderStyle.None,
+                GridColor = Color.FromArgb(222, 211, 194),
+                ReadOnly = true,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false,
+                AutoSizeColumnsMode =
+                    DataGridViewAutoSizeColumnsMode.DisplayedCells,
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = false,
+                RowHeadersVisible = false,
+                EnableHeadersVisualStyles = false,
+                ColumnHeadersHeight = 42,
+                RowTemplate = { Height = 32 },
+                Font = new Font("Segoe UI", 10F),
+                CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal
+            };
+
+            grilla.ColumnHeadersDefaultCellStyle.BackColor = marron;
+            grilla.ColumnHeadersDefaultCellStyle.ForeColor = dorado;
+            grilla.ColumnHeadersDefaultCellStyle.Font =
+                new Font("Segoe UI", 10F, FontStyle.Bold);
+
+            grilla.ColumnHeadersDefaultCellStyle.Alignment =
+                DataGridViewContentAlignment.MiddleLeft;
+
+            grilla.ColumnHeadersDefaultCellStyle.Padding =
+                new Padding(8, 0, 8, 0);
+
+            grilla.ColumnHeadersDefaultCellStyle.SelectionBackColor = marron;
+            grilla.ColumnHeadersDefaultCellStyle.SelectionForeColor = dorado;
+
+            grilla.DefaultCellStyle.BackColor = marfil;
+            grilla.DefaultCellStyle.ForeColor = marron;
+
+            grilla.DefaultCellStyle.SelectionBackColor =
+                Color.FromArgb(226, 211, 184);
+
+            grilla.DefaultCellStyle.SelectionForeColor = marron;
+            grilla.DefaultCellStyle.Padding = new Padding(8, 4, 8, 4);
+
+            grilla.AlternatingRowsDefaultCellStyle.BackColor = crema;
+
+            return grilla;
         }
 
         private Label CrearEtiqueta(string texto)
@@ -352,6 +489,97 @@ namespace HotelTramonto.Presentacion
 
                     return;
                 }
+                // Reporte de ingresos: mostrar los cuatro resultados.
+                if (cmbReporte.SelectedIndex == 1)
+                {
+                    DataSet datos = negocio.ObtenerIngresos(desde, hasta);
+
+                    if (datos.Tables.Count < 4)
+                    {
+                        throw new InvalidOperationException(
+                            "El procedimiento no devolvió los cuatro resultados esperados.");
+                    }
+
+                    dgvResumenIngresos.DataSource = datos.Tables[0];
+                    dgvIngresosPorMetodo.DataSource = datos.Tables[1];
+                    dgvIngresosPorTipo.DataSource = datos.Tables[2];
+                    dgvPagosTemporales.DataSource = datos.Tables[3];
+
+                    dgvReporte.Visible = false;
+                    tabEstadisticas.Visible = false;
+                    tabIngresos.Visible = true;
+
+                    tabIngresos.BringToFront();
+
+                    lblEstado.Text =
+                        $"Reporte: {cmbReporte.SelectedItem} | " +
+                        $"Resumen: {datos.Tables[0].Rows.Count} | " +
+                        $"Métodos: {datos.Tables[1].Rows.Count} | " +
+                        $"Tipos: {datos.Tables[2].Rows.Count} | " +
+                        $"Temporales: {datos.Tables[3].Rows.Count}";
+
+                    int registros =
+                        datos.Tables[0].Rows.Count +
+                        datos.Tables[1].Rows.Count +
+                        datos.Tables[2].Rows.Count +
+                        datos.Tables[3].Rows.Count;
+
+                    if (registros == 0)
+                    {
+                        MostrarMensaje(
+                            "Sin resultados",
+                            "El reporte no devolvió información para ese período.");
+                    }
+
+                    return;
+                }
+                // Estadísticas de reservas: mostrar las tres tablas.
+                if (cmbReporte.SelectedIndex == 2)
+                {
+                    DataSet datos =
+                        negocio.ObtenerEstadisticasReservas(desde, hasta);
+
+                    if (datos.Tables.Count < 3)
+                    {
+                        throw new InvalidOperationException(
+                            "El procedimiento no devolvió los tres resultados esperados.");
+                    }
+
+                    dgvResumenReservas.DataSource = datos.Tables[0];
+                    dgvReservasPorTipo.DataSource = datos.Tables[1];
+                    dgvDemandaMensual.DataSource = datos.Tables[2];
+
+                    dgvReporte.Visible = false;
+                    tabIngresos.Visible = false;
+                    tabEstadisticas.Visible = true;
+                    tabEstadisticas.BringToFront();
+
+                    int registros =
+                        datos.Tables[0].Rows.Count +
+                        datos.Tables[1].Rows.Count +
+                        datos.Tables[2].Rows.Count;
+
+                    lblEstado.Text =
+                        $"Reporte: {cmbReporte.SelectedItem} | " +
+                        $"Resumen: {datos.Tables[0].Rows.Count} | " +
+                        $"Tipos: {datos.Tables[1].Rows.Count} | " +
+                        $"Meses: {datos.Tables[2].Rows.Count}";
+
+                    if (registros == 0)
+                    {
+                        MostrarMensaje(
+                            "Sin resultados",
+                            "El reporte no devolvió información para ese período.");
+                    }
+
+                    return;
+                }
+
+                // Los demás reportes utilizan la grilla original.
+                tabEstadisticas.Visible = false;
+                tabIngresos.Visible = false;
+                dgvReporte.Visible = true;
+                dgvReporte.BringToFront();
 
                 DataTable tabla;
 
@@ -365,16 +593,14 @@ namespace HotelTramonto.Presentacion
                         tabla = negocio.ObtenerIngresos(desde, hasta).Tables[0];
                         break;
 
-                    case 2:
-                        tabla = negocio.ObtenerEstadisticasReservas(desde, hasta).Tables[0];
-                        break;
-
                     case 3:
-                        tabla = negocio.ObtenerHabitacionesMasUtilizadas(desde, hasta);
+                        tabla = negocio.ObtenerHabitacionesMasUtilizadas(
+                            desde, hasta);
                         break;
 
                     case 4:
-                        tabla = negocio.ObtenerServiciosMasUtilizados(desde, hasta);
+                        tabla = negocio.ObtenerServiciosMasUtilizados(
+                            desde, hasta);
                         break;
 
                     default:
@@ -388,7 +614,7 @@ namespace HotelTramonto.Presentacion
                 dgvReporte.DataSource = tabla;
 
                 lblEstado.Text =
-                    $"Reporte: {cmbReporte.SelectedItem}  |  " +
+                    $"Reporte: {cmbReporte.SelectedItem} | " +
                     $"Registros encontrados: {tabla.Rows.Count}";
 
                 if (tabla.Rows.Count == 0)

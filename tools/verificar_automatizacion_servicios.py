@@ -70,7 +70,7 @@ class AutomatizacionTests(unittest.TestCase):
         history = (CODE / "Historicos.cs").read_text()
         self.assertIn("SHA256.HashData", history)
         self.assertIn("original.Filas", history)
-        self.assertEqual(2, self.runner.count("historicos.Verificar(Copia)"))
+        self.assertEqual(3, self.runner.count("historicos.Verificar(Copia)"))  # Inicio, antes de UI y final.
 
 
 if __name__ == "__main__":

@@ -125,6 +125,14 @@ namespace HotelTramonto.Negocios
             huespedDatos.Reactivar(idHuesped);
         }
 
+        public DataTable ObtenerHistorial(int idHuesped)
+        {
+            var historial = HistorialReservas(idHuesped, rolOperacion!);
+            var reservas = new ReservaNegocios(rolOperacion).ListarPorHuesped(idHuesped);
+            return DetalleHistorialHuesped.Completar(historial, reservas);
+        }
+
+
     }
 
 }

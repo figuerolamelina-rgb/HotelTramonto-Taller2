@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using HotelTramonto.Negocios;
+using HotelTramonto.Presentacion.Servicios;
 
 namespace HotelTramonto.Presentacion
 {
@@ -11,11 +12,23 @@ namespace HotelTramonto.Presentacion
     {
         private readonly string rolOperacion;
         private readonly PagoNegocios negocio;
+        private readonly HuespedNegocios huespedNegocio;
+        private readonly ReservaNegocios reservaNegocio;
+
         private readonly int idUsuario;
 
-        private NumericUpDown numIdReserva;
+        private TextBox txtDNI;
+        private Button btnBuscarHuesped;
+        private Label lblDatosHuesped;
+        private DataGridView dgvReservas;
         private DataGridView dgvPagos;
         private DataGridView dgvConsumos;
+
+        private int idHuespedSeleccionado;
+        private readonly SeleccionReservaPagos seleccion = new();
+        private int idReservaSeleccionada => seleccion.IdReserva;
+        private bool cargandoReservas;
+        private NumericUpDown numIdReserva = new NumericUpDown();
 
         private Label lblTituloConsumos;
         private Label lblTotalConsumido;
@@ -23,13 +36,11 @@ namespace HotelTramonto.Presentacion
         private Label lblPendienteServicios;
 
         private readonly DetalleServicioNegocios detalleNegocio;
-        private Button btnConsultar;
         private Button btnRegistrarSaldo;
         private Button btnCerrar;
         private Button btnRegistrarServicios;
         private Button btnAgregarConsumo;
-        private Label lblIdReserva;
-
+        private Button btnGenerarComprobante;
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
         private readonly Color crema = Color.FromArgb(245, 239, 229);
@@ -41,6 +52,8 @@ namespace HotelTramonto.Presentacion
             PermisosOperacion.Exigir(rol);
             rolOperacion = rol;
             negocio = new PagoNegocios(rol);
+            huespedNegocio = new HuespedNegocios(rol);
+            reservaNegocio = new ReservaNegocios(rol);
             detalleNegocio = new DetalleServicioNegocios(rol);
             InitializeComponent();
             PresentacionTablas.Conectar(this);
@@ -49,9 +62,10 @@ namespace HotelTramonto.Presentacion
                 throw new ArgumentException("El usuario autenticado no es válido.");
 
             this.idUsuario = idUsuario;
-            Shown += (s, e) => ReanudarCobros();
 
             ConfigurarFormulario();
+            LimpiarBusqueda();
+            Shown += (s, e) => ReanudarCobros();
         }
 
         private void ConfigurarFormulario()
@@ -64,8 +78,11 @@ namespace HotelTramonto.Presentacion
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(1000, 750);
 
-            lblIdReserva = new Label();
-            numIdReserva = new NumericUpDown();
+            txtDNI = new TextBox();
+            btnBuscarHuesped = new Button();
+            lblDatosHuesped = new Label();
+
+            dgvReservas = new DataGridView();
             dgvPagos = new DataGridView();
             dgvConsumos = new DataGridView();
 
@@ -73,11 +90,11 @@ namespace HotelTramonto.Presentacion
             lblTotalConsumido = new Label();
             lblTotalPagadoServicios = new Label();
             lblPendienteServicios = new Label();
-            btnConsultar = new Button();
             btnRegistrarSaldo = new Button();
             btnCerrar = new Button();
             btnRegistrarServicios = new Button();
             btnAgregarConsumo = new Button();
+            btnGenerarComprobante = new Button();
 
             Label lblTitulo = new Label
             {
@@ -90,31 +107,92 @@ namespace HotelTramonto.Presentacion
                 Location = new Point(30, 25)
             };
 
-            lblIdReserva.Text = "ID de reserva:";
-            lblIdReserva.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            lblIdReserva.ForeColor = marron;
-            lblIdReserva.BackColor = Color.Transparent;
-            lblIdReserva.Location = new Point(35, 105);
-            lblIdReserva.Size = new Size(110, 25);
-
-            numIdReserva.Location = new Point(150, 100);
-            numIdReserva.Size = new Size(120, 32);
-            numIdReserva.Minimum = 1;
-            numIdReserva.ValueChanged += (s, e) =>
+            // Búsqueda por DNI
+            Label lblDNI = new Label
             {
-                dgvPagos.DataSource = null;
-                dgvConsumos.DataSource = null;
-                lblTotalConsumido.Text = lblTotalPagadoServicios.Text = lblPendienteServicios.Text = "Consultar la reserva seleccionada";
+                Text = "DNI del huésped:",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = marron,
+                BackColor = Color.Transparent,
+                Location = new Point(35, 105),
+                Size = new Size(125, 25)
             };
-            numIdReserva.Maximum = 1000000;
-            numIdReserva.Font = new Font("Segoe UI", 10F);
-            numIdReserva.BackColor = marfil;
-            numIdReserva.ForeColor = marron;
 
-            EstilizarBotonPago(btnConsultar, "Consultar pagos", marron);
-            btnConsultar.Location = new Point(290, 96);
-            btnConsultar.Size = new Size(150, 40);
-            btnConsultar.Click += btnConsultar_Click;
+            txtDNI.Location = new Point(165, 100);
+            txtDNI.Size = new Size(150, 32);
+            txtDNI.Font = new Font("Segoe UI", 10F);
+            txtDNI.BackColor = marfil;
+            txtDNI.ForeColor = marron;
+            txtDNI.MaxLength = 15;
+
+            EstilizarBotonPago(btnBuscarHuesped, "Buscar huésped", marron);
+            btnBuscarHuesped.Location = new Point(330, 96);
+            btnBuscarHuesped.Size = new Size(155, 40);
+            btnBuscarHuesped.Click += btnBuscarHuesped_Click;
+
+            // Datos del huésped
+            lblDatosHuesped.Location = new Point(35, 145);
+            lblDatosHuesped.Size = new Size(900, 28);
+            lblDatosHuesped.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblDatosHuesped.ForeColor = marron;
+            lblDatosHuesped.BackColor = Color.Transparent;
+
+            Label lblTituloReservas = new Label
+            {
+                Text = "RESERVAS DEL HUÉSPED",
+                Location = new Point(35, 175),
+                Size = new Size(350, 25),
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = marron,
+                BackColor = Color.Transparent
+            };
+
+            Label lblTituloPagos = new Label
+            {
+                Text = "HISTORIAL DE PAGOS",
+                Location = new Point(35, 340),
+                Size = new Size(350, 25),
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = marron,
+                BackColor = Color.Transparent
+            };
+
+            // Grilla de reservas
+            dgvReservas.Location = new Point(35, 200);
+            dgvReservas.Size = new Size(
+                Math.Max(400, ClientSize.Width - 70),
+                150);
+
+            dgvReservas.Anchor =
+                AnchorStyles.Top |
+                AnchorStyles.Left |
+                AnchorStyles.Right;
+
+            dgvReservas.ReadOnly = true;
+            dgvReservas.AllowUserToAddRows = false;
+            dgvReservas.AllowUserToDeleteRows = false;
+            dgvReservas.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvReservas.MultiSelect = false;
+            dgvReservas.RowHeadersVisible = false;
+            dgvReservas.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvReservas.SelectionChanged += (s, e) => CargarSeleccionReserva();
+            dgvReservas.BackgroundColor = marfil;
+            dgvReservas.BorderStyle = BorderStyle.None;
+            dgvReservas.EnableHeadersVisualStyles = false;
+
+            dgvReservas.ColumnHeadersDefaultCellStyle.BackColor = marron;
+            dgvReservas.ColumnHeadersDefaultCellStyle.ForeColor = dorado;
+            dgvReservas.ColumnHeadersDefaultCellStyle.Font =
+                new Font("Segoe UI", 9F, FontStyle.Bold);
+
+            dgvReservas.DefaultCellStyle.BackColor = marfil;
+            dgvReservas.DefaultCellStyle.ForeColor = marron;
+            dgvReservas.DefaultCellStyle.SelectionBackColor =
+                Color.FromArgb(238, 222, 190);
+            dgvReservas.DefaultCellStyle.SelectionForeColor = marron;
+
+            dgvReservas.AlternatingRowsDefaultCellStyle.BackColor =
+                Color.FromArgb(248, 243, 235);
 
             EstilizarBotonPago(btnRegistrarSaldo, "Registrar saldo", dorado);
             btnRegistrarSaldo.ForeColor = marron;
@@ -141,10 +219,10 @@ namespace HotelTramonto.Presentacion
             btnAgregarConsumo.Location = new Point(815, 96);
             btnAgregarConsumo.Size = new Size(165, 40);
             btnAgregarConsumo.Click += btnAgregarConsumo_Click;
-            dgvPagos.Location = new Point(35, 165);
+            dgvPagos.Location = new Point(35, 380);
             dgvPagos.Size = new Size(
                 Math.Max(400, ClientSize.Width - 70),
-                190);
+                130);
 
             dgvPagos.Anchor =
                 AnchorStyles.Top |
@@ -164,8 +242,7 @@ namespace HotelTramonto.Presentacion
             dgvPagos.MultiSelect = false;
             dgvPagos.RowHeadersVisible = false;
             dgvPagos.ScrollBars = ScrollBars.Both;
-            dgvPagos.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.DisplayedCells;
+            dgvPagos.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvPagos.RowTemplate.Height = 36;
             dgvPagos.ColumnHeadersHeight = 42;
 
@@ -193,16 +270,104 @@ namespace HotelTramonto.Presentacion
 
             dgvPagos.DataBindingComplete += (sender, e) =>
             {
+                // Encabezados de las columnas
+                if (dgvPagos.Columns.Contains("id_pago"))
+                    dgvPagos.Columns["id_pago"].HeaderText = "N.º de pago";
+
+                if (dgvPagos.Columns.Contains("id_reserva"))
+                    dgvPagos.Columns["id_reserva"].HeaderText = "N.º de reserva";
+
+                if (dgvPagos.Columns.Contains("id_usuario"))
+                    dgvPagos.Columns["id_usuario"].HeaderText = "ID usuario";
+
+                if (dgvPagos.Columns.Contains("nombre_usuario"))
+                    dgvPagos.Columns["nombre_usuario"].HeaderText = "Nombre usuario";
+
+                if (dgvPagos.Columns.Contains("apellido_usuario"))
+                    dgvPagos.Columns["apellido_usuario"].HeaderText = "Apellido usuario";
+
                 if (dgvPagos.Columns.Contains("monto"))
                 {
+                    dgvPagos.Columns["monto"].HeaderText = "Importe";
+
                     dgvPagos.Columns["monto"].DefaultCellStyle.Format = "N2";
+
                     dgvPagos.Columns["monto"].DefaultCellStyle.Alignment =
                         DataGridViewContentAlignment.MiddleRight;
                 }
+
+                if (dgvPagos.Columns.Contains("metodo_pago"))
+                    dgvPagos.Columns["metodo_pago"].HeaderText = "Método de pago";
+
+                if (dgvPagos.Columns.Contains("estado"))
+                    dgvPagos.Columns["estado"].HeaderText = "Estado";
+
+                if (dgvPagos.Columns.Contains("tipo_pago"))
+                    dgvPagos.Columns["tipo_pago"].HeaderText = "Concepto";
+
+                if (dgvPagos.Columns.Contains("fecha_pago"))
+                    dgvPagos.Columns["fecha_pago"].HeaderText = "Fecha de pago";
+
+                dgvPagos.CellFormatting += (sender, e) =>
+                {
+                    if (dgvPagos.Columns[e.ColumnIndex].Name == "tipo_pago"
+                        && e.Value != null)
+                    {
+                        string tipo = Convert.ToString(e.Value);
+
+                        switch (tipo)
+                        {
+                            case "PAGO_INICIAL":
+                                e.Value = "Pago inicial";
+                                break;
+
+                            case "SALDO_ALOJAMIENTO":
+                                e.Value = "Saldo de alojamiento";
+                                break;
+
+                            case "SERVICIOS_ADICIONALES":
+                                e.Value = "Servicios adicionales";
+                                break;
+                        }
+
+                        e.FormattingApplied = true;
+                    }
+                };
+
+
+                // Anchos de columnas para mejorar la lectura
+                dgvPagos.Columns["id_pago"].Width = 75;
+                dgvPagos.Columns["id_reserva"].Width = 90;
+                dgvPagos.Columns["id_usuario"].Width = 80;
+                dgvPagos.Columns["nombre_usuario"].Width = 115;
+                dgvPagos.Columns["apellido_usuario"].Width = 115;
+                dgvPagos.Columns["monto"].Width = 110;
+                dgvPagos.Columns["metodo_pago"].Width = 125;
+                dgvPagos.Columns["estado"].Width = 100;
+                dgvPagos.Columns["tipo_pago"].Width = 190;
+                dgvPagos.Columns["fecha_pago"].Width = 150;
+
+                // Evitar saltos de línea en encabezados y celdas
+                dgvPagos.ColumnHeadersDefaultCellStyle.WrapMode =
+                    DataGridViewTriState.False;
+
+                dgvPagos.DefaultCellStyle.WrapMode =
+                    DataGridViewTriState.False;
             };
+
+            // Botón Generar comprobante
+            EstilizarBotonPago(
+                btnGenerarComprobante,
+                "Generar comprobante PDF",
+                marron);
+
+            btnGenerarComprobante.Location = new Point(995, 96);
+            btnGenerarComprobante.Size = new Size(220, 40);
+            btnGenerarComprobante.Click += btnGenerarComprobante_Click;
+
             // Título de consumos
             lblTituloConsumos.Text = "CONSUMOS DE LA RESERVA";
-            lblTituloConsumos.Location = new Point(35, 370);
+            lblTituloConsumos.Location = new Point(35, 550);
             lblTituloConsumos.Size = new Size(350, 30);
             lblTituloConsumos.Font =
                 new Font("Segoe UI", 11F, FontStyle.Bold);
@@ -210,10 +375,10 @@ namespace HotelTramonto.Presentacion
             lblTituloConsumos.BackColor = Color.Transparent;
 
             // Grilla de consumos
-            dgvConsumos.Location = new Point(35, 405);
+            dgvConsumos.Location = new Point(35, 590);
             dgvConsumos.Size = new Size(
                 Math.Max(400, ClientSize.Width - 70),
-                185);
+                60);
 
             dgvConsumos.Anchor =
                 AnchorStyles.Top |
@@ -260,50 +425,230 @@ namespace HotelTramonto.Presentacion
                 Color.FromArgb(248, 243, 235);
 
             // Resumen de servicios
-            lblTotalConsumido.Location = new Point(35, 610);
+            lblTotalConsumido.Location = new Point(35, 665);
             lblTotalConsumido.Size = new Size(300, 30);
             lblTotalConsumido.Font =
                 new Font("Segoe UI", 9.5F, FontStyle.Bold);
             lblTotalConsumido.ForeColor = marron;
 
-            lblTotalPagadoServicios.Location = new Point(350, 610);
+            lblTotalPagadoServicios.Location = new Point(350, 655);
             lblTotalPagadoServicios.Size = new Size(300, 30);
             lblTotalPagadoServicios.Font =
                 new Font("Segoe UI", 9.5F, FontStyle.Bold);
             lblTotalPagadoServicios.ForeColor = marron;
 
-            lblPendienteServicios.Location = new Point(665, 610);
+            lblPendienteServicios.Location = new Point(665, 655);
             lblPendienteServicios.Size = new Size(350, 30);
             lblPendienteServicios.Font =
                 new Font("Segoe UI", 10F, FontStyle.Bold);
             lblPendienteServicios.ForeColor = dorado;
             EstilizarBotonPago(btnCerrar, "Cerrar", dorado);
             btnCerrar.ForeColor = marron;
-            btnCerrar.Size = new Size(130, 42);
+            btnCerrar.Size = new Size(130, 38);
             btnCerrar.Location = new Point(
                 ClientSize.Width - 165,
-                ClientSize.Height - 70);
+                ClientSize.Height - 55);
             btnCerrar.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnCerrar.Click += (sender, e) => Close();
 
-            Controls.Add(lblTitulo);
-            Controls.Add(lblIdReserva);
-            Controls.Add(numIdReserva);
-            Controls.Add(btnConsultar);
-            Controls.Add(btnRegistrarSaldo);
-            Controls.Add(btnRegistrarServicios);
-            Controls.Add(btnAgregarConsumo);
-            Controls.Add(dgvPagos);
-            Controls.Add(lblTituloConsumos);
-            Controls.Add(dgvConsumos);
 
-            Controls.Add(lblTotalConsumido);
-            Controls.Add(lblTotalPagadoServicios);
-            Controls.Add(lblPendienteServicios);
+            // ============================================
+            // DISTRIBUCIÓN RESPONSIVE CON TABLELAYOUTPANEL
+            // ============================================
 
-            Controls.Add(btnCerrar);
+            TableLayoutPanel panelPrincipal = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = crema,
+                ColumnCount = 1,
+                RowCount = 7,
+                Padding = new Padding(20),
+                CellBorderStyle = TableLayoutPanelCellBorderStyle.None
+            };
 
-            lblTitulo.BringToFront();
+            panelPrincipal.ColumnStyles.Add(
+                new ColumnStyle(SizeType.Percent, 100F));
+
+            panelPrincipal.RowStyles.Add(new RowStyle(SizeType.Percent, 8F));
+            panelPrincipal.RowStyles.Add(new RowStyle(SizeType.Percent, 10F));
+            panelPrincipal.RowStyles.Add(new RowStyle(SizeType.Percent, 5F));
+            panelPrincipal.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            panelPrincipal.RowStyles.Add(new RowStyle(SizeType.Percent, 27F));
+            panelPrincipal.RowStyles.Add(new RowStyle(SizeType.Percent, 18F));
+            panelPrincipal.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
+
+            // 1. Título principal
+            lblTitulo.Dock = DockStyle.Fill;
+            lblTitulo.Location = Point.Empty;
+            lblTitulo.TextAlign = ContentAlignment.MiddleLeft;
+            panelPrincipal.Controls.Add(lblTitulo, 0, 0);
+
+            // 2. Barra de búsqueda y botones
+            FlowLayoutPanel panelAcciones = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = true,
+                AutoScroll = true,
+                BackColor = crema,
+                Padding = new Padding(0, 5, 0, 5)
+            };
+
+            lblDNI.Margin = new Padding(5, 10, 5, 5);
+            txtDNI.Margin = new Padding(5, 5, 10, 5);
+
+            btnBuscarHuesped.Margin = new Padding(5);
+            btnRegistrarSaldo.Margin = new Padding(5);
+            btnRegistrarServicios.Margin = new Padding(5);
+            btnAgregarConsumo.Margin = new Padding(5);
+            btnGenerarComprobante.Margin = new Padding(5);
+
+            panelAcciones.Controls.Add(lblDNI);
+            panelAcciones.Controls.Add(txtDNI);
+            panelAcciones.Controls.Add(btnBuscarHuesped);
+            numIdReserva.Minimum = 1;
+            numIdReserva.Maximum = int.MaxValue;
+            numIdReserva.Width = 90;
+            var btnConsultarId = new Button();
+            EstilizarBotonPago(btnConsultarId, "Consultar ID", marron);
+            btnConsultarId.Size = new Size(125, 40);
+            btnConsultarId.Click += (s, e) => ConsultarPorId();
+            panelAcciones.Controls.Add(new Label { Text = "N.º reserva", AutoSize = true, Margin = new Padding(5, 12, 5, 0) });
+            panelAcciones.Controls.Add(numIdReserva);
+            panelAcciones.Controls.Add(btnConsultarId);
+            txtDNI.TextChanged += (s, e) => LimpiarBusqueda();
+            numIdReserva.ValueChanged += (s, e) => LimpiarBusqueda();
+            panelAcciones.Controls.Add(btnRegistrarSaldo);
+            panelAcciones.Controls.Add(btnRegistrarServicios);
+            panelAcciones.Controls.Add(btnAgregarConsumo);
+            panelAcciones.Controls.Add(btnGenerarComprobante);
+
+            panelPrincipal.Controls.Add(panelAcciones, 0, 1);
+
+            // 3. Datos del huésped
+            lblDatosHuesped.Dock = DockStyle.Fill;
+            lblDatosHuesped.TextAlign = ContentAlignment.MiddleLeft;
+
+            panelPrincipal.Controls.Add(lblDatosHuesped, 0, 2);
+
+            // 4. Sección de reservas
+            TableLayoutPanel panelReservas = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                BackColor = crema,
+                Padding = new Padding(0, 3, 0, 3)
+            };
+
+            panelReservas.RowStyles.Add(
+                new RowStyle(SizeType.Absolute, 28F));
+
+            panelReservas.RowStyles.Add(
+                new RowStyle(SizeType.Percent, 100F));
+
+            panelReservas.Controls.Add(lblTituloReservas, 0, 0);
+
+            lblTituloReservas.Dock = DockStyle.Fill;
+            dgvReservas.Dock = DockStyle.Fill;
+
+            panelReservas.Controls.Add(dgvReservas, 0, 1);
+
+            panelPrincipal.Controls.Add(panelReservas, 0, 3);
+
+            // 5. Sección de pagos
+            TableLayoutPanel panelPagos = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                BackColor = crema,
+                Padding = new Padding(0, 3, 0, 3)
+            };
+
+            panelPagos.RowStyles.Add(
+                new RowStyle(SizeType.Absolute, 28F));
+
+            panelPagos.RowStyles.Add(
+                new RowStyle(SizeType.Percent, 100F));
+
+            lblTituloPagos.Dock = DockStyle.Fill;
+            dgvPagos.Dock = DockStyle.Fill;
+
+            panelPagos.Controls.Add(lblTituloPagos, 0, 0);
+            panelPagos.Controls.Add(dgvPagos, 0, 1);
+
+            panelPrincipal.Controls.Add(panelPagos, 0, 4);
+
+            // 6. Sección de consumos
+            TableLayoutPanel panelConsumos = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                BackColor = crema,
+                Padding = new Padding(0, 3, 0, 3)
+            };
+
+            panelConsumos.RowStyles.Add(
+                new RowStyle(SizeType.Absolute, 28F));
+
+            panelConsumos.RowStyles.Add(
+                new RowStyle(SizeType.Percent, 100F));
+
+            lblTituloConsumos.Dock = DockStyle.Fill;
+            dgvConsumos.Dock = DockStyle.Fill;
+
+            panelConsumos.Controls.Add(lblTituloConsumos, 0, 0);
+            panelConsumos.Controls.Add(dgvConsumos, 0, 1);
+
+            panelPrincipal.Controls.Add(panelConsumos, 0, 5);
+
+            // 7. Resumen de importes y botón cerrar
+            TableLayoutPanel panelResumen = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 4,
+                RowCount = 1,
+                BackColor = crema
+            };
+
+            panelResumen.ColumnStyles.Add(
+                new ColumnStyle(SizeType.Percent, 25F));
+
+            panelResumen.ColumnStyles.Add(
+                new ColumnStyle(SizeType.Percent, 25F));
+
+            panelResumen.ColumnStyles.Add(
+                new ColumnStyle(SizeType.Percent, 30F));
+
+            panelResumen.ColumnStyles.Add(
+                new ColumnStyle(SizeType.Percent, 20F));
+
+            lblTotalConsumido.Dock = DockStyle.Fill;
+            lblTotalPagadoServicios.Dock = DockStyle.Fill;
+            lblPendienteServicios.Dock = DockStyle.Fill;
+
+            lblTotalConsumido.TextAlign = ContentAlignment.MiddleLeft;
+            lblTotalPagadoServicios.TextAlign = ContentAlignment.MiddleLeft;
+            lblPendienteServicios.TextAlign = ContentAlignment.MiddleLeft;
+
+            btnCerrar.Anchor = AnchorStyles.None;
+            btnCerrar.Dock = DockStyle.Fill;
+            btnCerrar.Margin = new Padding(8);
+
+            panelResumen.Controls.Add(lblTotalConsumido, 0, 0);
+            panelResumen.Controls.Add(lblTotalPagadoServicios, 1, 0);
+            panelResumen.Controls.Add(lblPendienteServicios, 2, 0);
+            panelResumen.Controls.Add(btnCerrar, 3, 0);
+
+            panelPrincipal.Controls.Add(panelResumen, 0, 6);
+
+            // Agregar el contenedor principal al formulario
+            Controls.Add(panelPrincipal);
+
+            panelPrincipal.BringToFront();
+
         }
 
         private void EstilizarBotonPago(
@@ -324,11 +669,142 @@ namespace HotelTramonto.Presentacion
             boton.Cursor = Cursors.Hand;
             boton.UseVisualStyleBackColor = false;
         }
+        private void btnBuscarHuesped_Click(object sender, EventArgs e)
+        {
+            LimpiarBusqueda(); // También ante DNI inválido o consulta fallida, nunca usar el destino anterior.
+            try
+            {
+                string dni = txtDNI.Text.Trim();
+                if (!Validaciones.DNIValido(dni))
+                {
+                    MostrarMensaje("DNI inválido", "Ingresá entre 7 y 15 dígitos.");
+                    return;
+                }
+                DataTable huesped = huespedNegocio.BuscarPorDNI(dni);
+                if (huesped.Rows.Count == 0)
+                {
+                    MostrarMensaje("Huésped no encontrado", "No existe un huésped con ese DNI.");
+                    return;
+                }
+                DataRow datos = huesped.Rows[0];
+                idHuespedSeleccionado = Convert.ToInt32(datos["id_huesped"]);
+                lblDatosHuesped.Text = $"Huésped: {datos["nombre"]} {datos["apellido"]} | DNI: {datos["dni"]}";
+                MostrarReservas(reservaNegocio.ListarPorHuesped(idHuespedSeleccionado));
+                if (dgvReservas.Rows.Count == 0)
+                    MostrarMensaje("Sin reservas", "El huésped no tiene reservas definitivas.");
+            }
+            catch (Exception ex)
+            {
+                LimpiarBusqueda();
+                MostrarMensaje("Error al buscar huésped", RegistroErrores.Mensaje(ex), true);
+            }
+        }
+
+        private void CargarSeleccionReserva()
+        {
+            if (cargandoReservas) return;
+            seleccion.Deseleccionar();
+            LimpiarDetalle();
+            if (dgvReservas.SelectedRows.Count != 1) return;
+            try
+            {
+                int id = Convert.ToInt32(dgvReservas.SelectedRows[0].Cells["id_reserva"].Value);
+                seleccion.Seleccionar(id);
+                var pagos = negocio.ListarPorReserva(id);
+                dgvPagos.DataSource = pagos;
+                CargarConsumosYResumen(id, pagos);
+                ActualizarAcciones();
+            }
+            catch (Exception ex)
+            {
+                seleccion.Deseleccionar();
+                LimpiarDetalle();
+                MostrarMensaje("Error al seleccionar reserva", RegistroErrores.Mensaje(ex), true);
+            }
+        }
+
+        private void LimpiarBusqueda()
+        {
+            seleccion.Limpiar();
+            idHuespedSeleccionado = 0;
+            cargandoReservas = true;
+            try { dgvReservas.DataSource = null; }
+            finally { cargandoReservas = false; }
+            lblDatosHuesped.Text = "Buscá un huésped y seleccioná una reserva, o consultá por ID.";
+            LimpiarDetalle();
+        }
+
+        private void LimpiarDetalle()
+        {
+            dgvPagos.DataSource = null;
+            dgvConsumos.DataSource = null;
+            lblTotalConsumido.Text = "Total consumido: —";
+            lblTotalPagadoServicios.Text = "Total pagado: —";
+            lblPendienteServicios.Text = "Pendiente: —";
+            ActualizarAcciones();
+        }
+
+        private void ActualizarAcciones()
+        {
+            btnRegistrarSaldo.Enabled = btnRegistrarServicios.Enabled = btnAgregarConsumo.Enabled = idReservaSeleccionada > 0;
+            btnGenerarComprobante.Enabled = dgvPagos.Rows.Count > 0;
+        }
+
+        private void MostrarReservas(DataTable reservas)
+        {
+            seleccion.Cargar(reservas);
+            cargandoReservas = true;
+            try
+            {
+                dgvReservas.DataSource = reservas;
+                dgvReservas.ClearSelection();
+            }
+            finally { cargandoReservas = false; }
+            LimpiarDetalle();
+        }
+
+        private void ConsultarPorId()
+        {
+            int id = (int)numIdReserva.Value;
+            LimpiarBusqueda();
+            try
+            {
+                var todas = reservaNegocio.Listar();
+                var reservas = todas.Clone();
+                foreach (DataRow fila in todas.Rows)
+                    if (Convert.ToInt32(fila["id_reserva"]) == id) reservas.ImportRow(fila);
+                MostrarReservas(reservas);
+                if (reservas.Rows.Count == 0)
+                {
+                    MostrarMensaje("Reserva no encontrada", "No existe una reserva definitiva con ese ID.");
+                    return;
+                }
+                lblDatosHuesped.Text = $"Reserva N.º {id} — consulta por ID";
+                dgvReservas.Rows[0].Selected = true;
+            }
+            catch (Exception ex) { LimpiarBusqueda(); MostrarMensaje("Consulta no disponible", RegistroErrores.Mensaje(ex), true); }
+        }
+
+        private int ObtenerIdReservaSeleccionada()
+        {
+            if (idReservaSeleccionada <= 0)
+            {
+                MostrarMensaje(
+                    "Seleccionar reserva",
+                    "Primero buscá un huésped y seleccioná una de sus reservas.");
+
+                return 0;
+            }
+
+            return idReservaSeleccionada;
+        }
+
 
         private void MostrarMensaje(
             string titulo,
             string detalle,
-            bool esError = false)
+            bool esError = false,
+            int? idPago = null)
         {
             using (Form mensaje = new Form())
             {
@@ -375,9 +851,31 @@ namespace HotelTramonto.Presentacion
                 Button btnAceptar = CrearBotonDialogo(
                     "Aceptar", dorado, marron);
 
-                btnAceptar.Location = new Point(165, 175);
                 btnAceptar.Size = new Size(110, 35);
                 btnAceptar.DialogResult = DialogResult.OK;
+
+                // Si hay un ID de pago, mostrar también el botón PDF.
+                if (idPago.HasValue && !esError)
+                {
+                    btnAceptar.Location = new Point(265, 175);
+
+                    Button btnComprobante = CrearBotonDialogo(
+                        "Generar comprobante PDF", marron, Color.White);
+
+                    btnComprobante.Location = new Point(35, 175);
+                    btnComprobante.Size = new Size(210, 35);
+
+                    btnComprobante.Click += (s, e) =>
+                    {
+                        GenerarComprobantePago(idPago.Value);
+                    };
+
+                    mensaje.Controls.Add(btnComprobante);
+                }
+                else
+                {
+                    btnAceptar.Location = new Point(165, 175);
+                }
 
                 mensaje.Controls.Add(encabezado);
                 mensaje.Controls.Add(lblTituloMensaje);
@@ -386,6 +884,49 @@ namespace HotelTramonto.Presentacion
 
                 mensaje.AcceptButton = btnAceptar;
                 mensaje.ShowDialog(this);
+            }
+        }
+
+
+        private void GenerarComprobantePago(int idPago)
+        {
+            try
+            {
+                DataTable comprobante = negocio.ObtenerComprobante(idPago);
+
+                if (comprobante == null || comprobante.Rows.Count == 0)
+                {
+                    throw new Exception(
+                        "No se encontraron los datos del comprobante.");
+                }
+
+                using (SaveFileDialog guardar = new SaveFileDialog())
+                {
+                    guardar.Title = "Guardar comprobante de pago";
+                    guardar.Filter = "Archivo PDF (*.pdf)|*.pdf";
+                    guardar.FileName = $"Comprobante_Pago_{idPago}.pdf";
+                    guardar.DefaultExt = "pdf";
+                    guardar.AddExtension = true;
+
+                    if (guardar.ShowDialog(this) != DialogResult.OK)
+                        return;
+
+                    HotelTramonto.Presentacion.Servicios.ComprobantePagoPdf.Generar(
+                        comprobante.Rows[0],
+                        guardar.FileName);
+
+                    MostrarMensaje(
+                        "Comprobante generado",
+                        "El comprobante de pago se generó correctamente.\n\n" +
+                        "Archivo: " + guardar.FileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "Error al generar comprobante",
+                    "No se pudo generar el comprobante PDF.\n\n" + RegistroErrores.Mensaje(ex),
+                    true);
             }
         }
 
@@ -401,7 +942,7 @@ namespace HotelTramonto.Presentacion
                 mensaje.MaximizeBox = false;
                 mensaje.MinimizeBox = false;
                 mensaje.ShowInTaskbar = false;
-                mensaje.ClientSize = new Size(440, 220);
+                mensaje.ClientSize = new Size(500, 310);
                 mensaje.BackColor = crema;
                 mensaje.ForeColor = marron;
                 mensaje.Font = new Font("Segoe UI", 10F);
@@ -417,7 +958,7 @@ namespace HotelTramonto.Presentacion
                 {
                     Text = titulo,
                     Location = new Point(15, 18),
-                    Size = new Size(410, 35),
+                    Size = new Size(470, 35),
                     TextAlign = ContentAlignment.MiddleCenter,
                     ForeColor = marron,
                     Font = new Font("Segoe UI", 12F, FontStyle.Bold)
@@ -427,7 +968,7 @@ namespace HotelTramonto.Presentacion
                 {
                     Text = detalle,
                     Location = new Point(25, 60),
-                    Size = new Size(390, 65),
+                    Size = new Size(450, 165),
                     TextAlign = ContentAlignment.MiddleCenter,
                     ForeColor = marronClaro,
                     Font = new Font("Segoe UI", 9.5F)
@@ -436,14 +977,14 @@ namespace HotelTramonto.Presentacion
                 Button btnSi = CrearBotonDialogo(
                     "Sí, confirmar", dorado, marron);
 
-                btnSi.Location = new Point(65, 155);
+                btnSi.Location = new Point(65, 255);
                 btnSi.Size = new Size(145, 38);
                 btnSi.DialogResult = DialogResult.Yes;
 
                 Button btnNo = CrearBotonDialogo(
                     "No, cancelar", marronClaro, Color.White);
 
-                btnNo.Location = new Point(230, 155);
+                btnNo.Location = new Point(270, 255);
                 btnNo.Size = new Size(145, 38);
                 btnNo.DialogResult = DialogResult.No;
 
@@ -585,37 +1126,6 @@ namespace HotelTramonto.Presentacion
             }
         }
 
-        private void btnConsultar_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                int idReserva = (int)numIdReserva.Value;
-
-                // Consultar historial de pagos
-                DataTable pagos = negocio.ListarPorReserva(idReserva);
-
-                dgvPagos.DataSource = pagos;
-
-                // Consultar consumos y calcular saldo pendiente
-                CargarConsumosYResumen(idReserva, pagos);
-
-                if (pagos.Rows.Count == 0 &&
-                    dgvConsumos.Rows.Count == 0)
-                {
-                    MostrarMensaje(
-                        "Consulta de reserva",
-                        "No se encontraron pagos ni consumos para esta reserva.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MostrarMensaje(
-                    "Error al consultar",
-                    "No se pudo consultar la información de la reserva.\n\n" +
-                    RegistroErrores.Mensaje(ex),
-                    true);
-            }
-        }
         private void CargarConsumosYResumen(
         int idReserva,
         DataTable pagos)
@@ -686,9 +1196,6 @@ namespace HotelTramonto.Presentacion
                    .DefaultCellStyle.Format = "N2";
             }
 
-            if (dgvConsumos.Columns.Contains("numero_habitacion"))
-                dgvConsumos.Columns["numero_habitacion"]!.HeaderText = "Habitación";
-
             // Encabezados más claros
             if (dgvConsumos.Columns.Contains("nombre_servicio"))
                 dgvConsumos.Columns["nombre_servicio"].HeaderText = "Servicio";
@@ -717,6 +1224,7 @@ namespace HotelTramonto.Presentacion
                     dgvConsumos.Columns[columna].Visible = false;
             }
         }
+
         private string ClaveCobro(bool servicios) => (servicios ? "servicios:" : "alojamiento:") + idUsuario;
 
         private void ReanudarCobros()
@@ -756,26 +1264,35 @@ namespace HotelTramonto.Presentacion
                 if (resultado.Valor.Rows.Count == 0)
                     throw new InvalidOperationException("No se recibió el resultado del pago.");
                 var pago = resultado.Valor.Rows[0];
-                numIdReserva.Value = solicitud.IdReserva;
+                if (idReservaSeleccionada != solicitud.IdReserva)
+                {
+                    LimpiarBusqueda();
+                    txtDNI.Clear();
+                    numIdReserva.Value = solicitud.IdReserva;
+                    seleccion.Recuperar(solicitud.IdReserva);
+                    lblDatosHuesped.Text = $"Reserva N.º {solicitud.IdReserva} — operación recuperada";
+                }
                 var pagos = negocio.ListarPorReserva(solicitud.IdReserva);
                 dgvPagos.DataSource = pagos;
                 CargarConsumosYResumen(solicitud.IdReserva, pagos);
                 MostrarMensaje("Pago registrado",
                     $"Pago N.º {pago["id_pago"]}\nReserva: {solicitud.IdReserva}\n" +
-                    $"Importe: {pago["monto_pagado"]}\nMétodo: {pago["metodo_pago"]}");
+                    $"Importe: {pago["monto_pagado"]}\nMétodo: {pago["metodo_pago"]}", false, Convert.ToInt32(pago["id_pago"]));
                 diario.Confirmar(ClaveCobro(solicitud.Servicios), resultado.Id);
             }
-            finally { btnRegistrarServicios.Enabled = btnRegistrarSaldo.Enabled = true; }
+            finally { ActualizarAcciones(); }
         }
 
         private void SolicitarCobro(bool servicios)
         {
             try
             {
+                int idReserva = ObtenerIdReservaSeleccionada();
+                if (idReserva <= 0) return;
                 if (!MostrarSelectorMetodoPago(out string metodo)) return;
                 if (!MostrarConfirmacion("Confirmar pago",
-                    $"Reserva N.º {numIdReserva.Value}.\nConcepto: {(servicios ? "servicios adicionales" : "saldo de alojamiento")}.\nMétodo: {metodo}.\nSe cobrará el saldo completo actualizado.\n¿Confirmás que recibiste o verificaste el pago?")) return;
-                EjecutarCobro(new SolicitudCobro((int)numIdReserva.Value, idUsuario, metodo, servicios));
+                    $"Reserva N.º {idReserva}.\nConcepto: {(servicios ? "servicios adicionales" : "saldo de alojamiento")}.\nMétodo: {metodo}.\nSe cobrará el saldo completo actualizado.\n¿Confirmás que recibiste o verificaste el pago?")) return;
+                EjecutarCobro(new SolicitudCobro(idReserva, idUsuario, metodo, servicios));
             }
             catch (Microsoft.Data.SqlClient.SqlException ex) when (
                 HotelTramonto.Datos.ErroresOperacionSql.Clasificar(ex.Number) == HotelTramonto.Entidades.EstadoResultadoOperacion.RechazoDefinitivo)
@@ -796,7 +1313,10 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                int idReserva = (int)numIdReserva.Value;
+                int idReserva = ObtenerIdReservaSeleccionada();
+
+                if (idReserva <= 0)
+                    return;
 
                 using (FormRegistrarConsumos formulario =
                     new FormRegistrarConsumos(idReserva, rolOperacion))
@@ -818,6 +1338,70 @@ namespace HotelTramonto.Presentacion
                     true);
             }
         }
+        private void btnGenerarComprobante_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Verificar que haya un pago seleccionado
+                if (dgvPagos.SelectedRows.Count == 0)
+                {
+                    MostrarMensaje(
+                        "Seleccionar pago",
+                        "Seleccioná un pago de la grilla para generar el comprobante.");
 
+                    return;
+                }
+
+                // Obtener el ID del pago seleccionado
+                DataGridViewRow filaSeleccionada =
+                    dgvPagos.SelectedRows[0];
+
+                int idPago = Convert.ToInt32(
+                    filaSeleccionada.Cells["id_pago"].Value);
+
+                // Obtener los datos del comprobante
+                DataTable datosComprobante =
+                    negocio.ObtenerComprobante(idPago);
+
+                if (datosComprobante.Rows.Count == 0)
+                {
+                    MostrarMensaje(
+                        "Comprobante no disponible",
+                        "No se encontró un pago aprobado para generar el comprobante.");
+
+                    return;
+                }
+
+                // Elegir dónde guardar el PDF
+                using (SaveFileDialog guardar = new SaveFileDialog())
+                {
+                    guardar.Title = "Guardar comprobante de pago";
+                    guardar.Filter = "Archivo PDF (*.pdf)|*.pdf";
+                    guardar.DefaultExt = "pdf";
+                    guardar.AddExtension = true;
+                    guardar.FileName = $"Comprobante_Pago_{idPago}.pdf";
+
+                    if (guardar.ShowDialog(this) != DialogResult.OK)
+                        return;
+
+                    // Generar el comprobante
+                    ComprobantePagoPdf.Generar(
+                        datosComprobante.Rows[0],
+                        guardar.FileName);
+
+                    MostrarMensaje(
+                        "Comprobante generado",
+                        "El comprobante se generó correctamente.\n\n" +
+                        "Ubicación:\n" + guardar.FileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "Error al generar comprobante",
+                    "No se pudo generar el comprobante.\n\n" + RegistroErrores.Mensaje(ex),
+                    true);
+            }
+        }
     }
 }

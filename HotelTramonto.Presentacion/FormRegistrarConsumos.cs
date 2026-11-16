@@ -11,7 +11,9 @@ namespace HotelTramonto.Presentacion
     public partial class FormRegistrarConsumos : Form
     {
         private readonly string rolOperacion;
-        private readonly int idReserva;
+        private int idReserva;
+        private readonly bool seleccionGlobal;
+        private bool cargandoHabitaciones;
         private SolicitudConsumo? consumoPendiente;
 
         private readonly ServicioNegocios servicioNegocio =
@@ -42,15 +44,20 @@ namespace HotelTramonto.Presentacion
 
         private decimal precioSeleccionado = 0;
 
-        public FormRegistrarConsumos(int idReserva, string rol)
+        public FormRegistrarConsumos(string rol) : this(0, rol, true) { }
+
+        public FormRegistrarConsumos(int idReserva, string rol) : this(idReserva, rol, false) { }
+
+        private FormRegistrarConsumos(int idReserva, string rol, bool seleccionGlobal)
         {
             PermisosOperacion.Exigir(rol);
             rolOperacion = rol;
             detalleNegocio = new DetalleServicioNegocios(rol);
-            if (idReserva <= 0)
+            if (idReserva <= 0 && !seleccionGlobal)
                 throw new ArgumentException("El ID de reserva no es válido.");
 
             this.idReserva = idReserva;
+            this.seleccionGlobal = seleccionGlobal;
 
             InitializeComponent();
             PresentacionTablas.Conectar(this);
@@ -58,7 +65,7 @@ namespace HotelTramonto.Presentacion
             CargarHabitaciones();
             CargarProductos();
             CargarConsumos();
-            Shown += (s, e) => ReanudarConsumo();
+            Shown += (s, e) => { if (this.idReserva > 0) ReanudarConsumo(); };
         }
 
         private void ConfigurarFormulario()
@@ -158,7 +165,16 @@ namespace HotelTramonto.Presentacion
             cmbHabitacion.BackColor = marfil;
             cmbHabitacion.SelectedIndexChanged += (s, e) =>
             {
-                if (filtrarHabitacion.Checked) CargarConsumos();
+                if (cargandoHabitaciones) return;
+                if (seleccionGlobal)
+                {
+                    idReserva = cmbHabitacion.SelectedItem is DataRowView fila ? Convert.ToInt32(fila["id_reserva"]) : 0;
+                    lblReserva.Text = idReserva > 0 ? "Reserva N.º: " + idReserva : "Seleccioná una habitación con check-in";
+                    btnAgregar.Enabled = idReserva > 0;
+                    CargarConsumos();
+                    if (idReserva > 0) ReanudarConsumo();
+                }
+                else if (filtrarHabitacion.Checked) CargarConsumos();
             };
             filtrarHabitacion.Text = "Consultar solo esta habitación";
             filtrarHabitacion.SetBounds(530, 210, 330, 30);
@@ -239,10 +255,26 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                cmbHabitacion.DisplayMember = "numero_habitacion";
+                cargandoHabitaciones = true;
+                DataTable habitaciones = seleccionGlobal
+                    ? new HabitacionNegocios().ListarConReservaCheckIn(rolOperacion)
+                    : detalleNegocio.HabitacionesDeReserva(idReserva);
+                if (seleccionGlobal)
+                {
+                    habitaciones.Columns.Add("descripcion_seleccion", typeof(string));
+                    foreach (DataRow fila in habitaciones.Rows)
+                        fila["descripcion_seleccion"] = $"Habitación {fila["numero_habitacion"]} — reserva {fila["id_reserva"]} — {fila["nombre_huesped"]} {fila["apellido_huesped"]}";
+                    cmbHabitacion.DropDownWidth = 650;
+                }
+                cmbHabitacion.DisplayMember = seleccionGlobal ? "descripcion_seleccion" : "numero_habitacion";
                 cmbHabitacion.ValueMember = "id_habitacion";
-                cmbHabitacion.DataSource = detalleNegocio.HabitacionesDeReserva(idReserva);
+                cmbHabitacion.DataSource = habitaciones;
                 cmbHabitacion.SelectedIndex = -1;
+                if (seleccionGlobal)
+                {
+                    lblReserva.Text = "Seleccioná una habitación con check-in";
+                    btnAgregar.Enabled = false;
+                }
             }
             catch (Exception)
             {
@@ -250,6 +282,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje("Habitaciones no disponibles",
                     "No se pudieron consultar las habitaciones de la reserva.", true);
             }
+            finally { cargandoHabitaciones = false; }
         }
 
         private void BloquearSolicitud(bool bloquear)
@@ -406,6 +439,11 @@ namespace HotelTramonto.Presentacion
                 EjecutarConsumo(consumoPendiente);
                 return;
             }
+            if (idReserva <= 0)
+            {
+                MostrarMensaje("Habitación requerida", "Seleccioná una habitación con reserva en check-in.");
+                return;
+            }
             if (cmbProducto.SelectedItem is not DataRowView producto)
             {
                 MostrarMensaje(
@@ -507,6 +545,7 @@ namespace HotelTramonto.Presentacion
 
         private void CargarConsumos()
         {
+            if (idReserva <= 0) { dgvConsumos.DataSource = null; return; }
             try
             {
                 tablaConsumos =

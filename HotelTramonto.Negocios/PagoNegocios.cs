@@ -9,7 +9,12 @@ namespace HotelTramonto.Negocios
     public class PagoNegocios
     {
         private readonly string? rol;
-        public PagoNegocios(string? rol = null) { this.rol = rol; }
+        private readonly IComprobantePagoDatos comprobantes;
+        public PagoNegocios(string? rol = null, IComprobantePagoDatos? comprobantes = null)
+        {
+            this.rol = rol;
+            this.comprobantes = comprobantes ?? datos;
+        }
 
         private readonly PagoDatos datos = new PagoDatos();
 
@@ -72,6 +77,8 @@ namespace HotelTramonto.Negocios
             datos.ActualizarEstado(idPago, estado.Trim());
         }
 
+
+
         public DataTable ListarPorReserva(int idReserva)
         {
             PermisosOperacion.Exigir(rol);
@@ -129,6 +136,23 @@ namespace HotelTramonto.Negocios
 
             if (string.IsNullOrWhiteSpace(metodoPago) || metodoPago.Trim().Length > 30)
                 throw new Exception("Debe indicar el método de pago.");
+        }
+        public DataTable ObtenerComprobante(int idPago)
+        {
+            PermisosOperacion.Exigir(rol);
+            if (idPago <= 0)
+                throw new Exception("El ID del pago no es válido.");
+
+            DataTable comprobante = comprobantes.ObtenerComprobante(idPago);
+
+            if (comprobante.Rows.Count == 0)
+                throw new Exception(
+                    "No se encontró un pago aprobado para generar el comprobante.");
+
+            if (comprobante.Rows.Count != 1)
+                throw new InvalidOperationException("El comprobante debe identificar un único pago.");
+            ComprobantePagoNegocios.Validar(comprobante.Rows[0], idPago);
+            return comprobante;
         }
     }
 }

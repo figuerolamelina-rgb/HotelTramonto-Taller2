@@ -1,36 +1,43 @@
 
-using System;
-using System.Windows.Forms;
 using HotelTramonto.Negocios;
+using System;
+using System.Data;
 using System.Drawing;
+using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace HotelTramonto.Presentacion
 {
     public partial class FormHabitaciones : Form
     {
-        // Rol del usuario que inició sesión.
         private readonly string rolUsuario;
+        private bool EsAdministrador => PermisosHabitaciones.PuedeAdministrar(rolUsuario);
 
-        private bool EsAdministrador =>
-            PermisosHabitaciones.PuedeAdministrar(rolUsuario);
+        private ComboBox cmbEstado;
+        private ComboBox cmbTipo;
+        private ComboBox cmbPiso;
+        private CheckBox chkSoloActivas;
+        private Button btnLimpiarFiltros;
 
-        // Constructor para el diseñador de Windows Forms.
+        private DataTable habitacionesOriginales;
+
         public FormHabitaciones() : this(string.Empty)
         {
         }
 
-        public FormHabitaciones(string rolUsuario)
+        public FormHabitaciones(string rol)
         {
-            this.rolUsuario = rolUsuario?.Trim() ?? string.Empty;
-
             InitializeComponent();
             PresentacionTablas.Conectar(this);
+
+            rolUsuario = (rol ?? "").Trim().ToUpperInvariant();
+
             AplicarEstilo();
-            ConfigurarPermisos();
+            AplicarPermisos();
             CargarHabitaciones();
         }
 
-        private void ConfigurarPermisos()
+        private void AplicarPermisos()
         {
             // Solo el administrador puede gestionar habitaciones.
             btnNuevaHabitacion.Visible = EsAdministrador;
@@ -39,22 +46,11 @@ namespace HotelTramonto.Presentacion
             btnReactivarHabitacion.Visible = EsAdministrador;
         }
 
-        private bool TienePermisoDeGestion()
-        {
-            if (EsAdministrador)
-                return true;
 
-            MostrarMensaje(
-                "Acceso denegado",
-                "Solo el administrador puede gestionar habitaciones.",
-                true);
-
-            return false;
-        }
 
         private void AplicarEstilo()
         {
-            // Paleta Hotel Tramonto.
+            // Paleta Hotel Tramonto
             Color marron = Color.FromArgb(74, 48, 39);
             Color marronClaro = Color.FromArgb(91, 62, 49);
             Color crema = Color.FromArgb(245, 239, 229);
@@ -62,7 +58,7 @@ namespace HotelTramonto.Presentacion
             Color dorado = Color.FromArgb(198, 161, 91);
             Color texto = Color.FromArgb(66, 51, 43);
 
-            // Ventana.
+            // Ventana
             Text = "Hotel Tramonto | Habitaciones";
             BackColor = crema;
             Font = new Font("Segoe UI", 10F);
@@ -70,7 +66,7 @@ namespace HotelTramonto.Presentacion
             WindowState = FormWindowState.Maximized;
             MinimumSize = new Size(900, 600);
 
-            // Título.
+            // Título
             Label lblTitulo = new Label
             {
                 Name = "lblTituloHabitaciones",
@@ -82,30 +78,18 @@ namespace HotelTramonto.Presentacion
                 Location = new Point(35, 30)
             };
 
-            // Botones.
+            // Botones
             EstilizarBotonHabitacion(
-                btnNuevaHabitacion,
-                "＋ Nueva habitación",
-                dorado,
-                marron);
+                btnNuevaHabitacion, "＋ Nueva habitación", dorado, marron);
 
             EstilizarBotonHabitacion(
-                btnModificarHabitacion,
-                "Modificar habitación",
-                marron,
-                marfil);
+                btnModificarHabitacion, "Modificar habitación", marron, marfil);
 
             EstilizarBotonHabitacion(
-                btnDesactivarHabitacion,
-                "Desactivar habitación",
-                marronClaro,
-                marfil);
+                btnDesactivarHabitacion, "Desactivar habitación", marronClaro, marfil);
 
             EstilizarBotonHabitacion(
-                btnReactivarHabitacion,
-                "Reactivar habitación",
-                marronClaro,
-                marfil);
+                btnReactivarHabitacion, "Reactivar habitación", marronClaro, marfil);
 
             btnNuevaHabitacion.Location = new Point(35, 100);
             btnNuevaHabitacion.Size = new Size(180, 42);
@@ -119,12 +103,131 @@ namespace HotelTramonto.Presentacion
             btnReactivarHabitacion.Location = new Point(630, 100);
             btnReactivarHabitacion.Size = new Size(180, 42);
 
-            // Tabla de habitaciones.
-            dgvHabitaciones.Location = new Point(35, 170);
 
+            // ============================================
+            // FILTROS DE HABITACIONES
+            // ============================================
+
+            Label lblFiltro = new Label
+            {
+                Text = "FILTRAR HABITACIONES:",
+                Location = new Point(35, 165),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = marron
+            };
+
+            Label lblEstado = new Label
+            {
+                Text = "Estado:",
+                Location = new Point(35, 200),
+                AutoSize = true,
+                ForeColor = texto
+            };
+
+            cmbEstado = new ComboBox
+            {
+                Location = new Point(95, 195),
+                Size = new Size(170, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+
+            cmbEstado.Items.AddRange(new object[]
+            {
+    "Todos",
+    "Disponibles",
+    "Ocupadas",
+    "Mantenimiento"
+            });
+
+            cmbEstado.SelectedIndex = 0;
+
+            Label lblTipo = new Label
+            {
+                Text = "Tipo:",
+                Location = new Point(290, 200),
+                AutoSize = true,
+                ForeColor = texto
+            };
+
+            cmbTipo = new ComboBox
+            {
+                Location = new Point(335, 195),
+                Size = new Size(160, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+
+            cmbTipo.Items.Add("Todos");
+            cmbTipo.SelectedIndex = 0;
+
+            Label lblPiso = new Label
+            {
+                Text = "Piso:",
+                Location = new Point(520, 200),
+                AutoSize = true,
+                ForeColor = texto
+            };
+
+            cmbPiso = new ComboBox
+            {
+                Location = new Point(565, 195),
+                Size = new Size(110, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+
+            cmbPiso.Items.Add("Todos");
+            cmbPiso.SelectedIndex = 0;
+
+            chkSoloActivas = new CheckBox
+            {
+                Text = "Solo habitaciones activas",
+                Location = new Point(700, 198),
+                AutoSize = true,
+                Checked = true,
+                ForeColor = texto
+            };
+
+            btnLimpiarFiltros = new Button
+            {
+                Text = "Limpiar filtros",
+                Location = new Point(930, 190),
+                Size = new Size(130, 35)
+            };
+
+            EstilizarBotonHabitacion(
+                btnLimpiarFiltros, "Limpiar filtros", marronClaro, marfil);
+
+            Controls.Add(lblFiltro);
+            Controls.Add(lblEstado);
+            Controls.Add(cmbEstado);
+            Controls.Add(lblTipo);
+            Controls.Add(cmbTipo);
+            Controls.Add(lblPiso);
+            Controls.Add(cmbPiso);
+            Controls.Add(chkSoloActivas);
+            Controls.Add(btnLimpiarFiltros);
+
+            cmbEstado.SelectedIndexChanged += (s, e) => AplicarFiltros();
+            cmbTipo.SelectedIndexChanged += (s, e) => AplicarFiltros();
+            cmbPiso.SelectedIndexChanged += (s, e) => AplicarFiltros();
+
+            chkSoloActivas.CheckedChanged += (s, e) => AplicarFiltros();
+
+            btnLimpiarFiltros.Click += (s, e) =>
+            {
+                cmbEstado.SelectedIndex = 0;
+                cmbTipo.SelectedIndex = 0;
+                cmbPiso.SelectedIndex = 0;
+                chkSoloActivas.Checked = true;
+
+                AplicarFiltros();
+            };
+
+            // Tabla de habitaciones
+            dgvHabitaciones.Location = new Point(35, 245);
             dgvHabitaciones.Size = new Size(
                 ClientSize.Width - 70,
-                ClientSize.Height - 205);
+                ClientSize.Height - 280);
 
             dgvHabitaciones.Anchor =
                 AnchorStyles.Top |
@@ -135,59 +238,41 @@ namespace HotelTramonto.Presentacion
             dgvHabitaciones.ReadOnly = true;
             dgvHabitaciones.AllowUserToAddRows = false;
             dgvHabitaciones.AllowUserToDeleteRows = false;
-
             dgvHabitaciones.SelectionMode =
                 DataGridViewSelectionMode.FullRowSelect;
-
             dgvHabitaciones.MultiSelect = false;
             dgvHabitaciones.RowHeadersVisible = false;
             dgvHabitaciones.ScrollBars = ScrollBars.Both;
-
-            dgvHabitaciones.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.Fill;
-
+            dgvHabitaciones.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvHabitaciones.RowTemplate.Height = 36;
             dgvHabitaciones.ColumnHeadersHeight = 42;
 
             dgvHabitaciones.BackgroundColor = marfil;
             dgvHabitaciones.BorderStyle = BorderStyle.None;
-
-            dgvHabitaciones.GridColor =
-                Color.FromArgb(229, 218, 202);
-
+            dgvHabitaciones.GridColor = Color.FromArgb(229, 218, 202);
             dgvHabitaciones.EnableHeadersVisualStyles = false;
 
-            dgvHabitaciones.ColumnHeadersDefaultCellStyle.BackColor =
-                marron;
-
-            dgvHabitaciones.ColumnHeadersDefaultCellStyle.ForeColor =
-                dorado;
-
+            dgvHabitaciones.ColumnHeadersDefaultCellStyle.BackColor = marron;
+            dgvHabitaciones.ColumnHeadersDefaultCellStyle.ForeColor = dorado;
             dgvHabitaciones.ColumnHeadersDefaultCellStyle.Font =
                 new Font("Segoe UI", 9F, FontStyle.Bold);
 
-            dgvHabitaciones.ColumnHeadersDefaultCellStyle.SelectionBackColor =
-                marron;
-
-            dgvHabitaciones.ColumnHeadersDefaultCellStyle.SelectionForeColor =
-                dorado;
+            dgvHabitaciones.ColumnHeadersDefaultCellStyle.SelectionBackColor = marron;
+            dgvHabitaciones.ColumnHeadersDefaultCellStyle.SelectionForeColor = dorado;
 
             dgvHabitaciones.DefaultCellStyle.BackColor = marfil;
             dgvHabitaciones.DefaultCellStyle.ForeColor = texto;
-
-            dgvHabitaciones.DefaultCellStyle.Font =
-                new Font("Segoe UI", 9F);
+            dgvHabitaciones.DefaultCellStyle.Font = new Font("Segoe UI", 9F);
 
             dgvHabitaciones.DefaultCellStyle.SelectionBackColor =
                 Color.FromArgb(238, 222, 190);
 
-            dgvHabitaciones.DefaultCellStyle.SelectionForeColor =
-                marron;
+            dgvHabitaciones.DefaultCellStyle.SelectionForeColor = marron;
 
             dgvHabitaciones.AlternatingRowsDefaultCellStyle.BackColor =
                 Color.FromArgb(248, 243, 235);
 
-            // Mantener el título visible.
+            // Mantener el título visible
             Controls.Add(lblTitulo);
             lblTitulo.BringToFront();
         }
@@ -199,23 +284,19 @@ namespace HotelTramonto.Presentacion
             Color colorTexto)
         {
             boton.Text = textoBoton;
-            boton.Font = new Font(
-                "Segoe UI", 9.5F, FontStyle.Bold);
-
+            boton.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             boton.BackColor = fondo;
             boton.ForeColor = colorTexto;
             boton.FlatStyle = FlatStyle.Flat;
             boton.FlatAppearance.BorderSize = 0;
-
             boton.FlatAppearance.MouseOverBackColor =
                 Color.FromArgb(126, 91, 65);
-
             boton.FlatAppearance.MouseDownBackColor =
                 Color.FromArgb(105, 73, 52);
-
             boton.Cursor = Cursors.Hand;
             boton.UseVisualStyleBackColor = false;
         }
+
 
         private void MostrarMensaje(
             string titulo,
@@ -230,13 +311,8 @@ namespace HotelTramonto.Presentacion
             using (Form mensaje = new Form())
             {
                 mensaje.Text = "Hotel Tramonto";
-
-                mensaje.StartPosition =
-                    FormStartPosition.CenterParent;
-
-                mensaje.FormBorderStyle =
-                    FormBorderStyle.FixedDialog;
-
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
                 mensaje.MaximizeBox = false;
                 mensaje.MinimizeBox = false;
                 mensaje.ShowInTaskbar = false;
@@ -260,8 +336,7 @@ namespace HotelTramonto.Presentacion
                     Size = new Size(350, 32),
                     TextAlign = ContentAlignment.MiddleCenter,
                     ForeColor = marron,
-                    Font = new Font(
-                        "Segoe UI", 12F, FontStyle.Bold)
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
                 };
 
                 Label lblDetalle = new Label
@@ -282,8 +357,7 @@ namespace HotelTramonto.Presentacion
                     BackColor = dorado,
                     ForeColor = marron,
                     FlatStyle = FlatStyle.Flat,
-                    Font = new Font(
-                        "Segoe UI", 9F, FontStyle.Bold),
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                     DialogResult = DialogResult.OK,
                     Cursor = Cursors.Hand
                 };
@@ -300,27 +374,20 @@ namespace HotelTramonto.Presentacion
             }
         }
 
-        private bool MostrarConfirmacion(
-            string titulo,
-            string detalle)
+
+        private bool MostrarConfirmacion(string titulo, string detalle)
         {
             Color marron = Color.FromArgb(74, 48, 39);
             Color marronClaro = Color.FromArgb(91, 62, 49);
             Color crema = Color.FromArgb(245, 239, 229);
             Color dorado = Color.FromArgb(198, 161, 91);
-
             bool confirmado = false;
 
             using (Form mensaje = new Form())
             {
                 mensaje.Text = "Hotel Tramonto";
-
-                mensaje.StartPosition =
-                    FormStartPosition.CenterParent;
-
-                mensaje.FormBorderStyle =
-                    FormBorderStyle.FixedDialog;
-
+                mensaje.StartPosition = FormStartPosition.CenterParent;
+                mensaje.FormBorderStyle = FormBorderStyle.FixedDialog;
                 mensaje.MaximizeBox = false;
                 mensaje.MinimizeBox = false;
                 mensaje.ShowInTaskbar = false;
@@ -342,8 +409,7 @@ namespace HotelTramonto.Presentacion
                     Size = new Size(370, 32),
                     TextAlign = ContentAlignment.MiddleCenter,
                     ForeColor = marron,
-                    Font = new Font(
-                        "Segoe UI", 12F, FontStyle.Bold)
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold)
                 };
 
                 Label lblDetalle = new Label
@@ -364,8 +430,7 @@ namespace HotelTramonto.Presentacion
                     BackColor = dorado,
                     ForeColor = marron,
                     FlatStyle = FlatStyle.Flat,
-                    Font = new Font(
-                        "Segoe UI", 9F, FontStyle.Bold),
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                     DialogResult = DialogResult.Yes,
                     Cursor = Cursors.Hand
                 };
@@ -378,8 +443,7 @@ namespace HotelTramonto.Presentacion
                     BackColor = marronClaro,
                     ForeColor = Color.White,
                     FlatStyle = FlatStyle.Flat,
-                    Font = new Font(
-                        "Segoe UI", 9F, FontStyle.Bold),
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                     DialogResult = DialogResult.No,
                     Cursor = Cursors.Hand
                 };
@@ -396,23 +460,25 @@ namespace HotelTramonto.Presentacion
                 mensaje.AcceptButton = btnSi;
                 mensaje.CancelButton = btnNo;
 
-                confirmado =
-                    mensaje.ShowDialog(this) == DialogResult.Yes;
+                confirmado = mensaje.ShowDialog(this) == DialogResult.Yes;
             }
 
             return confirmado;
         }
 
+
         private void CargarHabitaciones()
         {
             try
             {
-                HabitacionNegocios negocio =
-                    new HabitacionNegocios();
+                HabitacionNegocios negocio = new HabitacionNegocios();
 
-                dgvHabitaciones.DataSource = negocio.Listar();
+                // Guardar los datos originales para filtrar sin consultar SQL nuevamente.
+                habitacionesOriginales = negocio.Listar();
+                habitacionesOriginales.Merge(negocio.ListarInactivas(), false, MissingSchemaAction.Error);
 
-                ActualizarBotones();
+                CargarOpcionesFiltros();
+                AplicarFiltros();
             }
             catch (Exception ex)
             {
@@ -423,6 +489,89 @@ namespace HotelTramonto.Presentacion
                     true);
             }
         }
+
+
+        private void CargarOpcionesFiltros()
+        {
+            cmbTipo.Items.Clear();
+            cmbPiso.Items.Clear();
+
+            cmbTipo.Items.Add("Todos");
+            cmbPiso.Items.Add("Todos");
+
+            List<string> tipos = new List<string>();
+            List<string> pisos = new List<string>();
+
+            foreach (DataRow fila in habitacionesOriginales.Rows)
+            {
+                string tipo = fila["tipo"]?.ToString()?.Trim() ?? "";
+                string piso = fila["piso"]?.ToString()?.Trim() ?? "";
+
+                if (!string.IsNullOrWhiteSpace(tipo) &&
+                    !tipos.Contains(tipo))
+                {
+                    tipos.Add(tipo);
+                }
+
+                if (!string.IsNullOrWhiteSpace(piso) &&
+                    !pisos.Contains(piso))
+                {
+                    pisos.Add(piso);
+                }
+            }
+
+            tipos.Sort();
+            pisos.Sort();
+
+            foreach (string tipo in tipos)
+                cmbTipo.Items.Add(tipo);
+
+            foreach (string piso in pisos)
+                cmbPiso.Items.Add(piso);
+
+            cmbTipo.SelectedIndex = 0;
+            cmbPiso.SelectedIndex = 0;
+        }
+
+
+        private void AplicarFiltros()
+        {
+            if (habitacionesOriginales == null)
+                return;
+
+            DataTable filtrada = FiltrosHabitaciones.Aplicar(habitacionesOriginales,
+                cmbEstado.SelectedItem?.ToString() ?? "Todos",
+                cmbTipo.SelectedItem?.ToString() ?? "Todos",
+                cmbPiso.SelectedItem?.ToString() ?? "Todos", chkSoloActivas.Checked);
+
+            dgvHabitaciones.DataSource = filtrada;
+
+            ConfigurarColumnasHabitaciones();
+            ActualizarBotones();
+        }
+
+
+        private void ConfigurarColumnasHabitaciones()
+        {
+            if (dgvHabitaciones.Columns.Count == 0)
+                return;
+
+            dgvHabitaciones.Columns["id_habitacion"].Visible = false;
+            dgvHabitaciones.Columns["tipo_habitacion"].Visible = false;
+
+            dgvHabitaciones.Columns["tipo"].HeaderText = "Tipo de habitación";
+            dgvHabitaciones.Columns["piso"].HeaderText = "Piso";
+            dgvHabitaciones.Columns["numero"].HeaderText = "N.º de habitación";
+            dgvHabitaciones.Columns["estado"].HeaderText = "Estado";
+            dgvHabitaciones.Columns["activo"].HeaderText = "Activa";
+
+            dgvHabitaciones.Columns["tipo"].DisplayIndex = 0;
+            dgvHabitaciones.Columns["piso"].DisplayIndex = 1;
+            dgvHabitaciones.Columns["numero"].DisplayIndex = 2;
+            dgvHabitaciones.Columns["estado"].DisplayIndex = 3;
+            dgvHabitaciones.Columns["activo"].DisplayIndex = 4;
+        }
+
 
         private void btnNuevaHabitacion_Click(
             object sender,
@@ -440,6 +589,8 @@ namespace HotelTramonto.Presentacion
                 }
             }
         }
+
+
 
         private void btnModificarHabitacion_Click(
             object sender,
@@ -473,6 +624,8 @@ namespace HotelTramonto.Presentacion
                 }
             }
         }
+
+
 
         private void btnDesactivarHabitacion_Click(
             object sender,
@@ -527,6 +680,8 @@ namespace HotelTramonto.Presentacion
             }
         }
 
+
+
         private void btnReactivarHabitacion_Click(
             object sender,
             EventArgs e)
@@ -536,7 +691,8 @@ namespace HotelTramonto.Presentacion
 
             try
             {
-                // La tabla principal contiene solo activas. Elegir la habitación
+                // Elegir la habitación en la lista completa de inactivas, sin depender del filtro actual.
+                // Selección protegida
                 // en el formulario de inactivas, con el mismo rol autenticado.
                 using (FormReactivarHabitacion formulario = new FormReactivarHabitacion(rolUsuario))
                 {
@@ -549,6 +705,8 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje("Error al reactivar", "No se pudo abrir la lista de habitaciones inactivas.\n\n" + RegistroErrores.Mensaje(ex), true);
             }
         }
+
+
 
         private void ActualizarBotones()
         {
@@ -581,11 +739,26 @@ namespace HotelTramonto.Presentacion
             // Reactivar usa su propia lista; no depende de seleccionar una activa.
         }
 
-        private void dgvHabitaciones_SelectionChanged(
-            object sender,
-            EventArgs e)
+        private void dgvHabitaciones_SelectionChanged(object sender, EventArgs e)
         {
             ActualizarBotones();
         }
+
+        private bool TienePermisoDeGestion()
+        {
+            if (EsAdministrador)
+                return true;
+
+            MostrarMensaje(
+                "Acceso denegado",
+                "Solo el administrador puede gestionar habitaciones.",
+                true);
+
+            return false;
+        }
+
+
+
+
     }
 }

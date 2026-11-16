@@ -53,6 +53,8 @@ public static class OfflineChecks
         Exigir(DefinicionesAuditadas.ManifiestoCoincide(raiz), "Los siete manifiestos 04/05 coinciden literalmente.");
         Exigir(CasosSql.Todos.Length == 28 && CasosSql.Todos.Select(c => c.Nombre).Distinct().Count() == 28,
             "Exactamente 28 pruebas distintas.");
+        Exigir(CasosSql.Ciclo.Length == 8 && CasosSql.Todos.Concat(CasosSql.Ciclo).Select(c => c.Nombre).Distinct().Count() == 36,
+            "Exactamente 36 casos distintos en el recorrido integrado.");
         string proyecto = Path.Combine(raiz, "tests", "HotelTramonto.VerificacionSql", "HotelTramonto.VerificacionSql.csproj");
         var xml = XDocument.Load(proyecto);
         Exigir(xml.Descendants("TargetFramework").Single().Value == "net10.0", ".NET 10.");

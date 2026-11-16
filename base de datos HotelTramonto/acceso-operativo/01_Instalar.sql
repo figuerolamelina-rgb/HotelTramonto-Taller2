@@ -40,7 +40,8 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE principal_id = @Id)
 -- bajo la identidad REAL. Este preflight no sustituye la inspección del token efectivo.
 DECLARE @Procedimientos table (nombre sysname PRIMARY KEY);
 INSERT INTO @Procedimientos VALUES
-    (N'sp_Huesped_HistorialReservas'),
+    (N'sp_Habitacion_ListarConReservaCheckIn'),(N'sp_Pago_ObtenerComprobante'),
+(N'sp_Huesped_HistorialReservas'),
     (N'sp_ReservaTemporal_ConsultarConfirmacion'),
     (N'sp_ConfirmarReserva'),
     (N'sp_DetalleReserva_Insertar'),

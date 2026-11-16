@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="QuestPDF" Version="2026.9.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\HotelTramonto.Entidades\HotelTramonto.Entidades.csproj" />
     <ProjectReference Include="..\HotelTramonto.Negocios\HotelTramonto.Negocios.csproj" />
   </ItemGroup>

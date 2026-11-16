@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace HotelTramonto.Datos
 {
-    public class PagoDatos
+    public class PagoDatos : IComprobantePagoDatos
     {
         // Insertar un pago y devolver su ID
         public int Insertar(
@@ -53,6 +53,7 @@ namespace HotelTramonto.Datos
         }
 
         // Actualizar el estado de un pago
+
         public void ActualizarEstado(
             int idPago,
             string estado)
@@ -71,6 +72,8 @@ namespace HotelTramonto.Datos
         }
 
         // Listar pagos de una reserva
+
+
         public DataTable ListarPorReserva(int idReserva)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
@@ -129,6 +132,24 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@id_usuario", idUsuario);
             comando.Parameters.AddWithValue("@metodo_pago", metodoPago);
             comando.Parameters.Add("@id_operacion", SqlDbType.UniqueIdentifier).Value = idOperacion;
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
+        }
+
+        public DataTable ObtenerComprobante(int idPago)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando =
+                new SqlCommand("sp_Pago_ObtenerComprobante", conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@id_pago", idPago);
 
             using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
 

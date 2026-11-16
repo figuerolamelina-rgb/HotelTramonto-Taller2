@@ -56,11 +56,14 @@ class SeguridadScripts(unittest.TestCase):
         for path in (ROOT / 'HotelTramonto.Datos').glob('*.cs'):
             actual.update(n.removeprefix('dbo.') for n in re.findall(
                 r'"((?:dbo\.)?sp_\w+)"', path.read_text(encoding='utf-8-sig')))
-        adicionales = {'sp_Huesped_HistorialReservas', 'sp_ReservaTemporal_ConsultarConfirmacion'}
-        self.assertEqual(62, len(actual))
+        adicionales = {'sp_Huesped_HistorialReservas', 'sp_ReservaTemporal_ConsultarConfirmacion',
+                       'sp_Habitacion_ListarConReservaCheckIn', 'sp_Pago_ObtenerComprobante'}
+        self.assertEqual(64, len(actual))
         self.assertTrue(adicionales <= actual)
         # La instalación/reversión originales de corrección 2 conservan su alcance 60.
-        # Las dos rutas nuevas se conceden por un complemento separado, no se borran al revertir 2.
+        # Las consultas posteriores se conceden por complementos separados, no se borran al revertir 2.
+        propuesta = (SQL / 'acceso-operativo/01_Instalar.sql').read_text()
+        self.assertEqual(actual, set(re.findall(r"\(N'(sp_\w+)'\)", propuesta)))
         for name in ('02_PermisosMinimos.sql', '04_RevertirPermisos.sql'):
             code = (SQL / FOLDERS[1] / name).read_text()
             self.assertEqual(actual - adicionales, set(re.findall(r"\(N'(sp_\w+)'\)", code)))

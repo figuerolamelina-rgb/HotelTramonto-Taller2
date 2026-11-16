@@ -1,3 +1,5 @@
+> Informe histórico del incremento `5d747c9`. Para la versión que incorpora el trabajo posterior de Iara, consultar [integración final](integracion-final-iara-melina.md). Sus resultados anteriores no sustituyen la nueva validación.
+
 # Entrega final de correcciones 5 y 6 — 16/11/2026
 
 ## Alcance y estado

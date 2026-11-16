@@ -92,5 +92,13 @@ namespace HotelTramonto.Negocios
 
             return reservaDatos.ConfirmarReserva(idReservaTemporal, cantidadPersonas);
         }
+
+        public DataTable CrearYConfirmar(SolicitudReserva solicitud, DiarioOperaciones.Contexto contexto)
+        {
+            PermisosOperacion.Exigir(rol);
+            return new FlujoReservaNegocios(rol).Ejecutar(solicitud, contexto);
+        }
+
+
     }
 }

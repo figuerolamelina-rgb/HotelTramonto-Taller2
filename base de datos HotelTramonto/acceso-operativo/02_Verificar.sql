@@ -11,6 +11,7 @@ IF COALESCE(IS_SRVROLEMEMBER('sysadmin'),1)<>0 OR COALESCE(IS_MEMBER('db_owner')
 SELECT ORIGINAL_LOGIN() AS identidad,USER_NAME() AS usuario_base;
 DECLARE @Rutas TABLE(nombre sysname);
 INSERT @Rutas VALUES
+(N'dbo.sp_Habitacion_ListarConReservaCheckIn'),(N'dbo.sp_Pago_ObtenerComprobante'),
 (N'dbo.sp_Huesped_HistorialReservas'),
 (N'dbo.sp_ReservaTemporal_ConsultarConfirmacion'),
 (N'dbo.sp_ConfirmarReserva'),

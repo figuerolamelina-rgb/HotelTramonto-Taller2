@@ -18,13 +18,14 @@ public sealed class Informe
     public string Historicos { get; set; } = "Pendiente";
     public string Limpieza { get; set; } = "No creada";
     public string? Error { get; set; }
+    public string AceptacionVisual { get; set; } = "No ejecutada por el runner";
     public List<ResultadoCaso> Pruebas { get; set; } = CasosSql.Todos.Select(c => new ResultadoCaso(c.Nombre)).ToList();
     public int Aprobadas => Pruebas.Count(p => p.Estado == "Aprobada");
     public int Fallidas => Pruebas.Count(p => p.Estado == "Fallida");
     public int Pendientes => Pruebas.Count(p => p.Estado == "Pendiente");
 }
 
-public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = false)
+public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = false, bool pausaUi = false)
 {
     private readonly IdentidadCopia identidad = new(Guid.NewGuid());
     private CopiaSql Copia => new(identidad);
@@ -52,6 +53,12 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
                 throw new InvalidOperationException("Solo se admite la instancia Express local autorizada en LAPTOP-5TSJJUP8.");
             if (!File.Exists(backup) || !Path.GetExtension(backup).Equals(".bak", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Falta el respaldo FULL .bak posterior a categoria y anterior a correcciones 5/6.");
+            if (pausaUi)
+            {
+                if (!cicloReserva) throw new InvalidOperationException("La aceptación visual requiere el recorrido de 36 casos.");
+                using var configuracion = HotelTramonto.Datos.ConexionBD.ObtenerConexion();
+                _ = ConfiguracionUiTemporal.Crear(identidad, configuracion); // Prerrequisito local, sin abrir SQL.
+            }
             informe.Etapa = "Validación de motor y respaldo";
             PrepararCopia();
             informe.Limpieza = "Pendiente";
@@ -59,7 +66,7 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
             Migrar("00_Diagnostico.sql");
             var historicos = Historicos.Capturar(Copia);
             Console.WriteLine($"Destino ÚNICO: {identidad.Nombre}, ejecución {identidad.Ejecucion:D}.");
-            Console.WriteLine("Se instalará 01 -> 02 -> 04 -> 05 SOLO en la copia temporal; --backup-ciclo agrega 07 -> 08.");
+            Console.WriteLine("Se instalará 01 -> 02 -> 04 -> 05 SOLO en la copia temporal; --backup-ciclo agrega 07 -> 08 -> 09 -> 10.");
             Console.WriteLine("HotelTramontoDB y HotelTramontoDB_Pruebas no se abrirán ni modificarán.");
             Console.Write("Escribí INSTALAR para autorizar la migración de esta copia: ");
             if (Console.ReadLine() != "INSTALAR")
@@ -67,7 +74,7 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
             informe.Etapa = "Instalación";
             foreach (string nombre in new[] { "01_Instalar.sql", "02_Verificar.sql", "04_ConcurrenciaPagos.sql", "05_VerificarConcurrencia.sql" })
                 Migrar(nombre);
-            if (cicloReserva) { Migrar("07_CicloReserva.sql"); Migrar("08_VerificarCicloReserva.sql"); }
+            if (cicloReserva) { Migrar("07_CicloReserva.sql"); Migrar("08_VerificarCicloReserva.sql"); Migrar("09_ConsultasIntegracion.sql"); Migrar("10_VerificarConsultasIntegracion.sql"); }
             try { historicos.Verificar(Copia); }
             catch { informe.Historicos = "FALLIDA: se detectó un cambio histórico"; throw; }
             informe.Etapa = $"{casos.Length} pruebas SQL";
@@ -87,13 +94,22 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
                 }
                 Console.WriteLine($"{nombre}: {informe.Pruebas[i].Estado}");
             }
+            if (pausaUi)
+            {
+                if (!cicloReserva || informe.Fallidas != 0 || informe.Pendientes != 0)
+                    throw new InvalidOperationException("No se habilita Windows Forms sin aprobar los 36 casos.");
+                historicos.Verificar(Copia);
+                informe.Etapa = "Aceptación visual local pendiente";
+                PrepararAceptacionUi();
+                informe.AceptacionVisual = "Usuario indicó FINALIZAR; los casos visuales requieren revisión humana";
+            }
             informe.Etapa = "Verificación final";
             try { historicos.Verificar(Copia); }
             catch { informe.Historicos = "FALLIDA: se detectó un cambio histórico"; throw; }
             informe.Historicos = "Once tablas: filas y columnas preexistentes intactas";
             Migrar("02_Verificar.sql");
             Migrar("05_VerificarConcurrencia.sql");
-            if (cicloReserva) Migrar("08_VerificarCicloReserva.sql");
+            if (cicloReserva) { Migrar("08_VerificarCicloReserva.sql"); Migrar("10_VerificarConsultasIntegracion.sql"); }
             informe.Etapa = "Completada";
         }
         catch (Exception ex) { informe.Error = Describir(ex); }
@@ -119,6 +135,25 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
         }
         return informe.Error == null && informe.Aprobadas == casos.Length && informe.Fallidas == 0 &&
             informe.Pendientes == 0 && informe.Limpieza.StartsWith("Eliminada:", StringComparison.Ordinal) ? 0 : 1;
+    }
+
+    private void PrepararAceptacionUi()
+    {
+        using (Copia.Abrir()) { } // Revalida nombre GUID y marca antes de ofrecer el destino.
+        using var actual = HotelTramonto.Datos.ConexionBD.ObtenerConexion(); // No abre SQL.
+        string json = ConfiguracionUiTemporal.Crear(identidad, actual);
+        string archivo = Path.Combine(DirectorioInformes, "conexion-ui.local.json");
+        File.WriteAllText(archivo, json);
+        static string Ps(string texto) => "'" + texto.Replace("'", "''") + "'";
+        Console.WriteLine("Los 36 casos aprobaron. Copia temporal para aceptación: " + identidad.Nombre);
+        Console.WriteLine("En OTRA terminal PowerShell, ejecutar:");
+        Console.WriteLine("Set-Location " + Ps(raiz));
+        Console.WriteLine("$env:HOTELTRAMONTO_CONFIG = " + Ps(archivo));
+        Console.WriteLine("dotnet run --project .\\HotelTramonto.Presentacion");
+        Console.WriteLine("Usar solo datos de prueba nuevos en esta copia. La identidad actual NO valida privilegios SQL mínimos.");
+        Console.WriteLine("Al terminar, CERRAR la aplicación y escribir FINALIZAR aquí. Se verifican históricos y se elimina solo la copia propia, sin forzar sesiones.");
+        if (Console.ReadLine() != "FINALIZAR")
+            throw new OperationCanceledException("No se confirmó la aceptación visual; se intenta la limpieza protegida de la copia.");
     }
 
     private static string Describir(Exception ex) =>

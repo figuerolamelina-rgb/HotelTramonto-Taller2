@@ -12,6 +12,10 @@ internal static class PresentacionTablas
         ["email"] = "Correo electrónico", ["telefono"] = "Teléfono", ["categoria"] = "Categoría",
         ["precio"] = "Precio", ["total"] = "Total", ["subtotal"] = "Subtotal",
         ["cantidad"] = "Cantidad", ["activo"] = "Activo",
+        ["entrada_prevista"] = "Entrada prevista", ["salida_prevista"] = "Salida prevista",
+        ["checkin_reserva"] = "Check-in de la reserva", ["checkout_reserva"] = "Check-out de la reserva",
+        ["criterio_fecha"] = "Criterio de fecha", ["ingresos_generados"] = "Cargos por consumos",
+        ["precio_promedio_historico"] = "Precio medio histórico",
         ["id_reserva"] = "N.º de reserva", ["id_habitacion"] = "ID de habitación",
         ["id_huesped"] = "ID de huésped", ["id_pago"] = "N.º de pago",
         ["numero_habitacion_actual"] = "Número de habitación", ["numero_habitacion"] = "Habitación",
@@ -51,7 +55,7 @@ internal static class PresentacionTablas
             columna.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             if (columna.ValueType == typeof(DateTime))
             {
-                columna.DefaultCellStyle.Format = nombre is "fecha_entrada" or "fecha_salida" ? "dd/MM/yyyy" : "dd/MM/yyyy HH:mm";
+                columna.DefaultCellStyle.Format = nombre is "fecha_entrada" or "fecha_salida" or "entrada_prevista" or "salida_prevista" ? "dd/MM/yyyy" : "dd/MM/yyyy HH:mm";
                 columna.Width = 155;
             }
             if (columna.ValueType == typeof(decimal))
