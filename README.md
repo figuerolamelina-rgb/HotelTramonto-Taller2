@@ -1,3 +1,6 @@
+> **Versión integrada de Iara y Melina:** ver [informe y aceptación final](docs/integracion-final-iara-melina.md).
+> Las bases permanentes no se usan para pruebas de escritura. Los scripts de `referencias-iara` son referencias originales, no un instalador. El modo `--backup-ciclo-ui` prepara una copia temporal para validar los 36 casos y Windows Forms, y luego intenta su limpieza protegida.
+
 # Hotel Tramonto: ejecución local
 
 Aplicación Windows Forms en .NET 10 con SQL Server y cuatro capas:
@@ -119,3 +122,16 @@ Para la aceptación final sin repetir migración, ver
 [Resultados y verificador final](docs/resultados-finales-correccion2.md).
 El nuevo comando ejecuta 68 casos .NET y verifica contratos SQL mediante metadatos,
 sin instalar migraciones ni permisos.
+
+## Integración de correcciones 2 a 6
+
+Ver [preparación del PR y aceptación Windows](docs/preparacion-pr-correcciones56.md).
+Se conservan las herramientas de corrección 2 y el runner independiente de 28
+pruebas SQL en copia temporal de correcciones 5/6. Los dos recorridos tienen
+objetivos y requisitos distintos; no ejecutar migraciones indiscriminadamente.
+
+La suite .NET combinada se ejecuta con el filtro seguro indicado arriba.
+Para Express/.NET sin Python ni LocalDB, ver
+[verificación de servicios y habitaciones](docs/verificacion-windows-servicios.md).
+La revisión de permisos incluye dos consultas adicionales (historial y
+recuperación de confirmación); sus scripts complementarios no se aplican automáticamente.

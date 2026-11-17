@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using HotelTramonto.Datos;
 
@@ -6,6 +6,8 @@ namespace HotelTramonto.Negocios
 {
     public class ReporteNegocios
     {
+        private readonly string? rol;
+        public ReporteNegocios(string? rol = null) { this.rol = rol; }
         private readonly ReporteDatos datos = new ReporteDatos();
 
         private void ValidarFechas(DateTime fechaDesde, DateTime fechaHasta)
@@ -21,6 +23,7 @@ namespace HotelTramonto.Negocios
             DateTime fechaDesde,
             DateTime fechaHasta)
         {
+            PermisosOperacion.ExigirReportes(rol);
             ValidarFechas(fechaDesde, fechaHasta);
             return datos.ObtenerOcupacion(fechaDesde, fechaHasta);
         }
@@ -29,6 +32,7 @@ namespace HotelTramonto.Negocios
             DateTime fechaDesde,
             DateTime fechaHasta)
         {
+            PermisosOperacion.ExigirReportes(rol);
             ValidarFechas(fechaDesde, fechaHasta);
             return datos.ObtenerIngresos(fechaDesde, fechaHasta);
         }
@@ -37,6 +41,7 @@ namespace HotelTramonto.Negocios
             DateTime fechaDesde,
             DateTime fechaHasta)
         {
+            PermisosOperacion.ExigirReportes(rol);
             ValidarFechas(fechaDesde, fechaHasta);
             return datos.ObtenerEstadisticasReservas(fechaDesde, fechaHasta);
         }
@@ -45,6 +50,7 @@ namespace HotelTramonto.Negocios
             DateTime fechaDesde,
             DateTime fechaHasta)
         {
+            PermisosOperacion.ExigirReportes(rol);
             ValidarFechas(fechaDesde, fechaHasta);
             return datos.ObtenerHabitacionesMasUtilizadas(fechaDesde, fechaHasta);
         }
@@ -53,6 +59,7 @@ namespace HotelTramonto.Negocios
             DateTime fechaDesde,
             DateTime fechaHasta)
         {
+            PermisosOperacion.ExigirReportes(rol);
             ValidarFechas(fechaDesde, fechaHasta);
             return datos.ObtenerServiciosMasUtilizados(fechaDesde, fechaHasta);
         }

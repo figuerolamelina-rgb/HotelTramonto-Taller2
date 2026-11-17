@@ -8,6 +8,18 @@ namespace HotelTramonto.Datos
     public class ReservaTemporalDatos
     {
         // Crear reserva temporal y devolver su ID
+        public DataTable ConsultarConfirmacion(int idTemporal)
+        {
+            using var conexion = ConexionBD.ObtenerConexion();
+            using var comando = new SqlCommand("dbo.sp_ReservaTemporal_ConsultarConfirmacion", conexion);
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.Add("@id_reserva_temporal", SqlDbType.Int).Value = idTemporal;
+            using var adaptador = new SqlDataAdapter(comando);
+            var tabla = new DataTable();
+            adaptador.Fill(tabla);
+            return tabla;
+        }
+
         public int Insertar(
             int idHuesped,
             int idHabitacion,

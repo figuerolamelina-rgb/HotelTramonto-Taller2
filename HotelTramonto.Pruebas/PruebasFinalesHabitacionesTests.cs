@@ -82,6 +82,7 @@ public class PruebasFinalesHabitacionesTests
         public void Modificar(int idHabitacion, int tipoHabitacion, int? piso, string numero, string estado) => Escribir();
         public void Desactivar(int idHabitacion) => Escribir();
         public void Reactivar(int idHabitacion) => Escribir();
+        public DataTable ListarConReservaCheckIn() => Resultado;
         public DataTable Listar() => Leer();
         public DataTable BuscarPorId(int idHabitacion) => Leer();
         public DataTable ListarInactivas() => Leer();
