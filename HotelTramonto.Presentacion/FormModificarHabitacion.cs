@@ -10,7 +10,7 @@ namespace HotelTramonto.Presentacion
     public partial class FormModificarHabitacion : Form
     {
         private readonly int idHabitacion;
-
+        private string estadoOriginal = "";
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
         private readonly Color crema = Color.FromArgb(245, 239, 229);
@@ -319,8 +319,26 @@ namespace HotelTramonto.Presentacion
                 txtNumero.Text =
                     habitacion["numero"].ToString();
 
-                cmbEstado.SelectedItem =
-                    habitacion["estado"].ToString();
+                estadoOriginal = habitacion["estado"].ToString().Trim();
+
+                cmbEstado.SelectedItem = estadoOriginal;
+
+                // Si la habitación está ocupada, no se permite modificar su estado.
+                bool estaOcupada =
+                    estadoOriginal.Equals("OCUPADA", StringComparison.OrdinalIgnoreCase) ||
+                    estadoOriginal.Equals("OCUPADO", StringComparison.OrdinalIgnoreCase);
+
+                cmbEstado.Enabled = !estaOcupada;
+
+                if (estaOcupada)
+                {
+                    lblEstado.Text = "Estado (no modificable)";
+                }
+                else
+                {
+                    lblEstado.Text = "Estado";
+                }
+                ;
             }
             catch (Exception ex)
             {
@@ -393,7 +411,9 @@ namespace HotelTramonto.Presentacion
             int? piso = pisoIngresado;
 
             string numero = txtNumero.Text.Trim();
-            string estado = cmbEstado.SelectedItem.ToString()!;
+            string estado = cmbEstado.Enabled
+            ? cmbEstado.SelectedItem.ToString()
+            : estadoOriginal;
 
             try
             {
