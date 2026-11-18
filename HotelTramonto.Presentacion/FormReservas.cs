@@ -24,7 +24,7 @@ namespace HotelTramonto.Presentacion
         private Label lblEstado;
         private Panel pnlFiltros;
         private Label lblTituloFiltros;
-
+        private Button btnDeshacerCheckIn;
         public FormReservas(int idUsuario)
         {
             InitializeComponent();
@@ -151,6 +151,7 @@ namespace HotelTramonto.Presentacion
             pnlFiltros.Controls.Add(btnFiltrarEstado);
 
             // ACCIONES OPERATIVAS
+
             EstilizarBotonReserva(btnCheckIn, "Check-in", marronClaro);
             btnCheckIn.Location = new Point(35, 290);
             btnCheckIn.Size = new Size(130, 40);
@@ -159,9 +160,23 @@ namespace HotelTramonto.Presentacion
             btnCheckOut.Location = new Point(180, 290);
             btnCheckOut.Size = new Size(130, 40);
 
+            btnDeshacerCheckIn = new Button();
+
+            EstilizarBotonReserva(
+                btnDeshacerCheckIn,
+                "Deshacer Check-in",
+                Color.FromArgb(160, 75, 65));
+
+            btnDeshacerCheckIn.Location = new Point(325, 290);
+            btnDeshacerCheckIn.Size = new Size(180, 40);
+
+            btnDeshacerCheckIn.Click += btnDeshacerCheckIn_Click;
+
             EstilizarBotonReserva(btnConsultarSaldo, "Consultar saldo", marronClaro);
-            btnConsultarSaldo.Location = new Point(325, 290);
+            btnConsultarSaldo.Location = new Point(520, 290);
             btnConsultarSaldo.Size = new Size(155, 40);
+
+            Controls.Add(btnDeshacerCheckIn);
 
             // TABLA DE RESERVAS
             dgvReservas.Location = new Point(35, 350);
@@ -452,7 +467,7 @@ namespace HotelTramonto.Presentacion
                 Label lblIcono = new Label
                 {
                     AutoSize = false,
-                    Location = new Point(65, 35),
+                    Location = new Point(25, 35),
                     Size = new Size(45, 45),
                     Text = "?",
                     Font = new Font("Georgia", 27F, FontStyle.Bold),
@@ -463,8 +478,8 @@ namespace HotelTramonto.Presentacion
                 Label lblMensaje = new Label
                 {
                     AutoSize = false,
-                    Location = new Point(78, 25),
-                    Size = new Size(340, 90),
+                    Location = new Point(85, 25),
+                    Size = new Size(335, 90),
                     Text = mensaje,
                     ForeColor = marron,
                     Font = new Font("Segoe UI", 10F),
@@ -865,6 +880,63 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al registrar el check-in:\n" + ex.Message,
                     "Error de check-in",
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnDeshacerCheckIn_Click(object sender, EventArgs e)
+        {
+            if (dgvReservas.CurrentRow == null ||
+                dgvReservas.CurrentRow.IsNewRow)
+            {
+                MostrarMensaje(
+                    "Seleccione una reserva.",
+                    "Reserva no seleccionada",
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                int idReserva = Convert.ToInt32(
+                    dgvReservas.CurrentRow.Cells["id_reserva"].Value);
+
+                string estado = Convert.ToString(
+                    dgvReservas.CurrentRow.Cells["estado"].Value);
+
+                if (estado != "CHECKIN")
+                {
+                    MostrarMensaje(
+                        "Solo se puede deshacer el check-in de una reserva que esté en estado CHECKIN.",
+                        "Operación no permitida",
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                DialogResult confirmacion = MostrarConfirmacion(
+                    "¿Está seguro de que desea deshacer el check-in de la reserva N° "
+                    + idReserva + "?\n\nLa reserva volverá al estado CONFIRMADA.",
+                    "Confirmar deshacer check-in");
+
+                if (confirmacion != DialogResult.Yes)
+                    return;
+
+                ReservaNegocios negocio = new ReservaNegocios();
+
+                negocio.DeshacerCheckIn(idReserva);
+
+                MostrarMensaje(
+                    "El check-in de la reserva N° " + idReserva +
+                    " se deshizo correctamente.\nLa reserva volvió al estado CONFIRMADA.",
+                    "Check-in deshecho");
+
+                CargarReservas();
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje(
+                    "No se pudo deshacer el check-in:\n" + ex.Message,
+                    "Error al deshacer check-in",
                     MessageBoxIcon.Error);
             }
         }

@@ -328,11 +328,15 @@ namespace HotelTramonto.Presentacion
                     ex.Message,
                     true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // Registrar el error para diagnóstico
+                System.Diagnostics.Debug.WriteLine(
+                    "Error al iniciar sesión: " + ex);
+
                 MostrarMensaje(
                     "Error de inicio de sesión",
-                    "Ocurrió un error al intentar iniciar sesión.",
+                    "Ocurrió un error al intentar iniciar sesión. Intente nuevamente.",
                     true);
             }
         }
