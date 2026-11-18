@@ -927,10 +927,12 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MostrarMensaje(
-                    "Error al generar comprobante",
-                    "No se pudo generar el comprobante PDF.\n\n" + ex.Message,
-                    true);
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Error detallado",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
             }
         }
 
@@ -1454,10 +1456,12 @@ namespace HotelTramonto.Presentacion
             }
             catch (Exception ex)
             {
-                MostrarMensaje(
-                    "Error al generar comprobante",
-                    "No se pudo generar el comprobante.\n\n" + ex.Message,
-                    true);
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Error detallado al generar comprobante",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
             }
         }
     }

@@ -119,8 +119,32 @@ namespace HotelTramonto.Datos
             return tabla;
         }
 
+        public DataTable ListarDisponiblesPorFechas(
+    DateTime fechaEntrada,
+    DateTime fechaSalida)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
 
-        
+            using SqlCommand comando = new SqlCommand(
+                "sp_Habitacion_ConsultarDisponibilidad",
+                conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+
+            comando.Parameters.Add("@fecha_entrada", SqlDbType.Date).Value =
+                fechaEntrada.Date;
+
+            comando.Parameters.Add("@fecha_salida", SqlDbType.Date).Value =
+                fechaSalida.Date;
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
+        }
+
         public DataTable ListarInactivas()
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();

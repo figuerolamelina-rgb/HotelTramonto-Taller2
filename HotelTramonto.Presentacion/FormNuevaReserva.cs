@@ -124,6 +124,11 @@ namespace HotelTramonto.Presentacion
             AgregarEtiqueta(panelFormulario, "Fecha de salida", etiquetaX, 150);
             ConfigurarFecha(panelFormulario, dtpSalida, campoX, 147);
 
+            // Configuración inicial de fechas
+            dtpEntrada.Value = DateTime.Today;
+            dtpSalida.MinDate = dtpEntrada.Value.Date.AddDays(1);
+            dtpSalida.Value = dtpEntrada.Value.Date.AddDays(1);
+
             AgregarEtiqueta(panelFormulario, "Cantidad de personas", etiquetaX, 195);
 
             nudPersonas.Location = new Point(campoX, 192);
@@ -297,30 +302,34 @@ namespace HotelTramonto.Presentacion
 
         private void CargarHabitaciones()
         {
-            DataTable habitaciones = habitacionNegocios.Listar();
             tiposHabitacion = tipoNegocios.Listar();
+            CargarHabitacionesDisponibles();
+        }
 
-            DataTable disponiblesParaSeleccion = habitaciones.Clone();
+        private void CargarHabitacionesDisponibles()
+        {
+            int? habitacionSeleccionada = null;
 
-            foreach (DataRow fila in habitaciones.Rows)
+            if (cmbHabitacion.SelectedValue != null &&
+                cmbHabitacion.SelectedValue != DBNull.Value &&
+                !(cmbHabitacion.SelectedValue is DataRowView))
             {
-                string estado = Convert.ToString(fila["estado"]) ?? "";
-
-                if (!estado.Equals(
-                    "MANTENIMIENTO", StringComparison.OrdinalIgnoreCase))
-                {
-                    disponiblesParaSeleccion.ImportRow(fila);
-                }
+                habitacionSeleccionada =
+                    Convert.ToInt32(cmbHabitacion.SelectedValue);
             }
 
-            if (!disponiblesParaSeleccion.Columns.Contains(
-                "descripcion_habitacion"))
+            DataTable disponibles = habitacionNegocios.ConsultarDisponibilidad(
+                dtpEntrada.Value.Date,
+                dtpSalida.Value.Date
+            );
+
+            if (!disponibles.Columns.Contains("descripcion_habitacion"))
             {
-                disponiblesParaSeleccion.Columns.Add(
+                disponibles.Columns.Add(
                     "descripcion_habitacion", typeof(string));
             }
 
-            foreach (DataRow fila in disponiblesParaSeleccion.Rows)
+            foreach (DataRow fila in disponibles.Rows)
             {
                 fila["descripcion_habitacion"] =
                     "N.º " + fila["numero"] +
@@ -328,9 +337,30 @@ namespace HotelTramonto.Presentacion
                     " - Piso " + fila["piso"];
             }
 
-            cmbHabitacion.DataSource = disponiblesParaSeleccion;
+            cmbHabitacion.DataSource = null;
             cmbHabitacion.DisplayMember = "descripcion_habitacion";
             cmbHabitacion.ValueMember = "id_habitacion";
+            cmbHabitacion.DataSource = disponibles;
+
+            if (habitacionSeleccionada.HasValue &&
+                disponibles.AsEnumerable().Any(f =>
+                    Convert.ToInt32(f["id_habitacion"]) ==
+                    habitacionSeleccionada.Value))
+            {
+                cmbHabitacion.SelectedValue = habitacionSeleccionada.Value;
+            }
+
+            btnGuardar.Enabled = disponibles.Rows.Count > 0;
+
+            if (disponibles.Rows.Count == 0)
+            {
+                lblTotal.Text =
+                    "No hay habitaciones disponibles para las fechas seleccionadas.";
+            }
+            else
+            {
+                ActualizarTotal();
+            }
         }
 
         private void ConfigurarEventos()
@@ -346,10 +376,13 @@ namespace HotelTramonto.Presentacion
                 if (dtpSalida.Value.Date <= dtpEntrada.Value.Date)
                     dtpSalida.Value = dtpSalida.MinDate;
 
-                ActualizarTotal();
+                CargarHabitacionesDisponibles();
             };
 
-            dtpSalida.ValueChanged += (s, e) => ActualizarTotal();
+            dtpSalida.ValueChanged += (s, e) =>
+            {
+                CargarHabitacionesDisponibles();
+            };
         }
 
         private void ActualizarTotal()

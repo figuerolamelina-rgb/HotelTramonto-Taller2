@@ -81,7 +81,18 @@ namespace HotelTramonto.Negocios
             return habitacionDatos.ConsultarDisponibilidad(
                 fechaEntrada.Date, fechaSalida.Date);
         }
+        public DataTable ListarDisponiblesPorFechas(
+    DateTime fechaEntrada,
+    DateTime fechaSalida)
+        {
+            if (fechaEntrada.Date >= fechaSalida.Date)
+                throw new ArgumentException(
+                    "La fecha de salida debe ser posterior a la fecha de entrada.");
 
+            return habitacionDatos.ListarDisponiblesPorFechas(
+                fechaEntrada.Date,
+                fechaSalida.Date);
+        }
         private void ValidarDatos(
             int tipoHabitacion,
             int? piso,
