@@ -132,8 +132,31 @@ namespace HotelTramonto.Presentacion
                 dorado,
                 marron);
 
-            btnGuardarCambios.Location = new Point(190, 430);
-            btnGuardarCambios.Size = new Size(175, 40);
+            btnGuardarCambios.Location = new Point(185, 430);
+            btnGuardarCambios.Size = new Size(165, 40);
+
+
+            Button btnCambiarContrasena = new Button();
+
+            EstilizarBoton(
+                btnCambiarContrasena,
+                "Cambiar contraseña",
+                marronClaro,
+                Color.White);
+
+            btnCambiarContrasena.Location = new Point(20, 430);
+            btnCambiarContrasena.Size = new Size(155, 40);
+
+            btnCambiarContrasena.Click += (s, e) =>
+            {
+                using (FormCambiarContrasena formulario =
+                    new FormCambiarContrasena(idUsuario))
+                {
+                    formulario.ShowDialog(this);
+                }
+            };
+            Controls.Add(btnCambiarContrasena);
+
 
             EstilizarBoton(
                 btnCancelar,
@@ -141,8 +164,8 @@ namespace HotelTramonto.Presentacion
                 marronClaro,
                 Color.White);
 
-            btnCancelar.Location = new Point(380, 430);
-            btnCancelar.Size = new Size(120, 40);
+            btnCancelar.Location = new Point(360, 430);
+            btnCancelar.Size = new Size(160, 40);
 
             btnCancelar.Click -= btnCancelar_Click;
             btnCancelar.Click += btnCancelar_Click;

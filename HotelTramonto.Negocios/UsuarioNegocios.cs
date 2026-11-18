@@ -38,19 +38,21 @@ namespace HotelTramonto.Negocios
         }
 
         public void Insertar(
-    int idRol,
-    string nombre,
-    string apellido,
-    string dni,
-    string email,
-    string contrasena,
-    string? telefono,
-    string rolUsuario)
+     int idRol,
+     string nombre,
+     string apellido,
+     string dni,
+     string email,
+     string contrasena,
+     string? telefono,
+     string rolUsuario)
         {
             Permisos.ExigirAdministrador(rolUsuario);
 
             ValidarDatos(
                 idRol, nombre, apellido, dni, email, contrasena);
+
+            int longitudContrasena = contrasena.Length;
 
             string contrasenaHash = PasswordService.Hash(contrasena);
 
@@ -61,6 +63,7 @@ namespace HotelTramonto.Negocios
                 dni.Trim(),
                 email.Trim(),
                 contrasenaHash,
+                longitudContrasena,
                 telefono);
         }
 
@@ -117,22 +120,37 @@ namespace HotelTramonto.Negocios
 
 
         public void CambiarContrasena(
-     int idUsuario,
-     string contrasena)
+            int idUsuario,
+            string contrasena)
         {
             if (idUsuario <= 0)
                 throw new ArgumentException("El usuario no es válido.");
 
-            if (!Validaciones.TextoObligatorio(contrasena))
-                throw new ArgumentException(
-                    "La contraseña es obligatoria.");
+            ValidarContrasena(contrasena);
+
+            int longitudContrasena = contrasena.Length;
 
             string contrasenaHash = PasswordService.Hash(contrasena);
 
             usuarioDatos.CambiarContrasena(
-                idUsuario, contrasenaHash);
+                idUsuario,
+                contrasenaHash,
+                longitudContrasena);
         }
+        private static void ValidarContrasena(string? contrasena)
+        {
+            if (string.IsNullOrWhiteSpace(contrasena))
+            {
+                throw new ArgumentException(
+                    "La contraseña es obligatoria.");
+            }
 
+            if (contrasena.Length < 8)
+            {
+                throw new ArgumentException(
+                    "La contraseña debe tener al menos 8 caracteres.");
+            }
+        }
         private static void ValidarDatos(
             int idRol,
             string nombre,
@@ -158,11 +176,9 @@ namespace HotelTramonto.Negocios
                 throw new ArgumentException(
                     "Debe ingresar un email válido.");
 
-            if (contrasena != null
-                && !Validaciones.TextoObligatorio(contrasena))
+            if (contrasena != null)
             {
-                throw new ArgumentException(
-                    "La contraseña es obligatoria.");
+                ValidarContrasena(contrasena);
             }
         }
         public DataRow? Autenticar(string email, string contrasena)

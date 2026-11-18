@@ -371,6 +371,56 @@ namespace HotelTramonto.Presentacion
             return grilla;
         }
 
+
+        private void ConfigurarEncabezados(DataGridView grilla)
+        {
+            if (grilla.Columns.Count == 0)
+                return;
+
+            foreach (DataGridViewColumn columna in grilla.Columns)
+            {
+                string nombre = columna.Name;
+
+                switch (nombre.ToLowerInvariant())
+                {
+                    case "fecha_desde":
+                        columna.HeaderText = "Fecha desde";
+                        break;
+
+                    case "fecha_hasta":
+                        columna.HeaderText = "Fecha hasta";
+                        break;
+
+                    case "habitaciones_activas":
+                        columna.HeaderText = "Habitaciones activas";
+                        break;
+
+                    case "noches_disponibles":
+                        columna.HeaderText = "Noches disponibles";
+                        break;
+
+                    case "noches_ocupadas":
+                        columna.HeaderText = "Noches ocupadas";
+                        break;
+
+                    case "porcentaje_ocupacion":
+                        columna.HeaderText = "Porcentaje de ocupación";
+                        break;
+
+                    default:
+                        // Convertir automáticamente nombres con guiones bajos.
+                        string encabezado = nombre.Replace("_", " ");
+
+                        encabezado = System.Globalization.CultureInfo
+                            .GetCultureInfo("es-AR")
+                            .TextInfo.ToTitleCase(encabezado.ToLowerInvariant());
+
+                        columna.HeaderText = encabezado;
+                        break;
+                }
+            }
+        }
+
         private Label CrearEtiqueta(string texto)
         {
             return new Label
@@ -496,11 +546,15 @@ namespace HotelTramonto.Presentacion
                         throw new InvalidOperationException(
                             "El procedimiento no devolvió los cuatro resultados esperados.");
                     }
-
                     dgvResumenIngresos.DataSource = datos.Tables[0];
                     dgvIngresosPorMetodo.DataSource = datos.Tables[1];
                     dgvIngresosPorTipo.DataSource = datos.Tables[2];
                     dgvPagosTemporales.DataSource = datos.Tables[3];
+
+                    ConfigurarEncabezados(dgvResumenIngresos);
+                    ConfigurarEncabezados(dgvIngresosPorMetodo);
+                    ConfigurarEncabezados(dgvIngresosPorTipo);
+                    ConfigurarEncabezados(dgvPagosTemporales);
 
                     dgvReporte.Visible = false;
                     tabEstadisticas.Visible = false;
@@ -546,6 +600,9 @@ namespace HotelTramonto.Presentacion
                     dgvReservasPorTipo.DataSource = datos.Tables[1];
                     dgvDemandaMensual.DataSource = datos.Tables[2];
 
+                    ConfigurarEncabezados(dgvResumenReservas);
+                    ConfigurarEncabezados(dgvReservasPorTipo);
+                    ConfigurarEncabezados(dgvDemandaMensual);
                     dgvReporte.Visible = false;
                     tabIngresos.Visible = false;
                     tabEstadisticas.Visible = true;
@@ -609,6 +666,7 @@ namespace HotelTramonto.Presentacion
                 }
 
                 dgvReporte.DataSource = tabla;
+                ConfigurarEncabezados(dgvReporte);
 
                 lblEstado.Text =
                     $"Reporte: {cmbReporte.SelectedItem} | " +

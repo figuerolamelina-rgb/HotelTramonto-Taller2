@@ -9,19 +9,26 @@ namespace HotelTramonto.Datos
     {
 
         public void Insertar(
-            int idRol,
-            string nombre,
-            string apellido,
-            string dni,
-            string email,
-            string contrasena,
-            string? telefono)
+    int idRol,
+    string nombre,
+    string apellido,
+    string dni,
+    string email,
+    string contrasena,
+    int longitudContrasena,
+    string? telefono)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
                 throw new ArgumentException(
                     "El email del usuario es obligatorio.",
                     nameof(email));
+            }
+
+            if (longitudContrasena < 8)
+            {
+                throw new ArgumentException(
+                    "La contraseña debe tener al menos 8 caracteres.");
             }
 
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
@@ -36,6 +43,10 @@ namespace HotelTramonto.Datos
             comando.Parameters.AddWithValue("@dni", dni);
             comando.Parameters.AddWithValue("@email", email.Trim());
             comando.Parameters.AddWithValue("@contrasena", contrasena);
+
+            comando.Parameters.AddWithValue(
+                "@longitud_contrasena", longitudContrasena);
+
             comando.Parameters.AddWithValue(
                 "@telefono",
                 string.IsNullOrWhiteSpace(telefono)
@@ -158,9 +169,16 @@ namespace HotelTramonto.Datos
         }
 
         public void CambiarContrasena(
-            int idUsuario,
-            string contrasena)
+     int idUsuario,
+     string contrasena,
+     int longitudContrasena)
         {
+            if (longitudContrasena < 8)
+            {
+                throw new ArgumentException(
+                    "La contraseña debe tener al menos 8 caracteres.");
+            }
+
             using SqlConnection conexion = ConexionBD.ObtenerConexion();
             using SqlCommand comando =
                 new SqlCommand("sp_Usuario_CambiarContrasena", conexion);
@@ -169,6 +187,9 @@ namespace HotelTramonto.Datos
 
             comando.Parameters.AddWithValue("@id_usuario", idUsuario);
             comando.Parameters.AddWithValue("@contrasena", contrasena);
+
+            comando.Parameters.AddWithValue(
+                "@longitud_contrasena", longitudContrasena);
 
             conexion.Open();
             comando.ExecuteNonQuery();

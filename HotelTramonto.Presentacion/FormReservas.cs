@@ -560,6 +560,7 @@ namespace HotelTramonto.Presentacion
 
 
 
+
         private void ConfigurarColumnasReservas()
         {
             if (dgvReservas.Columns.Count == 0)
@@ -572,14 +573,27 @@ namespace HotelTramonto.Presentacion
             if (dgvReservas.Columns.Contains("id_usuario"))
                 dgvReservas.Columns["id_usuario"].Visible = false;
 
-            // Encabezados visibles
+            // Identificación de la reserva
             CambiarEncabezado("id_reserva", "N.º de reserva");
+
+            // Datos del huésped
             CambiarEncabezado("nombre_huesped", "Nombre del huésped");
             CambiarEncabezado("apellido_huesped", "Apellido del huésped");
+            
+            CambiarEncabezado("habitaciones", "Habitación");
+            
+            // Datos del usuario que registró la reserva
             CambiarEncabezado("nombre_usuario", "Nombre del usuario");
             CambiarEncabezado("apellido_usuario", "Apellido del usuario");
-            CambiarEncabezado("fecha_entrada", "Entrada");
-            CambiarEncabezado("fecha_salida", "Salida");
+
+            // Fechas de la reserva
+            CambiarEncabezado("fecha_entrada", "Fecha de entrada");
+            CambiarEncabezado("fecha_salida", "Fecha de salida");
+            CambiarEncabezado("fecha_creacion", "Fecha de creación");
+            CambiarEncabezado("fecha_checkin", "Fecha de check-in");
+            CambiarEncabezado("fecha_checkout", "Fecha de check-out");
+
+            // Otros datos
             CambiarEncabezado("estado", "Estado");
             CambiarEncabezado("total", "Importe total");
             CambiarEncabezado("observaciones", "Observaciones");
@@ -588,6 +602,7 @@ namespace HotelTramonto.Presentacion
             if (dgvReservas.Columns.Contains("total"))
             {
                 dgvReservas.Columns["total"].DefaultCellStyle.Format = "N2";
+
                 dgvReservas.Columns["total"].DefaultCellStyle.Alignment =
                     DataGridViewContentAlignment.MiddleRight;
             }
@@ -599,6 +614,7 @@ namespace HotelTramonto.Presentacion
                 dgvReservas.Columns["observaciones"].MinimumWidth = 180;
             }
         }
+
 
         private void CambiarEncabezado(string nombreColumna, string encabezado)
         {
