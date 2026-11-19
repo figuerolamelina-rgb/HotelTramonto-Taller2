@@ -550,10 +550,12 @@ namespace HotelTramonto.Presentacion
                     DataGridViewAutoSizeColumnsMode.DisplayedCells;
 
                 dgvReservas.ScrollBars = ScrollBars.Both;
-
                 if (dgvReservas.Columns.Contains("total"))
                 {
-                    dgvReservas.Columns["total"].DefaultCellStyle.Format = "N2";
+                    dgvReservas.Columns["total"].DefaultCellStyle.Format = "C2";
+                    dgvReservas.Columns["total"].DefaultCellStyle.FormatProvider =
+                        CultureInfo.GetCultureInfo("es-AR");
+
                     dgvReservas.Columns["total"].DefaultCellStyle.Alignment =
                         DataGridViewContentAlignment.MiddleRight;
                 }
@@ -574,9 +576,7 @@ namespace HotelTramonto.Presentacion
         }
 
 
-
-
-        private void ConfigurarColumnasReservas()
+        private void ConfigurarColumnasReservas(bool mostrarDetalle = false)
         {
             if (dgvReservas.Columns.Count == 0)
                 return;
@@ -611,23 +611,85 @@ namespace HotelTramonto.Presentacion
             // Otros datos
             CambiarEncabezado("estado", "Estado");
             CambiarEncabezado("total", "Importe total");
+            CambiarEncabezado("saldo_alojamiento", "Saldo pendiente");
+            CambiarEncabezado("saldo_servicios", "Servicios pendientes");
             CambiarEncabezado("observaciones", "Observaciones");
 
+            // Columnas de información secundaria
+            string[] columnasDetalle =
+            {
+                "fecha_creacion",
+                "fecha_checkin",
+                "fecha_checkout",
+                "nombre_usuario",
+                "apellido_usuario",
+            };
+
+            if (dgvReservas.Columns.Contains("observaciones"))
+            {
+                dgvReservas.Columns["observaciones"].Visible = false;
+            }
+
+            foreach (string columna in columnasDetalle)
+            {
+                if (dgvReservas.Columns.Contains(columna))
+                    dgvReservas.Columns[columna].Visible = mostrarDetalle;
+            }
+
+            // Orden de las columnas
+            string[] ordenColumnas =
+            {
+                "id_reserva",
+                "nombre_huesped",
+                "apellido_huesped",
+                "fecha_entrada",
+                "fecha_salida",
+                "estado",
+                "total",
+                "habitaciones",
+                "saldo_alojamiento",
+                "saldo_servicios",
+                "fecha_creacion",
+                "fecha_checkin",
+                "fecha_checkout",
+                "nombre_usuario",
+                "apellido_usuario"
+            };
+
+            for (int i = 0; i < ordenColumnas.Length; i++)
+            {
+                string columna = ordenColumnas[i];
+
+                if (dgvReservas.Columns.Contains(columna))
+                    dgvReservas.Columns[columna].DisplayIndex = i;
+            }
             // Formato del importe
             if (dgvReservas.Columns.Contains("total"))
             {
-                dgvReservas.Columns["total"].DefaultCellStyle.Format = "N2";
-
-                dgvReservas.Columns["total"].DefaultCellStyle.Alignment =
-                    DataGridViewContentAlignment.MiddleRight;
+                dgvReservas.Columns["total"].DefaultCellStyle.Format = "C2";
+                dgvReservas.Columns["total"].DefaultCellStyle.FormatProvider =
+                    CultureInfo.GetCultureInfo("es-AR");
             }
 
-            // Ancho de observaciones
-            if (dgvReservas.Columns.Contains("observaciones"))
+            // Formato monetario de los saldos
+            CultureInfo cultura = CultureInfo.GetCultureInfo("es-AR");
+
+            foreach (string columna in new[] {
+                    "saldo_alojamiento",
+                    "saldo_servicios"
+                })
             {
-                dgvReservas.Columns["observaciones"].Width = 240;
-                dgvReservas.Columns["observaciones"].MinimumWidth = 180;
+                if (dgvReservas.Columns.Contains(columna))
+                {
+                    dgvReservas.Columns[columna].DefaultCellStyle.Format = "C2";
+                    dgvReservas.Columns[columna].DefaultCellStyle.FormatProvider = cultura;
+
+                    dgvReservas.Columns[columna].DefaultCellStyle.Alignment =
+                        DataGridViewContentAlignment.MiddleRight;
+                }
             }
+
+          
         }
 
 
@@ -734,7 +796,7 @@ namespace HotelTramonto.Presentacion
                 else
                 {
                     dgvReservas.DataSource = negocio.ListarPorEstado(estado);
-                    ConfigurarColumnasReservas();
+                    ConfigurarColumnasReservas(true);
                 }
             }
             catch (Exception ex)
@@ -764,8 +826,7 @@ namespace HotelTramonto.Presentacion
                 dgvReservas.DataSource = negocio.ListarPorFechas(
                     dtpFechaDesde.Value.Date,
                     dtpFechaHasta.Value.Date);
-
-                ConfigurarColumnasReservas();
+                ConfigurarColumnasReservas(true);
             }
             catch (Exception ex)
             {
@@ -811,6 +872,14 @@ namespace HotelTramonto.Presentacion
                     decimal totalServicios =
                         Convert.ToDecimal(fila["total_servicios"]);
 
+                    decimal pagadoServicios =
+                         Convert.ToDecimal(fila["pagado_servicios"]);
+
+                    decimal saldoServicios =
+                        Convert.ToDecimal(fila["saldo_servicios"]);
+
+                    decimal totalPendiente =
+                        Convert.ToDecimal(fila["total_pendiente"]);
                     CultureInfo cultura = CultureInfo.GetCultureInfo("es-AR");
 
                     StringBuilder mensaje = new StringBuilder();
@@ -828,6 +897,17 @@ namespace HotelTramonto.Presentacion
 
                     mensaje.AppendLine("Total servicios: " +
                         totalServicios.ToString("C2", cultura));
+
+                    mensaje.AppendLine("Pagado servicios: " +
+                        pagadoServicios.ToString("C2", cultura));
+
+                    mensaje.AppendLine("Saldo servicios: " +
+                        saldoServicios.ToString("C2", cultura));
+
+                    mensaje.AppendLine();
+
+                    mensaje.AppendLine("TOTAL PENDIENTE: " +
+                        totalPendiente.ToString("C2", cultura));
 
                     MostrarMensaje(
                         mensaje.ToString(),
@@ -863,8 +943,30 @@ namespace HotelTramonto.Presentacion
 
             try
             {
+                DataGridViewRow fila = dgvReservas.CurrentRow;
+
                 int idReserva = Convert.ToInt32(
-                    dgvReservas.CurrentRow.Cells["id_reserva"].Value);
+                    fila.Cells["id_reserva"].Value);
+
+                string nombre = Convert.ToString(
+                    fila.Cells["nombre_huesped"].Value)?.Trim() ?? "";
+
+                string apellido = Convert.ToString(
+                    fila.Cells["apellido_huesped"].Value)?.Trim() ?? "";
+
+                string habitacion = Convert.ToString(
+                    fila.Cells["habitaciones"].Value)?.Trim() ?? "";
+
+                string mensaje =
+                    $"¿Confirmás el Check-in de {nombre} {apellido} " +
+                    $"para la habitación {habitacion}, " +
+                    $"correspondiente a la reserva N.º {idReserva}?";
+
+                if (MostrarConfirmacion(mensaje, "Confirmar Check-in")
+                    != DialogResult.Yes)
+                {
+                    return;
+                }
 
                 ReservaNegocios negocio = new ReservaNegocios();
                 negocio.CheckIn(idReserva);
