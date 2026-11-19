@@ -71,6 +71,37 @@ class IntegracionIaraMelina(unittest.TestCase):
         self.assertIn('BEGIN TRANSACTION', source)
         self.assertIn('Definicion previa desconocida', source)
 
+    def test_diagnostico_51904_compara_las_mismas_variantes_que_09(self):
+        script = (SQL / '09_ConsultasIntegracion.sql').read_text()
+        diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
+        canon = re.search(r'(LTRIM\(RTRIM\(REPLACE\(.*? COLLATE Latin1_General_100_BIN2) AS canon', diag)[1]
+        guards = re.findall(r"^IF OBJECT_ID\(N'(dbo\.\w+)'\) IS NOT NULL AND (.*)\n THROW 51904, '([^']+)'", script, re.M)
+        self.assertEqual(3, len(guards))
+        for i, (name, predicate, message) in enumerate(guards):
+            with self.subTest(name=name):
+                self.assertIn(f'("{name}", "nuevo{i}")', diag)
+                self.assertIn(name, message)
+                self.assertIn(f'@actual{i} IS NULL', predicate)
+                versions = [f'nuevo{i}'] if i < 2 else ['nuevo2', 'anterior', 'iara']
+                for var in versions:
+                    self.assertIn(canon.replace('texto', f'@actual{i}') + ' <> ' + canon.replace('texto', '@' + var), predicate)
+                    literal = re.search(rf"@{var} nvarchar\(max\)=N'((?:''|[^'])*)'", script)[1]
+                    self.assertIn('PROCEDURE ' + name, literal.splitlines()[0])
+                self.assertEqual(len(versions), predicate.count(' <> '))
+
+    def test_diagnostico_51904_solo_lee_antes_de_migrar_en_la_copia_validada(self):
+        runner = (ROOT / 'tests/HotelTramonto.VerificacionSql/Ejecutor.cs').read_text()
+        migrar = runner.split('private void Migrar(string nombre)')[1].split('private void EliminarCopia')[0]
+        self.assertLess(migrar.index('using var db = Copia.Abrir()'), migrar.index('DiagnosticoIntegracion.Guardar(db'))
+        self.assertLess(migrar.index('DiagnosticoIntegracion.Guardar(db'), migrar.index('adapter.Fill'))
+        diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
+        query = diag.split('Consulta = """')[1].split('"""')[0]
+        code = re.sub(r"'(?:''|[^'])*'", '', query)
+        self.assertNotRegex(code, r'(?i)\b(EXEC|USE|INSERT|INTO|UPDATE|DELETE|MERGE|ALTER|DROP|CREATE)\b')
+        self.assertIn('OBJECT_DEFINITION(o.id)', code)
+        self.assertIn('CASE WHEN o.canon=r.canon', code)
+        self.assertIn('diagnostico-integracion.json', diag)
+
     def test_ui_opcional_solo_despues_de_pruebas_y_antes_de_limpieza(self):
         source = (ROOT / 'tests/HotelTramonto.VerificacionSql/Ejecutor.cs').read_text()
         guard = source.split('if (pausaUi)', 1)[1].split('informe.Etapa = "Verificación final"', 1)[0]

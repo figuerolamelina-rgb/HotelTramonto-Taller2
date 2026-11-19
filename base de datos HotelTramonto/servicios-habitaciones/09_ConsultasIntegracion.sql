@@ -27,7 +27,7 @@ BEGIN
     ORDER BY h.numero,r.id_reserva;
 END;';
 IF OBJECT_ID(N'dbo.sp_Habitacion_ListarConReservaCheckIn') IS NOT NULL AND (@actual0 IS NULL OR (LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2))
- THROW 51904, 'Definicion previa desconocida: revisar sin sobrescribir.', 1;
+ THROW 51904, 'dbo.sp_Habitacion_ListarConReservaCheckIn: Definicion previa desconocida; revisar sin sobrescribir.', 1;
 SELECT N'dbo.sp_Habitacion_ListarConReservaCheckIn' AS procedimiento, @actual0 AS definicion_previa;
 DECLARE @actual1 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Pago_ObtenerComprobante')), @nuevo1 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_ObtenerComprobante
     @id_pago INT
@@ -45,7 +45,7 @@ BEGIN
     WHERE p.id_pago=@id_pago AND p.estado=''APROBADO'';
 END;';
 IF OBJECT_ID(N'dbo.sp_Pago_ObtenerComprobante') IS NOT NULL AND (@actual1 IS NULL OR (LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2))
- THROW 51904, 'Definicion previa desconocida: revisar sin sobrescribir.', 1;
+ THROW 51904, 'dbo.sp_Pago_ObtenerComprobante: Definicion previa desconocida; revisar sin sobrescribir.', 1;
 SELECT N'dbo.sp_Pago_ObtenerComprobante' AS procedimiento, @actual1 AS definicion_previa;
 DECLARE @actual2 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Reporte_ServiciosMasUtilizados')), @nuevo2 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Reporte_ServiciosMasUtilizados
     @fecha_desde DATE,
@@ -169,7 +169,7 @@ BEGIN
         ingresos_generados DESC;
 END;';
 IF OBJECT_ID(N'dbo.sp_Reporte_ServiciosMasUtilizados') IS NOT NULL AND (@actual2 IS NULL OR (LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 AND LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@anterior,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 AND LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@iara,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2))
- THROW 51904, 'Definicion previa desconocida: revisar sin sobrescribir.', 1;
+ THROW 51904, 'dbo.sp_Reporte_ServiciosMasUtilizados: Definicion previa desconocida; revisar sin sobrescribir.', 1;
 SELECT N'dbo.sp_Reporte_ServiciosMasUtilizados' AS procedimiento, @actual2 AS definicion_previa;
 -- Sin WITH VALUES: los consumos preexistentes conservan fecha NULL; solo las nuevas filas usan el default.
  IF COL_LENGTH(N'dbo.DetalleServicios',N'fecha_consumo') IS NULL

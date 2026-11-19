@@ -70,7 +70,7 @@ internal static class DiagnosticoCiclo
     }
 
     // Índice en unidades UTF-16 desde cero. Los archivos contienen ambos textos completos.
-    private static object? Diferencia(string? esperado, string? actual)
+    internal static object? Diferencia(string? esperado, string? actual)
     {
         if (esperado == null || actual == null || esperado == actual) return null;
         int indice = 0;

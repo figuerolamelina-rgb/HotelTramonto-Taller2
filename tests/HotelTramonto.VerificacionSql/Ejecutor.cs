@@ -70,7 +70,7 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
             Console.WriteLine("HotelTramontoDB y HotelTramontoDB_Pruebas no se abrirán ni modificarán.");
             Console.Write("Escribí INSTALAR para autorizar la migración de esta copia: ");
             if (Console.ReadLine() != "INSTALAR")
-                throw new OperationCanceledException("No se autorizó instalar; las 28 pruebas quedan pendientes.");
+                throw new OperationCanceledException($"No se autorizó instalar; las {casos.Length} pruebas quedan pendientes.");
             informe.Etapa = "Instalación";
             foreach (string nombre in new[] { "01_Instalar.sql", "02_Verificar.sql", "04_ConcurrenciaPagos.sql", "05_VerificarConcurrencia.sql" })
                 Migrar(nombre);
@@ -273,6 +273,8 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
             DiagnosticoDefiniciones.Guardar(Copia, raiz, DirectorioInformes);
         string original = File.ReadAllText(Path.Combine(CarpetaSql, nombre));
         using var db = Copia.Abrir();
+        if (nombre == "09_ConsultasIntegracion.sql")
+            DiagnosticoIntegracion.Guardar(db, original, DirectorioInformes);
         using var cmd = new SqlCommand(identidad.Adaptar(original), db) { CommandTimeout = 300 };
         cmd.Parameters.Add("@HT_Run", SqlDbType.UniqueIdentifier).Value = identidad.Ejecucion;
         cmd.Parameters.Add("@HT_Db", SqlDbType.NVarChar, 128).Value = identidad.Nombre;

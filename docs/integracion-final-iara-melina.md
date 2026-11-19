@@ -139,6 +139,16 @@ Revisá ambas entradas del diagnóstico antes de escribir `INSTALAR`. Al finaliz
 `informe.txt` e `informe.json` registran los conteos de los 36 casos, la verificación
 de históricos y la limpieza de la copia GUID.
 
+Si 09 devuelve **51904**, el mensaje identifica el procedimiento. En la carpeta
+privada del informe, `diagnostico-integracion.json` registra el estado de las tres
+consultas inmediatamente antes de 09. Para cada versión admitida indica
+`coincideSegun09` y la primera diferencia literal y tras la comparación de 09
+(índice UTF-16 desde cero y contexto). Los archivos `.observada.sql`,
+`.revisada.sql` y, para el reporte, `.historica.sql` e `.iara.sql` permiten
+comparar los textos completos. El informe distingue un objeto ausente o invisible
+de uno existente con definición ilegible. Los archivos quedan disponibles después
+de eliminar la copia temporal.
+
 Requisitos: Windows del equipo autorizado, Express local, .NET 10, respaldo FULL aprobado **posterior a categoria y anterior a 5/6**, y el archivo privado de conexión de pruebas ya existente. El ejecutor valida el motor/respaldo y se detiene ante esquemas o definiciones no reconocidos; no relajar sus controles. Si solo se dispone de un respaldo postmigración, no usarlo como si fuese el anterior: requiere un recorrido de restauración revisado.
 
 En PowerShell, desde la raíz actualizada:
