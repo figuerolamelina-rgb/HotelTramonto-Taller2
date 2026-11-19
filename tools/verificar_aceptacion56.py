@@ -33,6 +33,38 @@ class Aceptacion56(unittest.TestCase):
         self.assertIn('BEGIN TRANSACTION', install)
         self.assertNotRegex(re.sub(r"'(?:''|[^'])*'", '', verify), r'(?im)^\s*(EXEC|UPDATE|DELETE|INSERT|ALTER|CREATE)\s')
 
+    def test_contratos_del_ciclo_coinciden_con_los_lotes_originales_y_ddl_instalado(self):
+        original = (SQL.parent / 'Procedimientos_Almacenados.sql').read_text()
+        install = (SQL / '07_CicloReserva.sql').read_text()
+        verify = (SQL / '08_VerificarCicloReserva.sql').read_text()
+        batches = re.split(r'(?im)^GO[ \t]*$', original)
+        ddl = re.findall(r"EXEC sys\.sp_executesql N'((?:''|[^'])*)';", install)
+        for index, name in enumerate(('sp_Reserva_CheckIn', 'sp_Reserva_Cancelar')):
+            with self.subTest(name=name):
+                header = rf'(?m)^CREATE OR ALTER PROCEDURE (?:dbo\.)?{name}\b'
+                batch, = [b for b in batches if re.search(header, b)]
+                body = batch[re.search(header, batch).start():].rstrip()
+                previous = re.search(rf"@anterior{index} nvarchar\(max\)=N'((?:''|[^'])*)'", install)[1]
+                self.assertEqual(body, previous.replace("''", "'"))
+                for script in (install, verify):
+                    reviewed = re.search(rf"@nuevo{index} nvarchar\(max\)=N'((?:''|[^'])*)'", script)[1]
+                    self.assertEqual(ddl[index], reviewed)
+                    self.assertIn(f"(N'dbo.{name}', 3, @actual{index})", script)
+                if index == 0:
+                    self.assertIn('---check-in', batch[:batch.index(body)])
+
+    def test_diagnostico_y_guardas_comparten_el_comparador_escalar(self):
+        marker = r'(?ms)^    -- INICIO canon de ciclo[^\n]*\n(.*?)^    -- FIN canon de ciclo'
+        blocks = [re.findall(marker, (SQL / f).read_text()) for f in
+                  ('07_CicloReserva.sql', '08_VerificarCicloReserva.sql')]
+        self.assertEqual(1, len(blocks[0]))
+        self.assertEqual(*blocks)
+        code = re.sub(r"--[^\n]*|'(?:''|[^'])*'", '', blocks[0][0])
+        self.assertNotRegex(code, r'(?i)\b(EXEC|CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|MERGE|FROM|INTO)\b')
+        self.assertIn('IF @enLiteral=0 AND UNICODE(@car)=13', code)
+        runner = (ROOT / 'tests/HotelTramonto.VerificacionSql/Ejecutor.cs').read_text()
+        self.assertLess(runner.index('DiagnosticoCiclo.Validar'), runner.index('foreach (string nombre in ContratosBase.Procedimientos)'))
+
     def test_recuperacion_no_reconstruye_consumo_desde_controles(self):
         source = (ROOT / 'HotelTramonto.Presentacion/FormRegistrarConsumos.cs').read_text()
         click = source.split('private void btnAgregar_Click')[1].split('private string ClaveConsumo')[0]

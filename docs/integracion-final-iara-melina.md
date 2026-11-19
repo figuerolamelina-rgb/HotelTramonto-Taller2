@@ -113,6 +113,32 @@ Revisar `git status` y conservar el diff diagnóstico de `FormHuespedes.cs` u ot
 
 ### 2. Ejecutar las 36 pruebas y la aceptación visual en la misma copia temporal
 
+Para investigar **51705**, usá el modo `--backup-ciclo` desde la raíz del worktree en PowerShell:
+
+```powershell
+dotnet run --project tests/HotelTramonto.VerificacionSql -- --backup-ciclo (Read-Host 'Ruta completa del respaldo FULL anterior a 5/6 (.bak)')
+```
+
+Antes del pedido de `INSTALAR`, el ejecutor lee las definiciones de CheckIn y Cancelar
+desde la copia restaurada y marcada. En la carpeta privada de la ejecución guarda
+`diagnostico-ciclo.json` y, para cada procedimiento, los textos completos
+`.historico.sql` y `.restaurado.sql` (si el módulo es visible). El JSON indica la
+primera diferencia literal y canónica, con índice UTF-16 desde cero y contexto.
+Una definición ausente o un cuerpo desconocido detienen el recorrido antes de 01.
+Los originales versionados se encuentran en `Procedimientos_Almacenados.sql`.
+
+El comparador de 07/08 reconoce los comentarios de línea iniciales, la cabecera
+CREATE/ALTER/CREATE OR ALTER PROCEDURE con espacios, tabuladores o saltos, y el
+prefijo opcional `dbo.`. Desde el nombre compara el texto ordinal, admitiendo
+finales de línea equivalentes fuera de cadenas y espacio blanco al final del lote.
+Se conservan los espacios, mayúsculas, saltos y comillas escapadas dentro de
+literales. En el respaldo anterior a 5/6 se exige el contrato histórico. Al
+reaplicar 07 se admite también la versión revisada, y 08 exige esa última versión.
+
+Revisá ambas entradas del diagnóstico antes de escribir `INSTALAR`. Al finalizar,
+`informe.txt` e `informe.json` registran los conteos de los 36 casos, la verificación
+de históricos y la limpieza de la copia GUID.
+
 Requisitos: Windows del equipo autorizado, Express local, .NET 10, respaldo FULL aprobado **posterior a categoria y anterior a 5/6**, y el archivo privado de conexión de pruebas ya existente. El ejecutor valida el motor/respaldo y se detiene ante esquemas o definiciones no reconocidos; no relajar sus controles. Si solo se dispone de un respaldo postmigración, no usarlo como si fuese el anterior: requiere un recorrido de restauración revisado.
 
 En PowerShell, desde la raíz actualizada:

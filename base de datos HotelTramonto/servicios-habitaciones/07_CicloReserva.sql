@@ -9,12 +9,13 @@ IF @@TRANCOUNT<>0 THROW 51702, 'Ejecutar sin transaccion externa.', 1;
 SET XACT_ABORT ON;
 BEGIN TRY
  BEGIN TRANSACTION;
- IF EXISTS(SELECT 1 FROM sys.crypt_properties WHERE major_id IN
-    (OBJECT_ID(N'dbo.sp_Reserva_CheckIn'),OBJECT_ID(N'dbo.sp_Reserva_Cancelar')))
-  THROW 51703, 'Modulos firmados: coordinar con DBA antes de actualizar.', 1;
+ IF EXISTS(SELECT 1 FROM sys.crypt_properties WHERE major_id=OBJECT_ID(N'dbo.sp_Reserva_CheckIn'))
+  THROW 51703, 'dbo.sp_Reserva_CheckIn firmado: coordinar con DBA antes de actualizar.', 1;
+ IF EXISTS(SELECT 1 FROM sys.crypt_properties WHERE major_id=OBJECT_ID(N'dbo.sp_Reserva_Cancelar'))
+  THROW 51703, 'dbo.sp_Reserva_Cancelar firmado: coordinar con DBA antes de actualizar.', 1;
  IF COL_LENGTH(N'dbo.Pagos',N'id_operacion') IS NULL OR
     COALESCE(OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Reserva_CheckOut')),N'') NOT LIKE N'%HotelTramonto:reserva:%'
-  THROW 51704, 'Falta el protocolo de pagos/cierre de 04; no se reinstala automaticamente.', 1;
+  THROW 51704, 'Falta el protocolo de dbo.Pagos/dbo.sp_Reserva_CheckOut de 04; no se reinstala automaticamente.', 1;
 DECLARE @actual0 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Reserva_CheckIn')), @anterior0 nvarchar(max)=N'CREATE OR ALTER PROCEDURE sp_Reserva_CheckIn
     @id_reserva INT
 AS
@@ -100,9 +101,6 @@ BEGIN
         THROW;
     END CATCH;
 END;';
-IF @actual0 IS NULL OR (LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@anterior0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 AND LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2)
- THROW 51705, 'Definicion previa desconocida: revisar sin sobrescribir.', 1;
-SELECT N'dbo.sp_Reserva_CheckIn' AS procedimiento, @actual0 AS definicion_previa;
 DECLARE @actual1 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Reserva_Cancelar')), @anterior1 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Reserva_Cancelar
     @id_reserva INT
 AS
@@ -157,8 +155,89 @@ BEGIN
         THROW;
     END CATCH;
 END;';
-IF @actual1 IS NULL OR (LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@anterior1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 AND LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2)
- THROW 51705, 'Definicion previa desconocida: revisar sin sobrescribir.', 1;
+DECLARE @nombre sysname, @version int, @texto nvarchar(max), @canon nvarchar(max),
+        @historico nvarchar(max), @revisado nvarchar(max), @mensaje nvarchar(2048);
+DECLARE contratos CURSOR LOCAL FAST_FORWARD FOR
+    SELECT nombre, version, texto FROM (VALUES
+        (N'dbo.sp_Reserva_CheckIn', 1, @anterior0),
+        (N'dbo.sp_Reserva_CheckIn', 2, @nuevo0),
+        (N'dbo.sp_Reserva_CheckIn', 3, @actual0),
+        (N'dbo.sp_Reserva_Cancelar', 1, @anterior1),
+        (N'dbo.sp_Reserva_Cancelar', 2, @nuevo1),
+        (N'dbo.sp_Reserva_Cancelar', 3, @actual1)
+    ) AS candidatos(nombre, version, texto) ORDER BY nombre, version;
+OPEN contratos;
+FETCH NEXT FROM contratos INTO @nombre,@version,@texto;
+WHILE @@FETCH_STATUS=0
+BEGIN
+    -- INICIO canon de ciclo (entrada @texto, salida @canon)
+    DECLARE @pos int, @fin int, @ddl nvarchar(max), @enLiteral bit, @car nchar(1);
+    SET @canon = NULL;
+    IF @texto IS NOT NULL
+    BEGIN
+        -- Sólo se omiten espacios y comentarios de línea antes de la cabecera.
+        WHILE 1=1
+        BEGIN
+            WHILE UNICODE(LEFT(@texto,1)) IN (9,10,13,32)
+                SET @texto = STUFF(@texto,1,1,N'');
+            IF COALESCE(LEFT(@texto,2),N'') COLLATE Latin1_General_100_BIN2 <> N'--' BREAK;
+            SET @pos = PATINDEX(N'%['+NCHAR(13)+NCHAR(10)+N']%', @texto COLLATE Latin1_General_100_BIN2);
+            IF @pos=0 BREAK;
+            SET @texto = SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@pos+1,DATALENGTH(@texto)/2);
+        END;
+        SET @pos = CHARINDEX(N'PROCEDURE', @texto COLLATE Latin1_General_100_CI_AS);
+        IF @pos>1 AND UNICODE(SUBSTRING(@texto,@pos-1,1)) IN (9,10,13,32)
+            AND UNICODE(SUBSTRING(@texto,@pos+9,1)) IN (9,10,13,32)
+        BEGIN
+            SET @ddl = RTRIM(TRANSLATE(LEFT(@texto,@pos-1),NCHAR(9)+NCHAR(10)+NCHAR(13),N'   '));
+            WHILE CHARINDEX(N'  ',@ddl)>0 SET @ddl = REPLACE(@ddl,N'  ',N' ');
+            IF UPPER(@ddl COLLATE Latin1_General_100_BIN2) IN (N'CREATE',N'ALTER',N'CREATE OR ALTER')
+            BEGIN
+                SET @pos += 9;
+                WHILE UNICODE(SUBSTRING(@texto,@pos,1)) IN (9,10,13,32) SET @pos += 1;
+                IF SUBSTRING(@texto,@pos,4) COLLATE Latin1_General_100_BIN2 = N'dbo.' SET @pos += 4;
+                -- Desde el nombre: comparación ordinal. Un fin de línea dentro de
+                -- una cadena se copia tal cual, incluso si contiene comillas escapadas.
+                SET @canon = N'';
+                SET @enLiteral = 0;
+                SET @fin = DATALENGTH(@texto)/2;
+                WHILE @fin>=@pos AND UNICODE(SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@fin,1)) IN (9,10,13,32)
+                    SET @fin -= 1;
+                WHILE @pos<=@fin
+                BEGIN
+                    SET @car = SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@pos,1);
+                    IF UNICODE(@car)=39 SET @enLiteral = 1-@enLiteral;
+                    IF @enLiteral=0 AND UNICODE(@car)=13
+                    BEGIN
+                        IF UNICODE(SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@pos+1,1))=10 SET @pos += 1;
+                        SET @car = NCHAR(10);
+                    END;
+                    SET @canon += @car;
+                    SET @pos += 1;
+                END;
+            END;
+        END;
+    END;
+    -- FIN canon de ciclo
+    IF @version=1 SET @historico=@canon;
+    IF @version=2 SET @revisado=@canon;
+    IF @version<3 AND @canon IS NULL
+    BEGIN
+        SET @mensaje = CONCAT(@nombre, N': Cabecera del contrato versionado desconocida.');
+        THROW 51705, @mensaje, 1;
+    END;
+    IF @version=3 AND (@canon IS NULL OR NOT (
+        (DATALENGTH(@canon)=DATALENGTH(@revisado) AND @canon COLLATE Latin1_General_100_BIN2 = @revisado)
+        OR (DATALENGTH(@canon)=DATALENGTH(@historico) AND @canon COLLATE Latin1_General_100_BIN2 = @historico)))
+    BEGIN
+        SET @mensaje = CONCAT(@nombre, N': Definicion previa desconocida: revisar sin sobrescribir.');
+        THROW 51705, @mensaje, 1;
+    END;
+    FETCH NEXT FROM contratos INTO @nombre,@version,@texto;
+END;
+CLOSE contratos;
+DEALLOCATE contratos;
+SELECT N'dbo.sp_Reserva_CheckIn' AS procedimiento, @actual0 AS definicion_previa;
 SELECT N'dbo.sp_Reserva_Cancelar' AS procedimiento, @actual1 AS definicion_previa;
 EXEC sys.sp_executesql N'CREATE OR ALTER PROCEDURE dbo.sp_Reserva_CheckIn
     @id_reserva INT

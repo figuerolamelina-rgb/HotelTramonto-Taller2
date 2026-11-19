@@ -237,6 +237,12 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
             """, identidad.Ejecucion.ToString("D"));
         marcada = true;
         using var comprobada = Copia.Abrir();
+        if (cicloReserva)
+        {
+            DiagnosticoCiclo.Validar(comprobada, CarpetaSql, DirectorioInformes);
+            Console.WriteLine("Contratos históricos validados en la copia. Diagnóstico: " +
+                Path.Combine(DirectorioInformes, "diagnostico-ciclo.json"));
+        }
         foreach (string tabla in ContratosBase.Tablas)
             if (Convert.ToInt32(Sql.Escalar(comprobada, "SELECT COUNT(*) FROM sys.tables WHERE schema_id=SCHEMA_ID('dbo') AND name=@p0", tabla)) != 1)
                 throw new InvalidOperationException("No se acepta vista o tabla ausente: " + tabla);

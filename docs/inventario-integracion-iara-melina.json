@@ -36,8 +36,8 @@
     "base de datos HotelTramonto/servicios-habitaciones/04_ConcurrenciaPagos.sql": "a7097d597a34bb1982d35286782c44cf436ca7de5ee3947567dc36d4dd093929",
     "base de datos HotelTramonto/servicios-habitaciones/05_VerificarConcurrencia.sql": "215b55442797c765ecae9dff9e131dbcb4ec74c867d28b33f56a559546de7c85",
     "base de datos HotelTramonto/servicios-habitaciones/06_SuspenderEscrituras.sql": "c438b6f177ebde22925cff036556aa53eb21a7cf02bb5c3e64cf97bfecea3a4a",
-    "base de datos HotelTramonto/servicios-habitaciones/07_CicloReserva.sql": "766a1490eaab6ce06d3fc1aaffd7bc898daae05aa2ee9c3c54b67de3b176ce93",
-    "base de datos HotelTramonto/servicios-habitaciones/08_VerificarCicloReserva.sql": "e19d446b479c05d2d7e922f45a8a66a3ce176dcd550f933330958fb83dd8967e",
+    "base de datos HotelTramonto/servicios-habitaciones/07_CicloReserva.sql": "2a02259afbb43958f9e5f718c68ee467f376da506706428381f1687da7d1f531",
+    "base de datos HotelTramonto/servicios-habitaciones/08_VerificarCicloReserva.sql": "0b0c0d52d04a14177ba249dea606604a04a32eea06c54dccd0cf945d87c2c8d0",
     "base de datos HotelTramonto/Actualizacion_HistorialHuespedes.sql": "d5834cde2d8c0fa8fb4454df26441dc75d1cf6b7a139c9dfcdce593dc6349823",
     "base de datos HotelTramonto/Procedimientos_Almacenados.sql": "6ac5c5c431dbefff7622eb44598d6dc49f0109db47ce908c85b05fe1cb42120f",
     "HotelTramonto.Datos/ConexionBD.cs": "afec5a33a1757c3a34081983cc2a2f622c4e10f129a2bb72e1d987f879e26d29"

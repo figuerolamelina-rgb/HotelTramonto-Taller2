@@ -42,8 +42,6 @@ BEGIN
         THROW;
     END CATCH;
 END;';
-IF @actual0 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51706, 'Definicion de ciclo distinta de la revisada.', 1;
 DECLARE @actual1 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Reserva_Cancelar')), @nuevo1 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Reserva_Cancelar
     @id_reserva INT
 AS
@@ -74,6 +72,82 @@ BEGIN
         THROW;
     END CATCH;
 END;';
-IF @actual1 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51706, 'Definicion de ciclo distinta de la revisada.', 1;
+DECLARE @nombre sysname, @version int, @texto nvarchar(max), @canon nvarchar(max),
+        @revisado nvarchar(max), @mensaje nvarchar(2048);
+DECLARE contratos CURSOR LOCAL FAST_FORWARD FOR
+    SELECT nombre, version, texto FROM (VALUES
+        (N'dbo.sp_Reserva_CheckIn', 2, @nuevo0),
+        (N'dbo.sp_Reserva_CheckIn', 3, @actual0),
+        (N'dbo.sp_Reserva_Cancelar', 2, @nuevo1),
+        (N'dbo.sp_Reserva_Cancelar', 3, @actual1)
+    ) AS candidatos(nombre, version, texto) ORDER BY nombre, version;
+OPEN contratos;
+FETCH NEXT FROM contratos INTO @nombre,@version,@texto;
+WHILE @@FETCH_STATUS=0
+BEGIN
+    -- INICIO canon de ciclo (entrada @texto, salida @canon)
+    DECLARE @pos int, @fin int, @ddl nvarchar(max), @enLiteral bit, @car nchar(1);
+    SET @canon = NULL;
+    IF @texto IS NOT NULL
+    BEGIN
+        -- Sólo se omiten espacios y comentarios de línea antes de la cabecera.
+        WHILE 1=1
+        BEGIN
+            WHILE UNICODE(LEFT(@texto,1)) IN (9,10,13,32)
+                SET @texto = STUFF(@texto,1,1,N'');
+            IF COALESCE(LEFT(@texto,2),N'') COLLATE Latin1_General_100_BIN2 <> N'--' BREAK;
+            SET @pos = PATINDEX(N'%['+NCHAR(13)+NCHAR(10)+N']%', @texto COLLATE Latin1_General_100_BIN2);
+            IF @pos=0 BREAK;
+            SET @texto = SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@pos+1,DATALENGTH(@texto)/2);
+        END;
+        SET @pos = CHARINDEX(N'PROCEDURE', @texto COLLATE Latin1_General_100_CI_AS);
+        IF @pos>1 AND UNICODE(SUBSTRING(@texto,@pos-1,1)) IN (9,10,13,32)
+            AND UNICODE(SUBSTRING(@texto,@pos+9,1)) IN (9,10,13,32)
+        BEGIN
+            SET @ddl = RTRIM(TRANSLATE(LEFT(@texto,@pos-1),NCHAR(9)+NCHAR(10)+NCHAR(13),N'   '));
+            WHILE CHARINDEX(N'  ',@ddl)>0 SET @ddl = REPLACE(@ddl,N'  ',N' ');
+            IF UPPER(@ddl COLLATE Latin1_General_100_BIN2) IN (N'CREATE',N'ALTER',N'CREATE OR ALTER')
+            BEGIN
+                SET @pos += 9;
+                WHILE UNICODE(SUBSTRING(@texto,@pos,1)) IN (9,10,13,32) SET @pos += 1;
+                IF SUBSTRING(@texto,@pos,4) COLLATE Latin1_General_100_BIN2 = N'dbo.' SET @pos += 4;
+                -- Desde el nombre: comparación ordinal. Un fin de línea dentro de
+                -- una cadena se copia tal cual, incluso si contiene comillas escapadas.
+                SET @canon = N'';
+                SET @enLiteral = 0;
+                SET @fin = DATALENGTH(@texto)/2;
+                WHILE @fin>=@pos AND UNICODE(SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@fin,1)) IN (9,10,13,32)
+                    SET @fin -= 1;
+                WHILE @pos<=@fin
+                BEGIN
+                    SET @car = SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@pos,1);
+                    IF UNICODE(@car)=39 SET @enLiteral = 1-@enLiteral;
+                    IF @enLiteral=0 AND UNICODE(@car)=13
+                    BEGIN
+                        IF UNICODE(SUBSTRING(@texto COLLATE Latin1_General_100_BIN2,@pos+1,1))=10 SET @pos += 1;
+                        SET @car = NCHAR(10);
+                    END;
+                    SET @canon += @car;
+                    SET @pos += 1;
+                END;
+            END;
+        END;
+    END;
+    -- FIN canon de ciclo
+    IF @version=2 SET @revisado=@canon;
+    IF @version<3 AND @canon IS NULL
+    BEGIN
+        SET @mensaje = CONCAT(@nombre, N': Cabecera del contrato versionado desconocida.');
+        THROW 51706, @mensaje, 1;
+    END;
+    IF @version=3 AND (@canon IS NULL OR NOT (
+        (DATALENGTH(@canon)=DATALENGTH(@revisado) AND @canon COLLATE Latin1_General_100_BIN2 = @revisado)))
+    BEGIN
+        SET @mensaje = CONCAT(@nombre, N': Definicion de ciclo distinta de la revisada.');
+        THROW 51706, @mensaje, 1;
+    END;
+    FETCH NEXT FROM contratos INTO @nombre,@version,@texto;
+END;
+CLOSE contratos;
+DEALLOCATE contratos;
 SELECT N'Definiciones de check-in y cancelacion verificadas; concurrencia no ejecutada por esta consulta' AS resultado;
