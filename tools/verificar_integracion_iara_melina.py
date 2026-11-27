@@ -147,6 +147,47 @@ class IntegracionIaraMelina(unittest.TestCase):
         self.assertIn('CASE WHEN o.canon=r.canon', code)
         self.assertIn('diagnostico-integracion.json', diag)
 
+    def test_51905_conserva_contratos_y_comparacion_de_las_tres_consultas(self):
+        install = (SQL / '09_ConsultasIntegracion.sql').read_text()
+        verify = (SQL / '10_VerificarConsultasIntegracion.sql').read_text()
+        diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
+        canon = re.search(r'(LTRIM\(RTRIM\(REPLACE\(.*? COLLATE Latin1_General_100_BIN2) AS canon', diag)[1]
+        installed = re.findall(r"EXEC sys\.sp_executesql N'(CREATE OR ALTER PROCEDURE (?:''|[^'])*)';", install)
+        self.assertEqual(3, len(installed))
+        db = sqlite3.connect(':memory:')
+        self.addCleanup(db.close)
+        for i, literal in enumerate(installed):
+            name = re.match(r'CREATE OR ALTER PROCEDURE (dbo\.\w+)', literal)[1]
+            expected = re.search(rf"@nuevo{i} nvarchar\(max\)=N'((?:''|[^'])*)'", verify)[1]
+            self.assertEqual(literal, expected)
+            guard, message = re.search(rf"^IF (@actual{i} IS NULL OR [^\n]+)\n THROW 51905, '([^']+)'", verify, re.M).groups()
+            self.assertIn(name, message)
+            actual = canon.replace('texto', f'@actual{i}')
+            revised = canon.replace('texto', f'@nuevo{i}')
+            self.assertEqual(f'@actual{i} IS NULL OR {actual} <> {revised}', guard)
+            definition = expected.replace("''", "'")
+            for observed, reject in [(definition, False), (definition.replace('CREATE OR ALTER', 'ALTER', 1), False),
+                                     (definition.replace('WHERE', 'WHERE 1=0 AND', 1), True),
+                                     (definition.replace('SELECT', 'SELECT 0,', 1), True), ('', True), (None, True)]:
+                with self.subTest(name=name, reject=reject):
+                    expr = guard.replace("N'", "'").replace('Latin1_General_100_BIN2', 'BINARY')
+                    self.assertEqual(reject, bool(db.execute('SELECT ' + expr, {
+                        f'actual{i}': observed, f'nuevo{i}': definition}).fetchone()[0]))
+
+    def test_51905_informe_completo_antes_de_verificar_en_la_copia(self):
+        source = (ROOT / 'tests/HotelTramonto.VerificacionSql/Ejecutor.cs').read_text()
+        migrar = source.split('private void Migrar(string nombre)')[1].split('private void EliminarCopia')[0]
+        self.assertIn('if (nombre == "10_VerificarConsultasIntegracion.sql")', migrar)
+        call = migrar.index('DiagnosticoIntegracion.GuardarPaso10(db, original, DirectorioInformes)')
+        self.assertLess(migrar.index('Copia.Abrir()'), call)
+        self.assertLess(call, migrar.index('adapter.Fill'))
+        diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
+        report = diag.split('internal static void GuardarPaso10')[1]
+        self.assertIn('Sql.Tabla(copia, Consulta, nombre, esperada, null, null)', report)
+        for field in ('procedimiento = nombre', 'estado', 'coincideSegun10', 'diferenciaLiteral',
+                      'diferenciaSegun10 = diferencia, esperada, observada', 'diagnostico-paso10.json'):
+            self.assertIn(field, report)
+
     def test_ui_opcional_solo_despues_de_pruebas_y_antes_de_limpieza(self):
         source = (ROOT / 'tests/HotelTramonto.VerificacionSql/Ejecutor.cs').read_text()
         guard = source.split('if (pausaUi)', 1)[1].split('informe.Etapa = "Verificación final"', 1)[0]

@@ -35,24 +35,28 @@ internal static class DiagnosticoIntegracion
         ORDER BY r.variante;
         """;
 
+    private static readonly (string Nombre, string Variable)[] Procedimientos =
+    [
+        ("dbo.sp_Habitacion_ListarConReservaCheckIn", "nuevo0"),
+        ("dbo.sp_Pago_ObtenerComprobante", "nuevo1"),
+        ("dbo.sp_Reporte_ServiciosMasUtilizados", "nuevo2")
+    ];
+
+    private static string Literal(string script, string variable, string procedimiento)
+    {
+        var literal = Regex.Match(script, $@"@{variable} nvarchar\(max\)=N'((?:''|[^'])*)'");
+        if (!literal.Success) throw new InvalidDataException($"Falta @{variable} para {procedimiento}.");
+        return literal.Groups[1].Value.Replace("''", "'");
+    }
+
     internal static void Guardar(SqlConnection copia, string script, string directorio)
     {
-        string Literal(string variable, string procedimiento)
-        {
-            var literal = Regex.Match(script, $@"@{variable} nvarchar\(max\)=N'((?:''|[^'])*)'");
-            if (!literal.Success) throw new InvalidDataException($"Falta @{variable} para {procedimiento} en 09.");
-            return literal.Groups[1].Value.Replace("''", "'");
-        }
-
         var registros = new List<object>();
-        foreach (var (nombre, variable) in new[] {
-            ("dbo.sp_Habitacion_ListarConReservaCheckIn", "nuevo0"),
-            ("dbo.sp_Pago_ObtenerComprobante", "nuevo1"),
-            ("dbo.sp_Reporte_ServiciosMasUtilizados", "nuevo2") })
+        foreach (var (nombre, variable) in Procedimientos)
         {
             bool reporte = variable == "nuevo2";
-            var tabla = Sql.Tabla(copia, Consulta, nombre, Literal(variable, nombre),
-                reporte ? Literal("anterior", nombre) : null, reporte ? Literal("iara", nombre) : null);
+            var tabla = Sql.Tabla(copia, Consulta, nombre, Literal(script, variable, nombre),
+                reporte ? Literal(script, "anterior", nombre) : null, reporte ? Literal(script, "iara", nombre) : null);
             DataRow objeto = tabla.Rows[0];
             string? observada = objeto["observada"] as string;
             if (observada != null) File.WriteAllText(Path.Combine(directorio, nombre + ".observada.sql"), observada);
@@ -80,5 +84,36 @@ internal static class DiagnosticoIntegracion
         string archivo = Path.Combine(directorio, "diagnostico-integracion.json");
         File.WriteAllText(archivo, JsonSerializer.Serialize(registros, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine("Diagnóstico previo al paso 09: " + archivo);
+    }
+
+    internal static void GuardarPaso10(SqlConnection copia, string script, string directorio)
+    {
+        var registros = new List<object>();
+        foreach (var (nombre, variable) in Procedimientos)
+        {
+            string esperada = Literal(script, variable, nombre);
+            // 10 admite sólo @nuevoN. Los dos NULL excluyen las referencias previas de 09.
+            var fila = Sql.Tabla(copia, Consulta, nombre, esperada, null, null).Rows.Cast<DataRow>().Single();
+            string? observada = fila["observada"] as string;
+            bool coincide = (bool)fila["coincide"];
+            string estado = fila.IsNull("id") ? "Objeto ausente o no visible" :
+                observada == null ? "Definición no disponible" :
+                coincide ? "Definición reconocida" : "Definición diferente";
+            var diferencia = coincide ? null : DiagnosticoCiclo.Diferencia(
+                (string)fila["canonEsperado"], fila["canonObservado"] as string);
+            registros.Add(new {
+                procedimiento = nombre, estado, coincideSegun10 = coincide,
+                diferenciaLiteral = DiagnosticoCiclo.Diferencia(esperada, observada),
+                diferenciaSegun10 = diferencia, esperada, observada
+            });
+            if (!coincide)
+            {
+                Console.WriteLine($"Paso 10: {nombre}: {estado}");
+                if (diferencia != null) Console.WriteLine(JsonSerializer.Serialize(diferencia));
+            }
+        }
+        string archivo = Path.Combine(directorio, "diagnostico-paso10.json");
+        File.WriteAllText(archivo, JsonSerializer.Serialize(registros, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine("Diagnóstico previo al paso 10: " + archivo);
     }
 }

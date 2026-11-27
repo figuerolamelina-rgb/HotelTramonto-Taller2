@@ -149,6 +149,13 @@ comparar los textos completos. El informe distingue un objeto ausente o invisibl
 de uno existente con definición ilegible. Los archivos quedan disponibles después
 de eliminar la copia temporal.
 
+Si aparece **51905** después de la instalación, buscá `diagnostico-paso10.json`
+en la carpeta de esa ejecución. El verificador lee los tres módulos de la copia
+justo antes de cada paso 10. El JSON de la última comprobación guarda el nombre,
+el estado de visibilidad, los textos completos esperado y observado y la primera
+diferencia literal y según la comparación de 10 (índice UTF-16 desde cero y
+contexto). Ese único archivo alcanza para revisar el rechazo después de la limpieza.
+
 Para el reporte histórico del respaldo Pre56, 09 también reconoce el contrato
 original con finales de línea de Windows y un CRLF adicional antes de `CREATE`
 y después de `END;`. Construye esa variante desde `@anterior` y exige igual

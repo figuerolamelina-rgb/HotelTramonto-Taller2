@@ -275,6 +275,8 @@ public sealed class Ejecutor(string raiz, string backup, bool cicloReserva = fal
         using var db = Copia.Abrir();
         if (nombre == "09_ConsultasIntegracion.sql")
             DiagnosticoIntegracion.Guardar(db, original, DirectorioInformes);
+        if (nombre == "10_VerificarConsultasIntegracion.sql")
+            DiagnosticoIntegracion.GuardarPaso10(db, original, DirectorioInformes);
         using var cmd = new SqlCommand(identidad.Adaptar(original), db) { CommandTimeout = 300 };
         cmd.Parameters.Add("@HT_Run", SqlDbType.UniqueIdentifier).Value = identidad.Ejecucion;
         cmd.Parameters.Add("@HT_Db", SqlDbType.NVarChar, 128).Value = identidad.Nombre;

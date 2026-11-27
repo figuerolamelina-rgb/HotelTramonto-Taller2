@@ -20,7 +20,7 @@ BEGIN
     ORDER BY h.numero,r.id_reserva;
 END;';
 IF @actual0 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51905, 'Definicion de consulta diferente a la revisada.', 1;
+ THROW 51905, 'dbo.sp_Habitacion_ListarConReservaCheckIn: Definicion de consulta diferente a la revisada o no disponible.', 1;
 DECLARE @actual1 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Pago_ObtenerComprobante')), @nuevo1 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_ObtenerComprobante
     @id_pago INT
 AS
@@ -37,7 +37,7 @@ BEGIN
     WHERE p.id_pago=@id_pago AND p.estado=''APROBADO'';
 END;';
 IF @actual1 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51905, 'Definicion de consulta diferente a la revisada.', 1;
+ THROW 51905, 'dbo.sp_Pago_ObtenerComprobante: Definicion de consulta diferente a la revisada o no disponible.', 1;
 DECLARE @actual2 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Reporte_ServiciosMasUtilizados')), @nuevo2 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Reporte_ServiciosMasUtilizados
     @fecha_desde DATE,
     @fecha_hasta DATE
@@ -66,7 +66,7 @@ BEGIN
     ORDER BY cantidad_total_consumida DESC,ingresos_generados DESC;
 END;';
 IF @actual2 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51905, 'Definicion de consulta diferente a la revisada.', 1;
+ THROW 51905, 'dbo.sp_Reporte_ServiciosMasUtilizados: Definicion de consulta diferente a la revisada o no disponible.', 1;
 IF NOT EXISTS(SELECT 1 FROM sys.columns c JOIN sys.default_constraints d ON d.object_id=c.default_object_id
  WHERE c.object_id=OBJECT_ID(N'dbo.DetalleServicios') AND c.name=N'fecha_consumo'
  AND c.system_type_id IN (42,61) AND d.definition IN (N'(sysdatetime())',N'(getdate())',N'(SYSDATETIME())',N'(GETDATE())'))
