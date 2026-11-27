@@ -10,6 +10,9 @@ internal static class DiagnosticoIntegracion
     // Comparar con la misma expresión y collation del paso 09. La decisión de
     // instalar sigue dentro de la transacción de ese script.
     private const string Consulta = """
+        DECLARE @crlf nchar(2) = NCHAR(13) + NCHAR(10);
+        DECLARE @anterior nvarchar(max) = @p2;
+        DECLARE @historicaConCRLF nvarchar(max) = @crlf + REPLACE(REPLACE(@anterior, @crlf, NCHAR(10)), NCHAR(10), @crlf) + @crlf;
         WITH textos AS (
             SELECT v.variante, v.texto, o.id
             FROM (SELECT OBJECT_ID(@p0) AS id) o
@@ -23,7 +26,10 @@ internal static class DiagnosticoIntegracion
         )
         SELECT o.id, o.texto AS observada, o.canon AS canonObservado, r.variante,
                r.texto AS esperada, r.canon AS canonEsperado,
-               CONVERT(bit,CASE WHEN o.canon=r.canon THEN 1 ELSE 0 END) AS coincide
+               CONVERT(bit,CASE WHEN o.canon=r.canon THEN 1
+                   WHEN r.variante='historica' AND DATALENGTH(o.texto) = DATALENGTH(@historicaConCRLF)
+                       AND o.texto COLLATE Latin1_General_100_BIN2 = @historicaConCRLF
+                   THEN 1 ELSE 0 END) AS coincide
         FROM comparables o CROSS JOIN comparables r
         WHERE o.variante='observada' AND r.variante<>'observada' AND r.texto IS NOT NULL
         ORDER BY r.variante;
@@ -62,7 +68,7 @@ internal static class DiagnosticoIntegracion
                 comparaciones.Add(new {
                     variante, coincideSegun09 = igual,
                     diferenciaLiteral = DiagnosticoCiclo.Diferencia(esperada, observada),
-                    diferenciaSegun09 = DiagnosticoCiclo.Diferencia((string)fila["canonEsperado"], fila["canonObservado"] as string)
+                    diferenciaSegun09 = igual ? null : DiagnosticoCiclo.Diferencia((string)fila["canonEsperado"], fila["canonObservado"] as string)
                 });
             }
             string estado = objeto.IsNull("id") ? "Objeto ausente o no visible" :

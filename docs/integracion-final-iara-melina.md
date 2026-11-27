@@ -149,6 +149,12 @@ comparar los textos completos. El informe distingue un objeto ausente o invisibl
 de uno existente con definición ilegible. Los archivos quedan disponibles después
 de eliminar la copia temporal.
 
+Para el reporte histórico del respaldo Pre56, 09 también reconoce el contrato
+original con finales de línea de Windows y un CRLF adicional antes de `CREATE`
+y después de `END;`. Construye esa variante desde `@anterior` y exige igual
+longitud y contenido binario. El diagnóstico registra coincidencia histórica
+incluso si hay una diferencia literal de formato.
+
 Requisitos: Windows del equipo autorizado, Express local, .NET 10, respaldo FULL aprobado **posterior a categoria y anterior a 5/6**, y el archivo privado de conexión de pruebas ya existente. El ejecutor valida el motor/respaldo y se detiene ante esquemas o definiciones no reconocidos; no relajar sus controles. Si solo se dispone de un respaldo postmigración, no usarlo como si fuese el anterior: requiere un recorrido de restauración revisado.
 
 En PowerShell, desde la raíz actualizada:

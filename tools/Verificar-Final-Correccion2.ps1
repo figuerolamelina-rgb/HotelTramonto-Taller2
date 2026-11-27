@@ -19,7 +19,7 @@ function HashTexto([string]$Ruta) {
 try {
     Revisar ($env:OS -eq 'Windows_NT') 'Usar Windows PowerShell 5.1.'
     $archivo=Join-Path $PSScriptRoot 'pruebas-finales.manifest.json'
-    Revisar ((HashTexto $archivo) -ceq '513AAC48018858CE605AD29BCC583BC47157192F33B78A8729631977BD6FF223') 'El manifiesto final fue modificado.'
+    Revisar ((HashTexto $archivo) -ceq '9AB2F58132ABF5BA46F85D95AD3F50C4538758E8A4A6171464355FFC1257081A') 'El manifiesto final fue modificado.'
     $m=[IO.File]::ReadAllText($archivo) | ConvertFrom-Json
     foreach ($p in $m.archivos.PSObject.Properties) {
         Revisar ((HashTexto (Join-Path $Raiz $p.Name)) -ceq $p.Value) ('Archivo distinto del revisado: '+$p.Name)

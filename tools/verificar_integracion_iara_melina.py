@@ -2,6 +2,7 @@
 import hashlib
 import json
 import re
+import sqlite3
 import unittest
 from pathlib import Path
 from verificar_permisos_formularios import body
@@ -75,7 +76,7 @@ class IntegracionIaraMelina(unittest.TestCase):
         script = (SQL / '09_ConsultasIntegracion.sql').read_text()
         diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
         canon = re.search(r'(LTRIM\(RTRIM\(REPLACE\(.*? COLLATE Latin1_General_100_BIN2) AS canon', diag)[1]
-        guards = re.findall(r"^IF OBJECT_ID\(N'(dbo\.\w+)'\) IS NOT NULL AND (.*)\n THROW 51904, '([^']+)'", script, re.M)
+        guards = re.findall(r"^IF OBJECT_ID\(N'(dbo\.\w+)'\) IS NOT NULL AND (.*(?:\n AND @esHistoricaConCRLF = 0)?)\n THROW 51904, '([^']+)'", script, re.M)
         self.assertEqual(3, len(guards))
         for i, (name, predicate, message) in enumerate(guards):
             with self.subTest(name=name):
@@ -88,6 +89,50 @@ class IntegracionIaraMelina(unittest.TestCase):
                     literal = re.search(rf"@{var} nvarchar\(max\)=N'((?:''|[^'])*)'", script)[1]
                     self.assertIn('PROCEDURE ' + name, literal.splitlines()[0])
                 self.assertEqual(len(versions), predicate.count(' <> '))
+
+    def test_reporte_51904_respaldo_real_y_mutaciones(self):
+        # Evaluar las expresiones escalares de 09 en memoria con las cadenas del
+        # procedimiento. La integración SQL Server completa queda a cargo del runner.
+        script = (SQL / '09_ConsultasIntegracion.sql').read_text()
+        diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
+        refs = {k: re.search(rf"@{k} nvarchar\(max\)=N'((?:''|[^'])*)'", script)[1].replace("''", "'")
+                for k in ('anterior', 'iara', 'nuevo2')}
+        crlf = '\r\n'
+        observada = crlf + refs['anterior'].replace('\n', crlf) + crlf
+        self.assertEqual('776dfed78e6c0985455395d194ea3005e5bbb917a0d04bdee6370a4b139c5ef3',
+                         hashlib.sha256(observada.encode('utf-8')).hexdigest())
+        plantilla = re.search(r'DECLARE @historicaConCRLF nvarchar\(max\) = (.*);', script)[1]
+        self.assertIn(plantilla, diag)
+        bandera = re.search(r'DECLARE @esHistoricaConCRLF bit = (CASE WHEN.*?END);', script, re.S)[1]
+        predicado = re.search(r"^IF OBJECT_ID\(N'dbo.sp_Reporte_ServiciosMasUtilizados'\) IS NOT NULL AND (.*?)\n THROW 51904", script, re.M | re.S)[1]
+        self.assertIn('AND @esHistoricaConCRLF = 0', predicado)
+        self.assertIn("WHEN r.variante='historica' AND DATALENGTH(o.texto) = DATALENGTH(@historicaConCRLF)", diag)
+        self.assertIn('AND o.texto COLLATE Latin1_General_100_BIN2 = @historicaConCRLF', diag)
+        db = sqlite3.connect(':memory:')
+        self.addCleanup(db.close)
+        db.create_function('NCHAR', 1, chr)
+        db.create_function('DATALENGTH', 1, lambda s: None if s is None else len(s.encode('utf-16le')))
+
+        def evaluar(expr, params):
+            expr = expr.replace(' + ', ' || ').replace('Latin1_General_100_BIN2', 'BINARY')
+            return db.execute('SELECT ' + expr.replace("N'", "'"), params).fetchone()[0]
+
+        for eol in ('\n', crlf):
+            params = {k: v.replace('\n', eol) for k, v in refs.items()}
+            params['crlf'] = crlf
+            params['historicaConCRLF'] = evaluar(plantilla, params)
+            self.assertEqual(observada, params['historicaConCRLF'])
+            for texto, rechazo in [
+                (observada, False), (refs['anterior'], False), (refs['iara'], False), (refs['nuevo2'], False),
+                (None, True), (observada.replace('AVG(', 'SUM('), True),
+                (observada.replace("'CANCELADA'", "'CANCELADA '"), True),
+                (observada.replace("'CANCELADA'", "'CAN\rCELADA'"), True),
+                (observada + 'SELECT 1;', True)
+            ]:
+                with self.subTest(eol=eol, texto=texto):
+                    params['actual2'] = texto
+                    params['esHistoricaConCRLF'] = evaluar(bandera, params)
+                    self.assertEqual(rechazo, bool(evaluar(predicado, params)))
 
     def test_diagnostico_51904_solo_lee_antes_de_migrar_en_la_copia_validada(self):
         runner = (ROOT / 'tests/HotelTramonto.VerificacionSql/Ejecutor.cs').read_text()
