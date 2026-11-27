@@ -155,6 +155,10 @@ justo antes de cada paso 10. El JSON de la última comprobación guarda el nombr
 el estado de visibilidad, los textos completos esperado y observado y la primera
 diferencia literal y según la comparación de 10 (índice UTF-16 desde cero y
 contexto). Ese único archivo alcanza para revisar el rechazo después de la limpieza.
+El paso 10 reconoce la cabecera `CREATE   PROCEDURE` que SQL Express guardó en la copia.
+Después de `PROCEDURE` exige la misma longitud y el mismo texto, incluidos el esquema,
+los literales y los saltos de línea. Si ambas cabeceras son reconocidas, el índice de
+`diferenciaSegun10` cuenta desde el carácter siguiente a `PROCEDURE`.
 
 Para el reporte histórico del respaldo Pre56, 09 también reconoce el contrato
 original con finales de línea de Windows y un CRLF adicional antes de `CREATE`

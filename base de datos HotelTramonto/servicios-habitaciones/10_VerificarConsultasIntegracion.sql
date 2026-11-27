@@ -6,7 +6,7 @@ IF COALESCE(CONVERT(nvarchar(128),SERVERPROPERTY('MachineName')),N'')<>N'LAPTOP-
  OR COALESCE(CONVERT(nvarchar(128),SERVERPROPERTY('InstanceName')),N'')<>N'SQLEXPRESS'
  THROW 51901, 'Instancia no autorizada.', 1;
 IF @@TRANCOUNT<>0 THROW 51902, 'Ejecutar sin transaccion externa.', 1;
-DECLARE @actual0 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Habitacion_ListarConReservaCheckIn')), @nuevo0 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Habitacion_ListarConReservaCheckIn
+DECLARE @nuevo0 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Habitacion_ListarConReservaCheckIn
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -19,9 +19,7 @@ BEGIN
     WHERE r.estado=''CHECKIN'' AND r.fecha_checkout IS NULL
     ORDER BY h.numero,r.id_reserva;
 END;';
-IF @actual0 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo0,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51905, 'dbo.sp_Habitacion_ListarConReservaCheckIn: Definicion de consulta diferente a la revisada o no disponible.', 1;
-DECLARE @actual1 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Pago_ObtenerComprobante')), @nuevo1 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_ObtenerComprobante
+DECLARE @nuevo1 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Pago_ObtenerComprobante
     @id_pago INT
 AS
 BEGIN
@@ -36,9 +34,7 @@ BEGIN
     LEFT JOIN dbo.Usuarios u ON u.id_usuario=p.id_usuario
     WHERE p.id_pago=@id_pago AND p.estado=''APROBADO'';
 END;';
-IF @actual1 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo1,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51905, 'dbo.sp_Pago_ObtenerComprobante: Definicion de consulta diferente a la revisada o no disponible.', 1;
-DECLARE @actual2 nvarchar(max)=OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_Reporte_ServiciosMasUtilizados')), @nuevo2 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Reporte_ServiciosMasUtilizados
+DECLARE @nuevo2 nvarchar(max)=N'CREATE OR ALTER PROCEDURE dbo.sp_Reporte_ServiciosMasUtilizados
     @fecha_desde DATE,
     @fecha_hasta DATE
 AS
@@ -65,8 +61,40 @@ BEGIN
              THEN N''Entrada prevista; fecha de consumo desconocida'' ELSE N''Fecha de consumo'' END
     ORDER BY cantidad_total_consumida DESC,ingresos_generados DESC;
 END;';
-IF @actual2 IS NULL OR LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@actual2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2 <> LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@nuevo2,CHAR(13),N''),N'CREATE OR ALTER PROCEDURE',N'PROCEDURE'),N'CREATE PROCEDURE',N'PROCEDURE'),N'ALTER PROCEDURE',N'PROCEDURE'),N'PROCEDURE dbo.',N'PROCEDURE '))) COLLATE Latin1_General_100_BIN2
- THROW 51905, 'dbo.sp_Reporte_ServiciosMasUtilizados: Definicion de consulta diferente a la revisada o no disponible.', 1;
+DECLARE @error nvarchar(2048);
+-- INICIO comparación del paso 10
+;WITH contratos(nombre, esperada) AS (
+    SELECT N'dbo.sp_Habitacion_ListarConReservaCheckIn', @nuevo0 UNION ALL
+    SELECT N'dbo.sp_Pago_ObtenerComprobante', @nuevo1 UNION ALL
+    SELECT N'dbo.sp_Reporte_ServiciosMasUtilizados', @nuevo2
+), objetos AS (
+    SELECT nombre, esperada, OBJECT_ID(nombre, N'P') AS id FROM contratos
+), definiciones AS (
+    SELECT nombre, esperada, id, OBJECT_DEFINITION(id) AS observada FROM objetos
+), posiciones AS (
+    SELECT *, NULLIF(CHARINDEX(N'PROCEDURE', observada COLLATE Latin1_General_100_BIN2), 0) AS pos
+    FROM definiciones
+), cabeceras AS (
+    SELECT *, REPLACE(REPLACE(REPLACE(SUBSTRING(observada COLLATE Latin1_General_100_BIN2, 1, pos - 1),
+                  NCHAR(9), N' '), NCHAR(13), N' '), NCHAR(10), N' ') AS verbo
+    FROM posiciones
+), cuerpos AS (
+    SELECT nombre, id, esperada, observada,
+        SUBSTRING(esperada, LEN(N'CREATE OR ALTER PROCEDURE') + 1, DATALENGTH(esperada)) AS cuerpoEsperado,
+        CASE WHEN UNICODE(RIGHT(verbo, 1)) = 32
+                  AND RTRIM(verbo) COLLATE Latin1_General_100_BIN2 IN (N'CREATE', N'ALTER', N'CREATE OR ALTER')
+             THEN SUBSTRING(observada, pos + LEN(N'PROCEDURE'), DATALENGTH(observada)) END AS cuerpoObservado
+    FROM cabeceras
+), comparaciones AS (
+    SELECT *, CASE WHEN DATALENGTH(cuerpoEsperado) = DATALENGTH(cuerpoObservado)
+                    AND cuerpoEsperado COLLATE Latin1_General_100_BIN2 = cuerpoObservado
+                   THEN 1 ELSE 0 END AS coincide
+    FROM cuerpos
+)
+-- FIN comparación del paso 10
+SELECT TOP (1) @error = nombre + N': Definicion de consulta diferente a la revisada o no disponible.'
+FROM comparaciones WHERE coincide = 0 ORDER BY nombre;
+IF @error IS NOT NULL THROW 51905, @error, 1;
 IF NOT EXISTS(SELECT 1 FROM sys.columns c JOIN sys.default_constraints d ON d.object_id=c.default_object_id
  WHERE c.object_id=OBJECT_ID(N'dbo.DetalleServicios') AND c.name=N'fecha_consumo'
  AND c.system_type_id IN (42,61) AND d.definition IN (N'(sysdatetime())',N'(getdate())',N'(SYSDATETIME())',N'(GETDATE())'))

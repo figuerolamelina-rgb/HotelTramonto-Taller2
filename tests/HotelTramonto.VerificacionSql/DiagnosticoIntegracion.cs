@@ -88,19 +88,24 @@ internal static class DiagnosticoIntegracion
 
     internal static void GuardarPaso10(SqlConnection copia, string script, string directorio)
     {
+        var bloque = Regex.Match(script, @"(?ms)^-- INICIO comparación del paso 10\r?\n(.*?)^-- FIN comparación del paso 10\r?$");
+        if (!bloque.Success) throw new InvalidDataException("Falta la comparación de consultas del paso 10.");
+        string consulta = "DECLARE @nuevo0 nvarchar(max)=@p0, @nuevo1 nvarchar(max)=@p1, @nuevo2 nvarchar(max)=@p2;\n"
+            + bloque.Groups[1].Value + "\nSELECT * FROM comparaciones ORDER BY nombre;";
+        var contratos = Procedimientos.Select(p => Literal(script, p.Variable, p.Nombre)).ToArray();
+        var tabla = Sql.Tabla(copia, consulta, contratos);
         var registros = new List<object>();
-        foreach (var (nombre, variable) in Procedimientos)
+        foreach (DataRow fila in tabla.Rows)
         {
-            string esperada = Literal(script, variable, nombre);
-            // 10 admite sólo @nuevoN. Los dos NULL excluyen las referencias previas de 09.
-            var fila = Sql.Tabla(copia, Consulta, nombre, esperada, null, null).Rows.Cast<DataRow>().Single();
+            string nombre = (string)fila["nombre"], esperada = (string)fila["esperada"];
             string? observada = fila["observada"] as string;
-            bool coincide = (bool)fila["coincide"];
+            bool coincide = (int)fila["coincide"] == 1;
             string estado = fila.IsNull("id") ? "Objeto ausente o no visible" :
                 observada == null ? "Definición no disponible" :
                 coincide ? "Definición reconocida" : "Definición diferente";
-            var diferencia = coincide ? null : DiagnosticoCiclo.Diferencia(
-                (string)fila["canonEsperado"], fila["canonObservado"] as string);
+            var diferencia = fila["cuerpoObservado"] is string cuerpo
+                ? DiagnosticoCiclo.Diferencia((string)fila["cuerpoEsperado"], cuerpo)
+                : DiagnosticoCiclo.Diferencia(esperada, observada);
             registros.Add(new {
                 procedimiento = nombre, estado, coincideSegun10 = coincide,
                 diferenciaLiteral = DiagnosticoCiclo.Diferencia(esperada, observada),

@@ -150,29 +150,87 @@ class IntegracionIaraMelina(unittest.TestCase):
     def test_51905_conserva_contratos_y_comparacion_de_las_tres_consultas(self):
         install = (SQL / '09_ConsultasIntegracion.sql').read_text()
         verify = (SQL / '10_VerificarConsultasIntegracion.sql').read_text()
-        diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
-        canon = re.search(r'(LTRIM\(RTRIM\(REPLACE\(.*? COLLATE Latin1_General_100_BIN2) AS canon', diag)[1]
         installed = re.findall(r"EXEC sys\.sp_executesql N'(CREATE OR ALTER PROCEDURE (?:''|[^'])*)';", install)
         self.assertEqual(3, len(installed))
-        db = sqlite3.connect(':memory:')
-        self.addCleanup(db.close)
         for i, literal in enumerate(installed):
             name = re.match(r'CREATE OR ALTER PROCEDURE (dbo\.\w+)', literal)[1]
             expected = re.search(rf"@nuevo{i} nvarchar\(max\)=N'((?:''|[^'])*)'", verify)[1]
             self.assertEqual(literal, expected)
-            guard, message = re.search(rf"^IF (@actual{i} IS NULL OR [^\n]+)\n THROW 51905, '([^']+)'", verify, re.M).groups()
-            self.assertIn(name, message)
-            actual = canon.replace('texto', f'@actual{i}')
-            revised = canon.replace('texto', f'@nuevo{i}')
-            self.assertEqual(f'@actual{i} IS NULL OR {actual} <> {revised}', guard)
-            definition = expected.replace("''", "'")
-            for observed, reject in [(definition, False), (definition.replace('CREATE OR ALTER', 'ALTER', 1), False),
-                                     (definition.replace('WHERE', 'WHERE 1=0 AND', 1), True),
-                                     (definition.replace('SELECT', 'SELECT 0,', 1), True), ('', True), (None, True)]:
-                with self.subTest(name=name, reject=reject):
-                    expr = guard.replace("N'", "'").replace('Latin1_General_100_BIN2', 'BINARY')
-                    self.assertEqual(reject, bool(db.execute('SELECT ' + expr, {
-                        f'actual{i}': observed, f'nuevo{i}': definition}).fetchone()[0]))
+            self.assertIn(f"SELECT N'{name}', @nuevo{i}", verify)
+        self.assertIn("SELECT TOP (1) @error = nombre + N':", verify)
+        self.assertIn('FROM comparaciones WHERE coincide = 0 ORDER BY nombre;', verify)
+        self.assertIn('IF @error IS NOT NULL THROW 51905, @error, 1;', verify)
+
+    def test_51905_definiciones_del_informe_y_mutaciones(self):
+        verify = (SQL / '10_VerificarConsultasIntegracion.sql').read_text()
+        query = verify.split('-- INICIO comparación del paso 10\n')[1].split('-- FIN comparación del paso 10')[0]
+        self.assertNotRegex(query, r'(?im)^\s*(?:EXEC|USE|INSERT|UPDATE|DELETE|MERGE|ALTER|DROP|CREATE)\b')
+        # Ejecutar la misma consulta de solo lectura del verificador y del diagnóstico.
+        # SQLite aporta la CTE. Las funciones de catálogo leen este diccionario en memoria.
+        query = query.replace("N'", "'").replace('RIGHT(', 'sql_right(') + 'SELECT nombre, coincide FROM comparaciones'
+        db = sqlite3.connect(':memory:')
+        self.addCleanup(db.close)
+        catalog = {}
+        db.create_function('OBJECT_ID', 2, lambda name, kind: name if kind == 'P' and name in catalog else None)
+        db.create_function('OBJECT_DEFINITION', 1, catalog.get)
+        db.create_function('CHARINDEX', 2, lambda sub, s: None if s is None else s.find(sub) + 1)
+        db.create_function('LEN', 1, len)
+        db.create_function('NCHAR', 1, chr)
+        db.create_function('sql_right', 2, lambda s, n: None if s is None else s[-n:])
+        db.create_function('DATALENGTH', 1, lambda s: None if s is None else len(s.encode('utf-16le')))
+
+        def bin2(a, b):
+            # La igualdad SQL rellena con espacios incluso con BIN2.
+            a, b = a.rstrip(' '), b.rstrip(' ')
+            return (a > b) - (a < b)
+
+        db.create_collation('Latin1_General_100_BIN2', bin2)
+        params = {}
+        # SHA-256 de las tres observadas del diagnostico-paso10.json de la copia Pre56.
+        digests = ['88b5771b62c9facd29b84cc3c36cc8977ca08a7e06b3c4d962b40d8c03993074',
+                   'ea7f28bca350c1d3a5229869b3eb4403eab0e4c7a676874b0ffec06269f3bf2d',
+                   '5d4945066fb34ff6fa6354b79cbaa9cccb4b542a3262d6b5978421e61f23c144']
+        for i, digest in enumerate(digests):
+            literal = re.search(rf"@nuevo{i} nvarchar\(max\)=N'((?:''|[^'])*)'", verify)[1]
+            definition = literal.replace("''", "'").replace('\n', '\r\n')
+            name = re.match(r'CREATE OR ALTER PROCEDURE (dbo\.\w+)', definition)[1]
+            params[f'nuevo{i}'] = definition
+            catalog[name] = definition.replace('CREATE OR ALTER', 'CREATE  ', 1)
+            self.assertEqual(digest, hashlib.sha256(catalog[name].encode('utf-8')).hexdigest())
+        approved = {name: 1 for name in catalog}
+        self.assertEqual(approved, dict(db.execute(query, params)))
+
+        for name, observed in catalog.copy().items():
+            rest = observed.removeprefix('CREATE   PROCEDURE')
+            for header in ('CREATE OR ALTER PROCEDURE', 'CREATE PROCEDURE', 'ALTER PROCEDURE', 'CREATE\t\r\n PROCEDURE'):
+                with self.subTest(name=name, header=header):
+                    catalog[name] = header + rest
+                    self.assertEqual(approved, dict(db.execute(query, params)))
+            literal = re.search(r"'[^']+'", rest)[0]
+            for changed in (None, '', 'CREATEPROCEDURE' + rest, '-- CREATE PROCEDURE' + rest,
+                            'SELECT 1;\r\n' + observed, observed.replace('dbo.', '', 1),
+                            observed.replace('WHERE', 'WHERE 1=0 AND', 1), observed.replace('SELECT', 'SELECT 0,', 1),
+                            observed.replace(literal, literal[:-1] + " '", 1),
+                            observed.replace(literal, literal.swapcase(), 1),
+                            observed.replace('\r\n', '\n', 1), observed + ' ', observed + '\r\nSELECT 1;'):
+                with self.subTest(name=name, observed=changed):
+                    catalog[name] = changed
+                    self.assertEqual({**approved, name: 0}, dict(db.execute(query, params)))
+            del catalog[name]
+            self.assertEqual({**approved, name: 0}, dict(db.execute(query, params)))
+            catalog[name] = observed
+
+        # El antiguo REPLACE global también alcanzaba palabras DDL y CR dentro de literales.
+        name = 'dbo.sp_Reporte_ServiciosMasUtilizados'
+        frase = "N'CREATE PROCEDURE dbo.x\r\ndos  espacios'"
+        params['nuevo2'] = params['nuevo2'].replace("N'Fecha de consumo'", frase)
+        catalog[name] = catalog[name].replace("N'Fecha de consumo'", frase)
+        self.assertEqual(approved, dict(db.execute(query, params)))
+        revised = catalog[name]
+        for mutation in (frase.replace('CREATE PROCEDURE dbo.', 'ALTER PROCEDURE '),
+                         frase.replace('\r\n', '\n'), frase.replace('  ', ' ')):
+            catalog[name] = revised.replace(frase, mutation, 1)
+            self.assertEqual({**approved, name: 0}, dict(db.execute(query, params)))
 
     def test_51905_informe_completo_antes_de_verificar_en_la_copia(self):
         source = (ROOT / 'tests/HotelTramonto.VerificacionSql/Ejecutor.cs').read_text()
@@ -183,7 +241,11 @@ class IntegracionIaraMelina(unittest.TestCase):
         self.assertLess(call, migrar.index('adapter.Fill'))
         diag = (ROOT / 'tests/HotelTramonto.VerificacionSql/DiagnosticoIntegracion.cs').read_text()
         report = diag.split('internal static void GuardarPaso10')[1]
-        self.assertIn('Sql.Tabla(copia, Consulta, nombre, esperada, null, null)', report)
+        self.assertIn('-- INICIO comparación del paso 10', report)
+        self.assertIn('-- FIN comparación del paso 10', report)
+        self.assertIn('bloque.Groups[1].Value', report)
+        self.assertIn('SELECT * FROM comparaciones ORDER BY nombre;', report)
+        self.assertIn('Sql.Tabla(copia, consulta, contratos)', report)
         for field in ('procedimiento = nombre', 'estado', 'coincideSegun10', 'diferenciaLiteral',
                       'diferenciaSegun10 = diferencia, esperada, observada', 'diagnostico-paso10.json'):
             self.assertIn(field, report)
