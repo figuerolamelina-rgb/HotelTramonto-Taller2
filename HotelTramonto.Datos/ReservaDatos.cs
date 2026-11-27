@@ -126,6 +126,26 @@ namespace HotelTramonto.Datos
             return tabla;
         }
 
+
+        public DataTable DeshacerCheckIn(int idReserva)
+        {
+            using SqlConnection conexion = ConexionBD.ObtenerConexion();
+
+            using SqlCommand comando = new SqlCommand(
+                "sp_Reserva_DeshacerCheckIn",
+                conexion);
+
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@id_reserva", idReserva);
+
+            using SqlDataAdapter adaptador = new SqlDataAdapter(comando);
+
+            DataTable tabla = new DataTable();
+            adaptador.Fill(tabla);
+
+            return tabla;
+        }
+
         public DataTable CheckOut(int idReserva)
         {
             using SqlConnection conexion = ConexionBD.ObtenerConexion();

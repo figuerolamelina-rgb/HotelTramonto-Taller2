@@ -61,6 +61,13 @@ namespace HotelTramonto.Negocios
 
             return reservaDatos.CheckIn(idReserva);
         }
+        public DataTable DeshacerCheckIn(int idReserva)
+        {
+            if (idReserva <= 0)
+                throw new ArgumentException("La reserva seleccionada no es válida.");
+
+            return reservaDatos.DeshacerCheckIn(idReserva);
+        }
 
         public DataTable CheckOut(int idReserva)
         {
