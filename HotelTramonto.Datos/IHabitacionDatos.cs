@@ -9,6 +9,7 @@ public interface IHabitacionDatos
     void Desactivar(int idHabitacion);
     void Reactivar(int idHabitacion);
     DataTable Listar();
+    DataTable ListarConReservaCheckIn();
     DataTable BuscarPorId(int idHabitacion);
     DataTable ListarInactivas();
     DataTable ConsultarDisponibilidad(DateTime fechaEntrada, DateTime fechaSalida);

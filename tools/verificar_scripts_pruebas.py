@@ -56,10 +56,30 @@ class SeguridadScripts(unittest.TestCase):
         for path in (ROOT / 'HotelTramonto.Datos').glob('*.cs'):
             actual.update(n.removeprefix('dbo.') for n in re.findall(
                 r'"((?:dbo\.)?sp_\w+)"', path.read_text(encoding='utf-8-sig')))
-        self.assertEqual(60, len(actual))
+        adicionales = {'sp_Huesped_HistorialReservas', 'sp_ReservaTemporal_ConsultarConfirmacion',
+                       'sp_Habitacion_ListarConReservaCheckIn', 'sp_Pago_ObtenerComprobante'}
+        self.assertEqual(64, len(actual))
+        self.assertTrue(adicionales <= actual)
+        # La instalación/reversión originales de corrección 2 conservan su alcance 60.
+        # Las consultas posteriores se conceden por complementos separados, no se borran al revertir 2.
+        propuesta = (SQL / 'acceso-operativo/01_Instalar.sql').read_text()
+        self.assertEqual(actual, set(re.findall(r"\(N'(sp_\w+)'\)", propuesta)))
         for name in ('02_PermisosMinimos.sql', '04_RevertirPermisos.sql'):
             code = (SQL / FOLDERS[1] / name).read_text()
-            self.assertEqual(actual, set(re.findall(r"\(N'(sp_\w+)'\)", code)))
+            self.assertEqual(actual - adicionales, set(re.findall(r"\(N'(sp_\w+)'\)", code)))
+
+    def test_complemento_solo_agrega_dos_execute_y_respeta_las_bases(self):
+        carpeta = SQL / 'integracion'
+        instalador = (carpeta / '01_PermisosConsultasAdicionales_Pruebas.sql').read_text()
+        codigo = sin_comentarios(instalador)
+        self.assertEqual({'sp_Huesped_HistorialReservas', 'sp_ReservaTemporal_ConsultarConfirmacion'},
+                         set(re.findall(r'GRANT EXECUTE ON OBJECT::dbo\.(sp_\w+) TO', codigo)))
+        self.assertNotRegex(codigo, r'(?i)\b(?:REVOKE|ALTER ROLE|CREATE ROLE|DROP ROLE|USE)\b')
+        self.assertNotRegex(codigo, r'(?i)GRANT\s+(?:SELECT|INSERT|UPDATE|DELETE|CONTROL)')
+        for path in carpeta.glob('*.sql'):
+            self.assertIn("DB_NAME() COLLATE Latin1_General_100_BIN2 <> N'HotelTramontoDB_Pruebas'", path.read_text())
+        verificador = (carpeta / '02_VerificarConsultasAdicionales_Pruebas.sql').read_text()
+        self.assertNotRegex(sin_comentarios(verificador), r'(?i)\b(?:GRANT|DENY|REVOKE|EXEC|EXECUTE|ALTER|DROP)\s')
 
 
 if __name__ == '__main__':

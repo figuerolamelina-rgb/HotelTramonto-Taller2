@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using System.Drawing;
@@ -10,13 +10,16 @@ namespace HotelTramonto.Presentacion
 {
     public partial class FormRegistrarConsumos : Form
     {
-        private readonly int idReserva;
+        private readonly string rolOperacion;
+        private int idReserva;
+        private readonly bool seleccionGlobal;
+        private bool cargandoHabitaciones;
+        private SolicitudConsumo? consumoPendiente;
 
         private readonly ServicioNegocios servicioNegocio =
             new ServicioNegocios();
 
-        private readonly DetalleServicioNegocios detalleNegocio =
-            new DetalleServicioNegocios();
+        private readonly DetalleServicioNegocios detalleNegocio;
 
         private readonly Color marron = Color.FromArgb(74, 48, 39);
         private readonly Color marronClaro = Color.FromArgb(91, 62, 49);
@@ -24,6 +27,8 @@ namespace HotelTramonto.Presentacion
         private readonly Color marfil = Color.FromArgb(255, 252, 247);
         private readonly Color dorado = Color.FromArgb(198, 161, 91);
 
+        private readonly ComboBox cmbHabitacion = new ComboBox();
+        private readonly CheckBox filtrarHabitacion = new CheckBox();
         private ComboBox cmbCategoria;
         private ComboBox cmbProducto;
         private NumericUpDown nudCantidad;
@@ -39,17 +44,28 @@ namespace HotelTramonto.Presentacion
 
         private decimal precioSeleccionado = 0;
 
-        public FormRegistrarConsumos(int idReserva)
+        public FormRegistrarConsumos(string rol) : this(0, rol, true) { }
+
+        public FormRegistrarConsumos(int idReserva, string rol) : this(idReserva, rol, false) { }
+
+        private FormRegistrarConsumos(int idReserva, string rol, bool seleccionGlobal)
         {
-            if (idReserva <= 0)
+            PermisosOperacion.Exigir(rol);
+            rolOperacion = rol;
+            detalleNegocio = new DetalleServicioNegocios(rol);
+            if (idReserva <= 0 && !seleccionGlobal)
                 throw new ArgumentException("El ID de reserva no es válido.");
 
             this.idReserva = idReserva;
+            this.seleccionGlobal = seleccionGlobal;
 
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
             ConfigurarFormulario();
+            CargarHabitaciones();
             CargarProductos();
             CargarConsumos();
+            Shown += (s, e) => { if (this.idReserva > 0) ReanudarConsumo(); };
         }
 
         private void ConfigurarFormulario()
@@ -60,6 +76,8 @@ namespace HotelTramonto.Presentacion
             Font = new Font("Segoe UI", 10F);
             StartPosition = FormStartPosition.CenterParent;
             MinimumSize = new Size(950, 650);
+            AutoScroll = true;
+            AutoScrollMinSize = new Size(1070, 660);
             Size = new Size(1100, 720);
 
             Label lblTitulo = new Label
@@ -141,6 +159,29 @@ namespace HotelTramonto.Presentacion
             btnAgregar.Location = new Point(35, 205);
             btnAgregar.Size = new Size(175, 40);
             btnAgregar.Click += btnAgregar_Click;
+            Label habitacion = CrearEtiqueta("Habitación de la reserva", 280, 185);
+            cmbHabitacion.SetBounds(280, 210, 220, 30);
+            cmbHabitacion.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbHabitacion.BackColor = marfil;
+            cmbHabitacion.SelectedIndexChanged += (s, e) =>
+            {
+                if (cargandoHabitaciones) return;
+                if (seleccionGlobal)
+                {
+                    idReserva = cmbHabitacion.SelectedItem is DataRowView fila ? Convert.ToInt32(fila["id_reserva"]) : 0;
+                    lblReserva.Text = idReserva > 0 ? "Reserva N.º: " + idReserva : "Seleccioná una habitación con check-in";
+                    btnAgregar.Enabled = idReserva > 0;
+                    CargarConsumos();
+                    if (idReserva > 0) ReanudarConsumo();
+                }
+                else if (filtrarHabitacion.Checked) CargarConsumos();
+            };
+            filtrarHabitacion.Text = "Consultar solo esta habitación";
+            filtrarHabitacion.SetBounds(530, 210, 330, 30);
+            filtrarHabitacion.CheckedChanged += (s, e) => CargarConsumos();
+            Controls.Add(habitacion);
+            Controls.Add(cmbHabitacion);
+            Controls.Add(filtrarHabitacion);
 
             Label lblListado = new Label
             {
@@ -210,6 +251,49 @@ namespace HotelTramonto.Presentacion
             Controls.Add(btnCerrar);
         }
 
+        private void CargarHabitaciones()
+        {
+            try
+            {
+                cargandoHabitaciones = true;
+                DataTable habitaciones = seleccionGlobal
+                    ? new HabitacionNegocios().ListarConReservaCheckIn(rolOperacion)
+                    : detalleNegocio.HabitacionesDeReserva(idReserva);
+                if (seleccionGlobal)
+                {
+                    habitaciones.Columns.Add("descripcion_seleccion", typeof(string));
+                    foreach (DataRow fila in habitaciones.Rows)
+                        fila["descripcion_seleccion"] = $"Habitación {fila["numero_habitacion"]} — reserva {fila["id_reserva"]} — {fila["nombre_huesped"]} {fila["apellido_huesped"]}";
+                    cmbHabitacion.DropDownWidth = 650;
+                }
+                cmbHabitacion.DisplayMember = seleccionGlobal ? "descripcion_seleccion" : "numero_habitacion";
+                cmbHabitacion.ValueMember = "id_habitacion";
+                cmbHabitacion.DataSource = habitaciones;
+                cmbHabitacion.SelectedIndex = -1;
+                if (seleccionGlobal)
+                {
+                    lblReserva.Text = "Seleccioná una habitación con check-in";
+                    btnAgregar.Enabled = false;
+                }
+            }
+            catch (Exception)
+            {
+                btnAgregar.Enabled = false;
+                MostrarMensaje("Habitaciones no disponibles",
+                    "No se pudieron consultar las habitaciones de la reserva.", true);
+            }
+            finally { cargandoHabitaciones = false; }
+        }
+
+        private void BloquearSolicitud(bool bloquear)
+        {
+            cmbHabitacion.Enabled = !bloquear;
+            cmbCategoria.Enabled = !bloquear;
+            cmbProducto.Enabled = !bloquear;
+            nudCantidad.Enabled = !bloquear;
+            btnAgregar.Text = bloquear ? "Reintentar consumo" : "Agregar consumo";
+        }
+
         private Label CrearEtiqueta(string texto, int x, int y)
         {
             return new Label
@@ -249,7 +333,7 @@ namespace HotelTramonto.Presentacion
         {
             try
             {
-                tablaProductos = servicioNegocio.ListarParaConsumo();
+                tablaProductos = servicioNegocio.ListarParaConsumo(rolOperacion);
 
                 cmbCategoria.Items.Clear();
                 cmbCategoria.Items.Add("Todas");
@@ -268,7 +352,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error",
-                    "No se pudieron cargar los productos.\n\n" + ex.Message,
+                    "No se pudieron cargar los productos.\n\n" + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -350,6 +434,16 @@ namespace HotelTramonto.Presentacion
 
         private void btnAgregar_Click(object sender, EventArgs e)
         {
+            if (consumoPendiente != null)
+            {
+                EjecutarConsumo(consumoPendiente);
+                return;
+            }
+            if (idReserva <= 0)
+            {
+                MostrarMensaje("Habitación requerida", "Seleccioná una habitación con reserva en check-in.");
+                return;
+            }
             if (cmbProducto.SelectedItem is not DataRowView producto)
             {
                 MostrarMensaje(
@@ -358,6 +452,11 @@ namespace HotelTramonto.Presentacion
                 return;
             }
 
+            if (cmbHabitacion.SelectedValue is not int idHabitacion)
+            {
+                MostrarMensaje("Habitación requerida", "Seleccioná una habitación de esta reserva.");
+                return;
+            }
             int idServicio = Convert.ToInt32(producto["id_servicio"]);
             int cantidad = (int)nudCantidad.Value;
 
@@ -372,7 +471,7 @@ namespace HotelTramonto.Presentacion
             string nombre = producto["nombre"].ToString();
 
             string detalle =
-                "Producto: " + nombre +
+                "Habitación: " + cmbHabitacion.Text + "\nProducto: " + nombre +
                 "\nCantidad: " + cantidad +
                 "\nSubtotal: " +
                 (precioSeleccionado * cantidad).ToString(
@@ -383,44 +482,86 @@ namespace HotelTramonto.Presentacion
             if (!MostrarConfirmacion("Confirmar consumo", detalle))
                 return;
 
+            EjecutarConsumo(new SolicitudConsumo(idServicio, idReserva, cantidad,
+                precioSeleccionado, idHabitacion));
+        }
+
+        private string ClaveConsumo => "consumo:" + idReserva;
+
+        private void ReanudarConsumo()
+        {
             try
             {
-                detalleNegocio.Insertar(
-                    idServicio,
-                    idReserva,
-                    cantidad,
-                    precioSeleccionado);
+                var solicitud = DiarioOperaciones.Actual().Leer<SolicitudConsumo>(ClaveConsumo);
+                consumoPendiente = solicitud;
+                if (solicitud != null) BloquearSolicitud(true);
+                if (solicitud != null && MostrarConfirmacion("Consumo pendiente",
+                    $"¿Reanudar consumo guardado de habitación #{solicitud.IdHabitacion}, servicio #{solicitud.IdServicio}, " +
+                    $"cantidad {solicitud.Cantidad}, precio {solicitud.Precio:C2}?"))
+                    EjecutarConsumo(solicitud);
+            }
+            catch (Exception)
+            {
+                MostrarMensaje("Operación pendiente", "No se pudo recuperar el consumo. Conservá el diario para revisión.", true);
+            }
+        }
 
-                MostrarMensaje(
-                    "Consumo registrado",
-                    "El consumo de " + nombre +
-                    " se registró correctamente.");
-
+        private void EjecutarConsumo(SolicitudConsumo solicitud)
+        {
+            consumoPendiente = solicitud;
+            BloquearSolicitud(true);
+            btnAgregar.Enabled = false;
+            try
+            {
+                var diario = DiarioOperaciones.Actual();
+                var resultado = diario.Ejecutar(ClaveConsumo, solicitud, contexto =>
+                {
+                    detalleNegocio.Insertar(solicitud.IdServicio, solicitud.IdReserva, solicitud.Cantidad,
+                        solicitud.Precio, solicitud.IdHabitacion, contexto.Id);
+                    return true;
+                });
+                MostrarMensaje("Consumo registrado", "El consumo se registró correctamente.");
+                diario.Confirmar(ClaveConsumo, resultado.Id);
+                consumoPendiente = null;
+                BloquearSolicitud(false);
                 nudCantidad.Value = 1;
                 CargarConsumos();
                 ActualizarSubtotal();
             }
-            catch (Exception ex)
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number >= 51313 && ex.Number <= 51318)
             {
-                MostrarMensaje(
-                    "Error al registrar",
-                    "No se pudo registrar el consumo.\n\n" + ex.Message,
-                    true);
+                consumoPendiente = null;
+                BloquearSolicitud(false);
+                CargarProductos();
+                MostrarMensaje("Consumo rechazado", HotelTramonto.Datos.ErroresOperacionSql.Mensaje(ex.Number), true);
             }
+            catch (Exception)
+            {
+                MostrarMensaje("Resultado no confirmado",
+                    "Reabrí esta reserva para recuperar la misma operación pendiente. No ingreses otra solicitud del consumo.", true);
+            }
+            finally { btnAgregar.Enabled = true; }
         }
 
         private void CargarConsumos()
         {
+            if (idReserva <= 0) { dgvConsumos.DataSource = null; return; }
             try
             {
                 tablaConsumos =
-                    detalleNegocio.ListarPorReserva(idReserva);
+                    detalleNegocio.ListarPorReserva(idReserva,
+                        filtrarHabitacion.Checked && cmbHabitacion.SelectedValue is int habitacion
+                            ? habitacion : null);
 
                 dgvConsumos.DataSource = tablaConsumos;
 
                 if (dgvConsumos.Columns.Contains("id_detalle_servicio"))
                     dgvConsumos.Columns["id_detalle_servicio"].Visible = false;
 
+                if (dgvConsumos.Columns.Contains("id_habitacion"))
+                    dgvConsumos.Columns["id_habitacion"]!.Visible = false;
+                if (dgvConsumos.Columns.Contains("numero_habitacion"))
+                    dgvConsumos.Columns["numero_habitacion"]!.HeaderText = "Habitación";
                 if (dgvConsumos.Columns.Contains("id_reserva"))
                     dgvConsumos.Columns["id_reserva"].Visible = false;
 
@@ -460,7 +601,7 @@ namespace HotelTramonto.Presentacion
                 MostrarMensaje(
                     "Error al consultar consumos",
                     "No se pudieron consultar los consumos.\n\n" +
-                    ex.Message,
+                    RegistroErrores.Mensaje(ex),
                     true);
             }
         }

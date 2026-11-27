@@ -1,8 +1,10 @@
-﻿
+
 namespace HotelTramonto.Entidades
 {
     public class Pago
     {
+        public Guid? IdOperacion { get; set; }
+
         public int IdPago { get; set; }
 
         public int? IdReserva { get; set; }

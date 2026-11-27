@@ -110,6 +110,7 @@ public class PermisosHabitacionesTests
             Llamadas.Add($"modificar:{idHabitacion}:{tipoHabitacion}:{piso}:{numero}:{estado}");
         public void Desactivar(int idHabitacion) => Llamadas.Add($"desactivar:{idHabitacion}");
         public void Reactivar(int idHabitacion) => Llamadas.Add($"reactivar:{idHabitacion}");
+        public DataTable ListarConReservaCheckIn() => Resultado;
         public DataTable Listar() => Resultado;
         public DataTable BuscarPorId(int idHabitacion) => Resultado;
         public DataTable ListarInactivas() => Resultado;
@@ -124,6 +125,7 @@ public class PermisosHabitacionesTests
     {
         public List<string> Llamadas { get; } = new();
         public DataTable Resultado { get; } = new();
+        public DataTable ListarConReservaCheckIn() => Resultado;
         public DataTable Listar() => Resultado;
         public void Insertar(string nombre, string? descripcion, decimal precioNoche, int capacidad) =>
             Llamadas.Add($"insertar:{nombre}:{precioNoche}:{capacidad}");

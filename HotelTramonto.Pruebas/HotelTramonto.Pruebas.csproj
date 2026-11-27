@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -15,8 +15,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\tests\HotelTramonto.VerificacionSql\HotelTramonto.VerificacionSql.csproj" />
     <ProjectReference Include="..\HotelTramonto.Datos\HotelTramonto.Datos.csproj" />
     <ProjectReference Include="..\HotelTramonto.Negocios\HotelTramonto.Negocios.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Se prueba el generador sin cargar Windows Forms en Linux. Mismo fuente y versión de producción. -->
+    <Compile Include="../HotelTramonto.Presentacion/Servicios/ComprobantePagoPdf.cs" Link="ComprobantePagoPdf.cs" />
+    <PackageReference Include="QuestPDF" Version="2026.9.2" />
   </ItemGroup>
 
   <ItemGroup>

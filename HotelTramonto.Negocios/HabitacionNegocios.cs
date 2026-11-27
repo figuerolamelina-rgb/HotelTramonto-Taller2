@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using HotelTramonto.Datos;
@@ -75,6 +75,12 @@ namespace HotelTramonto.Negocios
         public DataTable Listar()
         {
             return habitacionDatos.Listar();
+        }
+
+        public DataTable ListarConReservaCheckIn(string? rol = null)
+        {
+            PermisosOperacion.Exigir(rol);
+            return habitacionDatos.ListarConReservaCheckIn();
         }
 
         public DataTable BuscarPorId(int idHabitacion)

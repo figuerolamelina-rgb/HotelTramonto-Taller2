@@ -1,0 +1,52 @@
+{
+  "base_correcciones": "5d747c946ccfcfa3a99d464564bb79902762574c",
+  "fuentes": {
+    "origin/feature/iara": "11440cf6e38b5c7dbc3ddd65ddc751a28683ea56",
+    "origin/feature/melina": "d5467c7d7683a3017f1b75bb0213017a534d4545",
+    "origin/develop": "b607d885f6f50217734afee9c50a16b908411cd0",
+    "origin/integracion-melina-iara": "f6cae70eca93f3df646220b975ad4953ee501c35"
+  },
+  "commits_iara_incorporados": [
+    "fa9a31b99fc30e6f95f14c5ff7cee3656a6c82ee",
+    "8ff1d023b62dd79e80c4c37ae8b5460e6fc50229",
+    "d59b66855e2a24ed92bc82f85ac25969c8b72282",
+    "b9177145ef00be8c46a5de997d4d3d494eadc627",
+    "eb0a3415e4cb3f3dda3fd4598e882b28ab92ea89",
+    "23ee77dc8b59c4bccb52e7ef83cd5b5589c6e7f3",
+    "a49ca2b7b181ecb7a88ab0056b886dd87d7d68d4",
+    "73a6b71ce1b69a333d9f2af20835c12da26176bd",
+    "11440cf6e38b5c7dbc3ddd65ddc751a28683ea56"
+  ],
+  "referencias_sql_sha256": {
+    "base de datos HotelTramonto/referencias-iara/Agregar_Categoria_Servicios.sql": "01939f46f8377f6bd894ac725e43d2d8422a44c93e1df3c2f5317f58d1298f5b",
+    "base de datos HotelTramonto/referencias-iara/Agregar_FechaConsumo_DetalleServicios.sql": "831042e02815ac71f0e5d297ce06ac417afa4b12a14e9029c855276572762b2c",
+    "base de datos HotelTramonto/referencias-iara/dbo.sp_ConfirmarReserva.sql": "f6fa3c30c439f9d526b3a91f18708fd72bd6953d441ca08c148560d853cdc5c3",
+    "base de datos HotelTramonto/referencias-iara/dbo.sp_Reporte_ServiciosMasUtilizados.sql": "069967889e13dfdab4ac23b2d6e3b6c4c0350fe8ec01de9f659aa66ae9e36c87",
+    "base de datos HotelTramonto/referencias-iara/sp_ConfirmarReserva_v3.sql": "8346bbd6d425ad8df66a10ec18c04f29d5197f031065f9d756fd10b89658bbe2",
+    "base de datos HotelTramonto/referencias-iara/sp_DetalleServicio_Insertar.sql": "f19d5cd7ee961fe725671fc1ba875d9887c461d46609036b44d02c21b4d8e4dd",
+    "base de datos HotelTramonto/referencias-iara/sp_Reserva_CrearYConfirmar.sql": "c83d0a875e5ddd3f96d5cc30f72a966cf3c511c10635daede78f43dbcd287a4b",
+    "base de datos HotelTramonto/referencias-iara/sp_Reserva_CrearYConfirmar_v2.sql": "66f2977a04802142ac7973dfbe5ee6997b717f7f738758a7be17a9821ed7af1f",
+    "base de datos HotelTramonto/referencias-iara/sp_Servicio_CRUD.sql": "b4f8cdb636758af26bae519e7c02d2dbd203e2123926b8cfbcfbdc992c80a37c",
+    "base de datos HotelTramonto/referencias-iara/sp_Servicio_GestionInactivos.sql": "4ae112885c6b1786d4b7c9924bc5f4ca8b6ee52f610da2f638fe3d6e35522dcf"
+  },
+  "contratos_conservados_sha256": {
+    "base de datos HotelTramonto/servicios-habitaciones/01_Instalar.sql": "8989a79ba7fddae1511c4d69f9dc119493b658a15f8ed71f5f92a6614db89d94",
+    "base de datos HotelTramonto/servicios-habitaciones/02_Verificar.sql": "44bc0af0ed7aab1a2dfeadc6067ac1573e02467b1e38e87517ea54d5b24429ac",
+    "base de datos HotelTramonto/servicios-habitaciones/03_Recuperacion.sql": "da06e2bc4325172d02b6a6e225c530eb43eef44124160e943c8a4430e95b6ee8",
+    "base de datos HotelTramonto/servicios-habitaciones/04_ConcurrenciaPagos.sql": "a7097d597a34bb1982d35286782c44cf436ca7de5ee3947567dc36d4dd093929",
+    "base de datos HotelTramonto/servicios-habitaciones/05_VerificarConcurrencia.sql": "215b55442797c765ecae9dff9e131dbcb4ec74c867d28b33f56a559546de7c85",
+    "base de datos HotelTramonto/servicios-habitaciones/06_SuspenderEscrituras.sql": "c438b6f177ebde22925cff036556aa53eb21a7cf02bb5c3e64cf97bfecea3a4a",
+    "base de datos HotelTramonto/servicios-habitaciones/07_CicloReserva.sql": "2a02259afbb43958f9e5f718c68ee467f376da506706428381f1687da7d1f531",
+    "base de datos HotelTramonto/servicios-habitaciones/08_VerificarCicloReserva.sql": "0b0c0d52d04a14177ba249dea606604a04a32eea06c54dccd0cf945d87c2c8d0",
+    "base de datos HotelTramonto/Actualizacion_HistorialHuespedes.sql": "d5834cde2d8c0fa8fb4454df26441dc75d1cf6b7a139c9dfcdce593dc6349823",
+    "base de datos HotelTramonto/Procedimientos_Almacenados.sql": "6ac5c5c431dbefff7622eb44598d6dc49f0109db47ce908c85b05fe1cb42120f",
+    "HotelTramonto.Datos/ConexionBD.cs": "afec5a33a1757c3a34081983cc2a2f622c4e10f129a2bb72e1d987f879e26d29"
+  },
+  "plantillas_vacias_eliminadas_previamente": {
+    "commit": "4dd66ba",
+    "archivos": [
+      "HotelTramonto.Entidades/Class1.cs",
+      "HotelTramonto.Negocios/Class1.cs"
+    ]
+  }
+}

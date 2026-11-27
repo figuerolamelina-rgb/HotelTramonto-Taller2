@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Data;
 using HotelTramonto.Datos;
@@ -7,6 +7,9 @@ namespace HotelTramonto.Negocios
 {
     public class ReservaTemporalNegocios
     {
+        private readonly string? rol;
+        public ReservaTemporalNegocios(string? rol = null) { this.rol = rol; }
+
         private readonly ReservaTemporalDatos datos =
             new ReservaTemporalDatos();
 
@@ -17,6 +20,7 @@ namespace HotelTramonto.Negocios
             DateTime fechaSalida,
             string modalidadPago)
         {
+            PermisosOperacion.Exigir(rol);
             if (idHuesped <= 0)
                 throw new ArgumentException(
                     "Debe seleccionar un huésped válido.");
@@ -56,6 +60,7 @@ namespace HotelTramonto.Negocios
             int idReservaTemporal,
             string estado)
         {
+            PermisosOperacion.Exigir(rol);
             if (idReservaTemporal <= 0)
                 throw new ArgumentException(
                     "La reserva temporal seleccionada no es válida.");
@@ -71,11 +76,13 @@ namespace HotelTramonto.Negocios
 
         public void ExpirarVencidas()
         {
+            PermisosOperacion.Exigir(rol);
             datos.ExpirarVencidas();
         }
 
         public DataTable ListarPendientes()
         {
+            PermisosOperacion.Exigir(rol);
             return datos.ListarPendientes();
         }
     }

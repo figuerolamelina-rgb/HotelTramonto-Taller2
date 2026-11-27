@@ -20,12 +20,18 @@ namespace HotelTramonto.Presentacion
         private readonly string rolHistorial;
         private readonly Button btnHistorial = new Button();
 
-        public FormHuespedes() : this("") { }
+        public FormHuespedes()
+        {
+            rolHistorial = "";
+            InitializeComponent(); // Constructor del diseñador: no consulta Datos.
+        }
 
         public FormHuespedes(string rol)
         {
+            HotelTramonto.Negocios.PermisosOperacion.Exigir(rol);
             rolHistorial = rol?.Trim().ToUpperInvariant() ?? "";
             InitializeComponent();
+            PresentacionTablas.Conectar(this);
             Controls.Add(btnHistorial);
             btnHistorial.Click += ConsultarHistorial;
             AplicarEstilo();
@@ -128,44 +134,19 @@ namespace HotelTramonto.Presentacion
             try
             {
                 int id = Convert.ToInt32(dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
-                DataTable historial = new HotelTramonto.Negocios.HuespedNegocios()
-                    .HistorialReservas(id, rolHistorial);
-                using Form ventana = new Form
-                {
-                    Text = "Historial de reservas del huésped #" + id,
-                    StartPosition = FormStartPosition.CenterParent,
-                    Size = new Size(1100, 600),
-                    BackColor = crema,
-                    Font = new Font("Segoe UI", 10F)
-                };
-                Label aviso = new Label
-                {
-                    Dock = DockStyle.Top, Height = 85, Padding = new Padding(12),
-                    Text = historial.Rows.Count == 0 ? "El huésped no tiene reservas definitivas." :
-                        "Una fila por reserva y habitación asociada. Las fechas de entrada/salida son previstas. " +
-                        "Check-in y check-out corresponden a la reserva; no acreditan ocupación real por habitación. " +
-                        "El número y tipo de habitación son los del catálogo actual.",
-                    ForeColor = marron
-                };
-                DataGridView tabla = new DataGridView
-                {
-                    Dock = DockStyle.Fill, DataSource = historial,
-                    ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
-                    RowHeadersVisible = false, BackgroundColor = marfil,
-                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
-                };
-                ventana.Controls.Add(tabla);
-                ventana.Controls.Add(aviso);
+                using var ventana = new FormHistorialHuespedes(id,
+                    Convert.ToString(dgvHuespedes.CurrentRow.Cells["nombre"].Value) ?? "",
+                    Convert.ToString(dgvHuespedes.CurrentRow.Cells["apellido"].Value) ?? "",
+                    Convert.ToString(dgvHuespedes.CurrentRow.Cells["dni"].Value) ?? "", rolHistorial);
                 ventana.ShowDialog(this);
             }
             catch (UnauthorizedAccessException)
             {
                 MostrarMensaje("Acceso restringido", "No tiene permisos para consultar el historial.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                MostrarMensaje("Historial no disponible",
-                    "No se pudo consultar el historial. Verificá la configuración y la instalación del procedimiento.", true);
+                MostrarMensaje("Historial no disponible", RegistroErrores.Mensaje(ex), true);
             }
         }
 
@@ -393,9 +374,11 @@ namespace HotelTramonto.Presentacion
             try
             {
                 HotelTramonto.Negocios.HuespedNegocios negocio =
-                    new HotelTramonto.Negocios.HuespedNegocios();
+                    new HotelTramonto.Negocios.HuespedNegocios(rolHistorial);
 
                 dgvHuespedes.DataSource = negocio.Listar();
+
+                ConfigurarEncabezadosHuespedes();
 
                 dgvHuespedes.ReadOnly = true;
                 dgvHuespedes.SelectionMode =
@@ -454,7 +437,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al cargar los huéspedes",
-                    "No se pudieron cargar los huéspedes.\n\nDetalle: " + ex.Message,
+                    "No se pudieron cargar los huéspedes.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -466,7 +449,7 @@ namespace HotelTramonto.Presentacion
 
         private void btnNuevoHuesped_Click(object sender, EventArgs e)
         {
-            using (FormNuevoHuesped formulario = new FormNuevoHuesped())
+            using (FormNuevoHuesped formulario = new FormNuevoHuesped(rolHistorial))
             {
                 if (formulario.ShowDialog() == DialogResult.OK)
                 {
@@ -492,7 +475,7 @@ namespace HotelTramonto.Presentacion
                     dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
 
                 using (FormModificarHuesped formulario =
-                    new FormModificarHuesped(idHuesped))
+                    new FormModificarHuesped(idHuesped, rolHistorial))
                 {
                     if (formulario.ShowDialog() == DialogResult.OK)
                     {
@@ -504,7 +487,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al modificar el huésped",
-                    "No se pudo modificar el huésped.\n\nDetalle: " + ex.Message,
+                    "No se pudo modificar el huésped.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -544,7 +527,7 @@ namespace HotelTramonto.Presentacion
                 int idHuesped = Convert.ToInt32(
                     dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
 
-                new HotelTramonto.Negocios.HuespedNegocios()
+                new HotelTramonto.Negocios.HuespedNegocios(rolHistorial)
                     .Desactivar(idHuesped);
 
                 MostrarMensaje(
@@ -557,7 +540,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al desactivar",
-                    "No se pudo desactivar el huésped.\n\nDetalle: " + ex.Message,
+                    "No se pudo desactivar el huésped.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -597,7 +580,7 @@ namespace HotelTramonto.Presentacion
                 int idHuesped = Convert.ToInt32(
                     dgvHuespedes.CurrentRow.Cells["id_huesped"].Value);
 
-                new HotelTramonto.Negocios.HuespedNegocios()
+                new HotelTramonto.Negocios.HuespedNegocios(rolHistorial)
                     .Reactivar(idHuesped);
 
                 MostrarMensaje(
@@ -610,7 +593,7 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al reactivar",
-                    "No se pudo reactivar el huésped.\n\nDetalle: " + ex.Message,
+                    "No se pudo reactivar el huésped.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
         }
@@ -744,11 +727,13 @@ namespace HotelTramonto.Presentacion
             try
             {
                 HotelTramonto.Negocios.HuespedNegocios negocio =
-                    new HotelTramonto.Negocios.HuespedNegocios();
+                    new HotelTramonto.Negocios.HuespedNegocios(rolHistorial);
 
                 DataTable resultado = negocio.BuscarPorDNI(dni);
 
                 dgvHuespedes.DataSource = resultado;
+
+                ConfigurarEncabezadosHuespedes();
 
                 if (dgvHuespedes.Columns.Contains("id_huesped"))
                     dgvHuespedes.Columns["id_huesped"].Visible = false;
@@ -764,10 +749,46 @@ namespace HotelTramonto.Presentacion
             {
                 MostrarMensaje(
                     "Error al buscar el huésped",
-                    "No se pudo realizar la búsqueda.\n\nDetalle: " + ex.Message,
+                    "No se pudo realizar la búsqueda.\n\nDetalle: " + RegistroErrores.Mensaje(ex),
                     true);
             }
+
         }
+
+        private void ConfigurarEncabezadosHuespedes()
+        {
+            // Ocultar identificador interno
+            if (dgvHuespedes.Columns.Contains("id_huesped"))
+                dgvHuespedes.Columns["id_huesped"].Visible = false;
+
+            // Encabezados visibles
+            if (dgvHuespedes.Columns.Contains("nombre"))
+                dgvHuespedes.Columns["nombre"].HeaderText = "Nombre";
+
+            if (dgvHuespedes.Columns.Contains("apellido"))
+                dgvHuespedes.Columns["apellido"].HeaderText = "Apellido";
+
+            if (dgvHuespedes.Columns.Contains("dni"))
+                dgvHuespedes.Columns["dni"].HeaderText = "DNI";
+
+            if (dgvHuespedes.Columns.Contains("telefono"))
+                dgvHuespedes.Columns["telefono"].HeaderText = "Teléfono";
+
+            if (dgvHuespedes.Columns.Contains("email"))
+                dgvHuespedes.Columns["email"].HeaderText = "Correo electrónico";
+
+            if (dgvHuespedes.Columns.Contains("nacionalidad"))
+                dgvHuespedes.Columns["nacionalidad"].HeaderText = "Nacionalidad";
+
+            if (dgvHuespedes.Columns.Contains("fecha_alta"))
+                dgvHuespedes.Columns["fecha_alta"].HeaderText = "Fecha de alta";
+
+            // Ocultar columna técnica activo.
+            if (dgvHuespedes.Columns.Contains("activo"))
+                dgvHuespedes.Columns["activo"].Visible = false;
+        }
+
+
 
     }
 }
