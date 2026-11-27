@@ -47,16 +47,21 @@ public sealed partial class CasosSql
     {
         int r = Reserva("CONFIRMADA", 1);
         using var espera = copia.Abrir();
+        using var observador = copia.Abrir();
         int sesion = Convert.ToInt32(Sql.Escalar(espera, "SELECT @@SPID"));
-        Sql.Ejecutar(db, """
-            BEGIN TRANSACTION;
-            DECLARE @resultado int,@recurso nvarchar(255)=CONCAT(N'HotelTramonto:reserva:',@p0);
-            EXEC @resultado=sys.sp_getapplock @Resource=@recurso,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
-            IF @resultado<0 THROW 51720,'No se obtuvo bloqueo de prueba.',1;
-            """, r);
+        int titular = Convert.ToInt32(Sql.Escalar(db, "SELECT @@SPID"));
         Task<int>? tarea = null;
+        int? codigo;
         try
         {
+            using var transaccion = db.BeginTransaction();
+            using var bloqueo = Sql.Comando(db, """
+                DECLARE @resultado int,@recurso nvarchar(255)=CONCAT(N'HotelTramonto:reserva:',@p0);
+                EXEC @resultado=sys.sp_getapplock @Resource=@recurso,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
+                IF @resultado<0 THROW 51720,'No se obtuvo bloqueo de prueba.',1;
+                """, r);
+            bloqueo.Transaction = transaccion;
+            bloqueo.ExecuteNonQuery();
             tarea = Task.Run(() =>
             {
                 try
@@ -69,27 +74,31 @@ public sealed partial class CasosSql
             // Acredita espera de bloqueo real; no se considera suficiente lanzar dos tareas.
             var limite = DateTime.UtcNow.AddSeconds(5);
             bool bloqueada = false;
-            using var observador = copia.Abrir();
             while (DateTime.UtcNow < limite && !tarea.IsCompleted)
             {
                 bloqueada = Convert.ToInt32(Sql.Escalar(observador,
-                    "SELECT COUNT(*) FROM sys.dm_exec_requests WHERE session_id=@p0 AND wait_type LIKE 'LCK_M_%'", sesion)) == 1;
+                    "SELECT COUNT(*) FROM sys.dm_exec_requests WHERE session_id=@p0 AND blocking_session_id=@p1 AND wait_type LIKE 'LCK[_]M[_]%'",
+                    sesion, titular)) == 1;
                 if (bloqueada) break;
                 Thread.Sleep(20);
             }
             Exigir(bloqueada, "No se observó espera real; revisar permisos VIEW SERVER STATE/PERFORMANCE STATE.");
-            Sql.Ejecutar(db, checkin ?
-                "UPDATE dbo.Reservas SET estado='FINALIZADA',fecha_checkout=GETDATE() WHERE id_reserva=@p0; COMMIT;" :
-                "UPDATE dbo.Reservas SET estado='CHECKIN',fecha_checkin=GETDATE() WHERE id_reserva=@p0; COMMIT;", r);
-            Exigir(tarea.GetAwaiter().GetResult() == (checkin ? 50027 : 50042));
-            Exigir((string)Sql.Escalar(db, "SELECT estado FROM dbo.Reservas WHERE id_reserva=@p0", r)! ==
-                (checkin ? "FINALIZADA" : "CHECKIN"));
+            using var actualizar = Sql.Comando(db, checkin ?
+                "UPDATE dbo.Reservas SET estado='FINALIZADA',fecha_checkout=GETDATE() WHERE id_reserva=@p0;" :
+                "UPDATE dbo.Reservas SET estado='CHECKIN',fecha_checkin=GETDATE() WHERE id_reserva=@p0;", r);
+            actualizar.Transaction = transaccion;
+            actualizar.ExecuteNonQuery();
+            transaccion.Commit();
         }
         finally
         {
-            Sql.Ejecutar(db, "IF @@TRANCOUNT>0 ROLLBACK;");
-            if (tarea != null) tarea.GetAwaiter().GetResult();
+            // Al salir del try, SqlTransaction ya confirmó o revirtió y liberó el bloqueo.
+            codigo = tarea?.GetAwaiter().GetResult();
         }
+        int esperado = checkin ? 50027 : 50042;
+        Exigir(codigo == esperado, $"Se esperaba el rechazo SQL {esperado} y se obtuvo {codigo}.");
+        string estado = (string)Sql.Escalar(db, "SELECT estado FROM dbo.Reservas WHERE id_reserva=@p0", r)!;
+        Exigir(estado == (checkin ? "FINALIZADA" : "CHECKIN"), $"Estado inesperado tras la espera: {estado}.");
     }
 
     private void ConsumoCheckin()

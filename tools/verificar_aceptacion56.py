@@ -92,6 +92,21 @@ class Aceptacion56(unittest.TestCase):
         self.assertIn('sys.dm_exec_requests', source)
         self.assertIn('Exigir(bloqueada', source)
 
+    def test_266_transicion_demorada_mantiene_una_transaccion_del_cliente(self):
+        source = (ROOT / 'tests/HotelTramonto.VerificacionSql/CasosCiclo.cs').read_text()
+        caso = source.split('private void TransicionDemorada(bool checkin)')[1].split('private void ConsumoCheckin()')[0]
+        self.assertNotRegex(caso, r'(?i)\b(?:BEGIN\s+TRAN(?:SACTION)?|COMMIT|ROLLBACK)\s*;')
+        pasos = [
+            'using var transaccion = db.BeginTransaction()', 'sys.sp_getapplock',
+            'bloqueo.Transaction = transaccion', 'bloqueo.ExecuteNonQuery()', 'Task.Run(',
+            'Sql.Ejecutar(espera, checkin', 'blocking_session_id=@p1', 'Exigir(bloqueada',
+            'UPDATE dbo.Reservas', 'actualizar.Transaction = transaccion', 'actualizar.ExecuteNonQuery()',
+            'transaccion.Commit()', 'finally', 'GetAwaiter().GetResult()',
+            'checkin ? 50027 : 50042', 'SELECT estado FROM dbo.Reservas'
+        ]
+        posiciones = [caso.index(paso) for paso in pasos]
+        self.assertEqual(posiciones, sorted(posiciones))
+
     def test_consulta_aceptacion_sin_escrituras(self):
         source = (ROOT / 'base de datos HotelTramonto/pruebas/ConsultarReservas_Pruebas.sql').read_text()
         code = re.sub(r"/\*.*?\*/|--[^\n]*|'(?:''|[^'])*'", '', source, flags=re.S)
