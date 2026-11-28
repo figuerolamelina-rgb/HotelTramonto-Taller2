@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using HotelTramonto.Negocios;
+using ScottPlot.WinForms;
 
 namespace HotelTramonto.Presentacion
 {
@@ -17,16 +18,26 @@ namespace HotelTramonto.Presentacion
         private Button btnConsultar;
         private Button btnCerrar;
         private DataGridView dgvReporte;
+        private TabControl tabReporteSimple;
+        private TabPage paginaDatosReporte;
+        private TabPage paginaGraficoReporte;
+        private FormsPlot plotReporte;
         private TabControl tabEstadisticas;
         private DataGridView dgvResumenReservas;
         private DataGridView dgvReservasPorTipo;
         private DataGridView dgvDemandaMensual;
+        private TabPage paginaGraficoDemanda;
+        private FormsPlot plotDemanda;
+        private TabPage paginaGraficoReservas;
+        private FormsPlot plotReservas;
         // Pestañas del reporte de ingresos.
         private TabControl tabIngresos;
         private DataGridView dgvResumenIngresos;
         private DataGridView dgvIngresosPorMetodo;
         private DataGridView dgvIngresosPorTipo;
         private DataGridView dgvPagosTemporales;
+        private FormsPlot plotIngresos;
+        private TabPage paginaGraficoIngresos;
         private Label lblEstado;
         private Label lblTitulo;
         private Label lblSubtitulo;
@@ -42,6 +53,7 @@ namespace HotelTramonto.Presentacion
             InitializeComponent();
             ConfigurarFormulario();
         }
+
 
         private void ConfigurarFormulario()
         {
@@ -130,11 +142,11 @@ namespace HotelTramonto.Presentacion
 
             cmbReporte.Items.AddRange(new object[]
             {
-                "Ocupación",
-                "Ingresos",
-                "Estadísticas de reservas",
-                "Habitaciones más utilizadas",
-                "Servicios más utilizados"
+        "Ocupación",
+        "Ingresos",
+        "Estadísticas de reservas",
+        "Habitaciones más utilizadas",
+        "Servicios más utilizados"
             });
 
             cmbReporte.SelectedIndex = 0;
@@ -148,10 +160,10 @@ namespace HotelTramonto.Presentacion
 
             panelFiltros.Controls.AddRange(new Control[]
             {
-                lblDesde, dtpDesde,
-                lblHasta, dtpHasta,
-                lblTipo, cmbReporte,
-                btnConsultar
+        lblDesde, dtpDesde,
+        lblHasta, dtpHasta,
+        lblTipo, cmbReporte,
+        btnConsultar
             });
 
             dgvReporte = new DataGridView
@@ -197,6 +209,32 @@ namespace HotelTramonto.Presentacion
             dgvReporte.DefaultCellStyle.Padding = new Padding(8, 4, 8, 4);
 
             dgvReporte.AlternatingRowsDefaultCellStyle.BackColor = crema;
+
+            // Pestañas para los reportes simples: datos y gráficos.
+            tabReporteSimple = new TabControl
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 10F),
+                Visible = true
+            };
+
+            paginaDatosReporte = new TabPage("Datos");
+            paginaGraficoReporte = new TabPage("Gráfico");
+
+            paginaDatosReporte.BackColor = marfil;
+            paginaGraficoReporte.BackColor = marfil;
+
+            plotReporte = new FormsPlot
+            {
+                Dock = DockStyle.Fill
+            };
+
+            paginaDatosReporte.Controls.Add(dgvReporte);
+            paginaGraficoReporte.Controls.Add(plotReporte);
+
+            tabReporteSimple.TabPages.Add(paginaDatosReporte);
+            tabReporteSimple.TabPages.Add(paginaGraficoReporte);
+
             // Pestañas para el reporte de estadísticas de reservas.
             tabEstadisticas = new TabControl
             {
@@ -224,6 +262,33 @@ namespace HotelTramonto.Presentacion
             tabEstadisticas.TabPages.Add(paginaResumen);
             tabEstadisticas.TabPages.Add(paginaTipos);
             tabEstadisticas.TabPages.Add(paginaDemanda);
+
+            // Pestaña con gráfico de reservas por estado.
+            paginaGraficoReservas = new TabPage("Reservas por estado");
+            paginaGraficoReservas.BackColor = marfil;
+
+            plotReservas = new FormsPlot
+            {
+                Dock = DockStyle.Fill
+            };
+
+            paginaGraficoReservas.Controls.Add(plotReservas);
+
+            tabEstadisticas.TabPages.Add(paginaGraficoReservas);
+
+            // Pestaña de evolución mensual de reservas.
+            paginaGraficoDemanda = new TabPage("Demanda mensual - Gráfico");
+            paginaGraficoDemanda.BackColor = marfil;
+
+            plotDemanda = new FormsPlot
+            {
+                Dock = DockStyle.Fill
+            };
+
+            paginaGraficoDemanda.Controls.Add(plotDemanda);
+
+            tabEstadisticas.TabPages.Add(paginaGraficoDemanda);
+
             // Pestañas para el reporte de ingresos.
             tabIngresos = new TabControl
             {
@@ -249,6 +314,16 @@ namespace HotelTramonto.Presentacion
             TabPage paginaTemporales =
                 new TabPage("Reservas temporales");
 
+            paginaGraficoIngresos = new TabPage("Gráfico de ingresos");
+            paginaGraficoIngresos.BackColor = marfil;
+
+            plotIngresos = new FormsPlot
+            {
+                Dock = DockStyle.Fill
+            };
+
+            paginaGraficoIngresos.Controls.Add(plotIngresos);
+
             paginaResumenIngresos.BackColor = marfil;
             paginaMetodo.BackColor = marfil;
             paginaTipoPago.BackColor = marfil;
@@ -263,6 +338,9 @@ namespace HotelTramonto.Presentacion
             tabIngresos.TabPages.Add(paginaMetodo);
             tabIngresos.TabPages.Add(paginaTipoPago);
             tabIngresos.TabPages.Add(paginaTemporales);
+            tabIngresos.TabPages.Add(paginaGraficoIngresos);
+
+            // Panel inferior.
             Panel panelInferior = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -305,7 +383,7 @@ namespace HotelTramonto.Presentacion
                 BackColor = marfil
             };
 
-            panelContenido.Controls.Add(dgvReporte);
+            panelContenido.Controls.Add(tabReporteSimple);
             panelContenido.Controls.Add(tabEstadisticas);
             panelContenido.Controls.Add(tabIngresos);
 
@@ -318,6 +396,7 @@ namespace HotelTramonto.Presentacion
             dtpHasta.Value = DateTime.Today;
             dtpDesde.Value = DateTime.Today.AddMonths(-1);
         }
+
         private DataGridView CrearGrillaEstadisticas()
         {
             DataGridView grilla = new DataGridView
@@ -457,6 +536,22 @@ namespace HotelTramonto.Presentacion
             return boton;
         }
 
+        private void AplicarEstiloGrafico(FormsPlot control)
+        {
+            var fondo = ScottPlot.Color.FromColor(marfil);
+            var texto = ScottPlot.Color.FromColor(marron);
+            var grilla = ScottPlot.Color.FromColor(
+                Color.FromArgb(222, 211, 194));
+
+            control.Plot.FigureBackground.Color = fondo;
+            control.Plot.DataBackground.Color = fondo;
+
+            control.Plot.Axes.Color(texto);
+            control.Plot.Grid.MajorLineColor = grilla;
+
+            control.Refresh();
+        }
+
         private void MostrarMensaje(
             string titulo,
             string detalle,
@@ -521,10 +616,405 @@ namespace HotelTramonto.Presentacion
             }
         }
 
+
+        private void MostrarGraficoOcupacion(DataTable tabla)
+        {
+            plotReporte.Plot.Clear();
+
+            if (tabla.Rows.Count == 0)
+                return;
+
+            DataRow fila = tabla.Rows[0];
+
+            double nochesDisponibles =
+                Convert.ToDouble(fila["noches_disponibles"]);
+
+            double nochesOcupadas =
+                Convert.ToDouble(fila["noches_ocupadas"]);
+
+            double nochesLibres =
+                Math.Max(0, nochesDisponibles - nochesOcupadas);
+
+            double porcentaje =
+                Convert.ToDouble(fila["porcentaje_ocupacion"]);
+
+            if (nochesDisponibles > 0)
+            {
+                var porciones = new List<ScottPlot.PieSlice>
+        {
+            new ScottPlot.PieSlice
+            {
+                Value = nochesOcupadas,
+                FillColor = ScottPlot.Color.FromColor(dorado),
+                Label = $"Ocupadas: {nochesOcupadas:N0}",
+                LegendText = "Noches ocupadas"
+            },
+            new ScottPlot.PieSlice
+            {
+                Value = nochesLibres,
+                FillColor = ScottPlot.Color.FromColor(crema),
+                Label = $"Disponibles: {nochesLibres:N0}",
+                LegendText = "Noches disponibles"
+            }
+        };
+
+                var grafico = plotReporte.Plot.Add.Pie(porciones);
+
+                grafico.DonutFraction = 0.45;
+                grafico.SliceLabelDistance = 1.2;
+
+                plotReporte.Plot.Axes.AutoScale();
+                plotReporte.Plot.ShowLegend();
+
+                // Porcentaje en el centro de la dona, sin recuadro.
+                var textoPorcentaje = plotReporte.Plot.Add.Text(
+                    $"{porcentaje:N2}%",
+                    0,
+                    0
+                );
+
+                textoPorcentaje.LabelFontSize = 20;
+                textoPorcentaje.LabelBold = true;
+                textoPorcentaje.LabelFontColor =
+                    ScottPlot.Color.FromColor(marron);
+                textoPorcentaje.Alignment =
+                    ScottPlot.Alignment.MiddleCenter;
+            }
+
+            plotReporte.Plot.Axes.Frameless();
+            plotReporte.Plot.HideGrid();
+
+            plotReporte.Plot.Title(
+                $"Ocupación del hotel: {porcentaje:N2}%");
+
+            AplicarEstiloGrafico(plotReporte);
+        }
+
+
+        private void MostrarGraficoIngresos(DataTable tabla)
+        {
+            plotIngresos.Plot.Clear();
+
+            if (tabla.Rows.Count == 0)
+            {
+                plotIngresos.Plot.Title("No hay ingresos por método de pago");
+                plotIngresos.Refresh();
+                return;
+            }
+
+            int cantidad = tabla.Rows.Count;
+
+            double[] valores = new double[cantidad];
+            double[] posiciones = new double[cantidad];
+            string[] etiquetas = new string[cantidad];
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                DataRow fila = tabla.Rows[i];
+
+                posiciones[i] = i;
+                etiquetas[i] = fila["metodo_pago"].ToString() ?? "";
+
+                valores[i] = Convert.ToDouble(fila["total_ingresos"]);
+            }
+
+            var barras = plotIngresos.Plot.Add.Bars(valores);
+            barras.Color = ScottPlot.Color.FromColor(dorado);
+            barras.Horizontal = true;
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                barras.Bars[i].Position = posiciones[i];
+
+                barras.Bars[i].Label =
+                    valores[i].ToString("C2",
+                        System.Globalization.CultureInfo.GetCultureInfo("es-AR"));
+            }
+
+            barras.ValueLabelStyle.FontSize = 12;
+            barras.ValueLabelStyle.Bold = true;
+
+            plotIngresos.Plot.Axes.Left.SetTicks(
+                posiciones,
+                etiquetas);
+
+            plotIngresos.Plot.Axes.Margins(left: 0, right: 0.2);
+
+            plotIngresos.Plot.Title("Ingresos por método de pago");
+            plotIngresos.Plot.XLabel("Importe recaudado");
+            plotIngresos.Plot.HideGrid();
+
+            AplicarEstiloGrafico(plotIngresos);
+        }
+
+        private void MostrarGraficoReservas(DataTable tabla)
+        {
+            plotReservas.Plot.Clear();
+
+            if (tabla.Rows.Count == 0)
+            {
+                plotReservas.Plot.Title("No hay reservas para el período seleccionado");
+                plotReservas.Refresh();
+                return;
+            }
+
+            DataRow fila = tabla.Rows[0];
+
+            string[] etiquetas =
+            {
+        "Confirmadas",
+        "En Check-in",
+        "Finalizadas",
+        "Canceladas"
+    };
+
+            string[] columnas =
+            {
+        "confirmadas",
+        "en_checkin",
+        "finalizadas",
+        "canceladas"
+    };
+
+            double[] valores = new double[columnas.Length];
+            double[] posiciones = { 0, 1, 2, 3 };
+
+            for (int i = 0; i < columnas.Length; i++)
+            {
+                valores[i] = fila[columnas[i]] == DBNull.Value
+                    ? 0
+                    : Convert.ToDouble(fila[columnas[i]]);
+            }
+
+            var barras = plotReservas.Plot.Add.Bars(valores);
+            barras.Color = ScottPlot.Color.FromColor(dorado);
+            barras.Horizontal = true;
+
+            for (int i = 0; i < valores.Length; i++)
+            {
+                barras.Bars[i].Position = posiciones[i];
+                barras.Bars[i].Label = valores[i].ToString("N0");
+            }
+
+            barras.ValueLabelStyle.FontSize = 13;
+            barras.ValueLabelStyle.Bold = true;
+
+            plotReservas.Plot.Axes.Left.SetTicks(posiciones, etiquetas);
+
+            plotReservas.Plot.Axes.Margins(left: 0, right: 0.2);
+
+            plotReservas.Plot.Title("Cantidad de reservas por estado");
+            plotReservas.Plot.XLabel("Cantidad de reservas");
+            plotReservas.Plot.HideGrid();
+
+            AplicarEstiloGrafico(plotReservas);
+        }
+
+        private void MostrarGraficoDemanda(DataTable tabla)
+        {
+            plotDemanda.Plot.Clear();
+
+            if (tabla.Rows.Count == 0)
+            {
+                plotDemanda.Plot.Title("No hay reservas para el período seleccionado");
+                plotDemanda.Refresh();
+                return;
+            }
+
+            int cantidad = tabla.Rows.Count;
+
+            double[] posiciones = new double[cantidad];
+            double[] valores = new double[cantidad];
+            string[] etiquetas = new string[cantidad];
+
+            var cultura = System.Globalization.CultureInfo.GetCultureInfo("es-AR");
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                DataRow fila = tabla.Rows[i];
+
+                int anio = Convert.ToInt32(fila["anio"]);
+                int mes = Convert.ToInt32(fila["mes"]);
+
+                posiciones[i] = i;
+                valores[i] = Convert.ToDouble(fila["cantidad_reservas"]);
+
+                etiquetas[i] = new DateTime(anio, mes, 1)
+                    .ToString("MMM yyyy", cultura);
+            }
+
+            var linea = plotDemanda.Plot.Add.Scatter(posiciones, valores);
+
+            linea.Color = ScottPlot.Color.FromColor(dorado);
+            linea.LineWidth = 3;
+            linea.MarkerSize = 9;
+
+            plotDemanda.Plot.Axes.Bottom.SetTicks(posiciones, etiquetas);
+
+            plotDemanda.Plot.Axes.Margins(left: 0.05, right: 0.05);
+
+            plotDemanda.Plot.Title("Evolución mensual de reservas");
+            plotDemanda.Plot.XLabel("Mes");
+            plotDemanda.Plot.YLabel("Cantidad de reservas");
+
+            plotDemanda.Plot.HideGrid();
+
+            AplicarEstiloGrafico(plotDemanda);
+        }
+
+        private void MostrarGraficoHabitaciones(DataTable tabla)
+        {
+            plotReporte.Plot.Clear();
+            plotReporte.Plot.Axes.Left.IsVisible = true;
+            plotReporte.Plot.Axes.Bottom.IsVisible = true;
+
+            if (tabla.Rows.Count == 0)
+            {
+                plotReporte.Plot.Title("No hay habitaciones para mostrar");
+                plotReporte.Refresh();
+                return;
+            }
+
+            int cantidad = tabla.Rows.Count;
+
+            double[] posiciones = new double[cantidad];
+            double[] valores = new double[cantidad];
+            string[] etiquetas = new string[cantidad];
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                DataRow fila = tabla.Rows[i];
+
+                posiciones[i] = i;
+
+                etiquetas[i] =
+                    "Hab. " + fila["numero_habitacion"].ToString();
+
+                valores[i] =
+                    Convert.ToDouble(fila["noches_ocupadas"]);
+            }
+
+            var barras = plotReporte.Plot.Add.Bars(valores);
+            barras.Color = ScottPlot.Color.FromColor(dorado);
+            barras.Horizontal = true;
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                barras.Bars[i].Position = posiciones[i];
+
+                barras.Bars[i].Label =
+                    valores[i].ToString("N0") + " noches";
+            }
+
+            barras.ValueLabelStyle.FontSize = 12;
+            barras.ValueLabelStyle.Bold = true;
+
+            plotReporte.Plot.Axes.Left.SetTicks(
+            posiciones,
+            etiquetas);
+
+            // El eje horizontal comienza siempre en cero.
+            double maximo = valores.Max();
+
+            if (maximo <= 0)
+                maximo = 1;
+
+            plotReporte.Plot.Axes.SetLimits(
+             left: 0,
+             right: maximo * 1.20,
+             bottom: -0.5,
+             top: cantidad - 0.5);
+
+            plotReporte.Plot.Title("Habitaciones más utilizadas");
+            plotReporte.Plot.XLabel("Cantidad de noches ocupadas");
+
+            plotReporte.Plot.HideGrid();
+
+            AplicarEstiloGrafico(plotReporte);
+        }
+
+        private void MostrarGraficoServicios(DataTable tabla)
+        {
+            plotReporte.Plot.Clear();
+            plotReporte.Plot.Axes.Left.IsVisible = true;
+            plotReporte.Plot.Axes.Bottom.IsVisible = true;
+
+            if (tabla.Rows.Count == 0)
+            {
+                plotReporte.Plot.Title("No hay servicios registrados");
+                plotReporte.Refresh();
+                return;
+            }
+
+            int cantidad = tabla.Rows.Count;
+
+            double[] posiciones = new double[cantidad];
+            double[] valores = new double[cantidad];
+            string[] etiquetas = new string[cantidad];
+
+            var cultura = System.Globalization.CultureInfo
+                .GetCultureInfo("es-AR");
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                DataRow fila = tabla.Rows[i];
+
+                posiciones[i] = i;
+                etiquetas[i] = fila["servicio"].ToString() ?? "";
+
+                valores[i] = Convert.ToDouble(
+                    fila["cantidad_total_consumida"]);
+            }
+
+            var barras = plotReporte.Plot.Add.Bars(valores);
+            barras.Color = ScottPlot.Color.FromColor(dorado);
+            barras.Horizontal = true;
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                barras.Bars[i].Position = posiciones[i];
+
+                decimal ingresos = Convert.ToDecimal(
+                    tabla.Rows[i]["ingresos_generados"]);
+
+                barras.Bars[i].Label =
+                    valores[i].ToString("N0") +
+                    " | " + ingresos.ToString("C2", cultura);
+            }
+
+            barras.ValueLabelStyle.FontSize = 11;
+            barras.ValueLabelStyle.Bold = true;
+
+            plotReporte.Plot.Axes.Left.SetTicks(
+            posiciones,
+            etiquetas);
+
+            double maximo = valores.Max();
+
+            if (maximo <= 0)
+                maximo = 1;
+
+            plotReporte.Plot.Title("Servicios más utilizados");
+            plotReporte.Plot.XLabel("Cantidad consumida");
+
+            plotReporte.Plot.HideGrid();
+
+            AplicarEstiloGrafico(plotReporte);
+
+            plotReporte.Plot.Axes.SetLimits(
+                left: 0,
+                right: maximo * 1.60,
+                bottom: -0.5,
+                top: cantidad - 0.5);
+
+            plotReporte.Refresh();
+        }
+
         private void btnConsultar_Click(object sender, EventArgs e)
         {
             try
             {
+
                 DateTime desde = dtpDesde.Value.Date;
                 DateTime hasta = dtpHasta.Value.Date;
 
@@ -536,6 +1026,7 @@ namespace HotelTramonto.Presentacion
 
                     return;
                 }
+
                 // Reporte de ingresos: mostrar los cuatro resultados.
                 if (cmbReporte.SelectedIndex == 1)
                 {
@@ -550,13 +1041,14 @@ namespace HotelTramonto.Presentacion
                     dgvIngresosPorMetodo.DataSource = datos.Tables[1];
                     dgvIngresosPorTipo.DataSource = datos.Tables[2];
                     dgvPagosTemporales.DataSource = datos.Tables[3];
+                    MostrarGraficoIngresos(datos.Tables[1]);
 
                     ConfigurarEncabezados(dgvResumenIngresos);
                     ConfigurarEncabezados(dgvIngresosPorMetodo);
                     ConfigurarEncabezados(dgvIngresosPorTipo);
                     ConfigurarEncabezados(dgvPagosTemporales);
-
-                    dgvReporte.Visible = false;
+                    
+                    tabReporteSimple.Visible = false;
                     tabEstadisticas.Visible = false;
                     tabIngresos.Visible = true;
 
@@ -600,10 +1092,14 @@ namespace HotelTramonto.Presentacion
                     dgvReservasPorTipo.DataSource = datos.Tables[1];
                     dgvDemandaMensual.DataSource = datos.Tables[2];
 
+                    MostrarGraficoReservas(datos.Tables[0]);
+
+                    MostrarGraficoDemanda(datos.Tables[2]);
+
                     ConfigurarEncabezados(dgvResumenReservas);
                     ConfigurarEncabezados(dgvReservasPorTipo);
                     ConfigurarEncabezados(dgvDemandaMensual);
-                    dgvReporte.Visible = false;
+                    tabReporteSimple.Visible = false;
                     tabIngresos.Visible = false;
                     tabEstadisticas.Visible = true;
                     tabEstadisticas.BringToFront();
@@ -632,8 +1128,9 @@ namespace HotelTramonto.Presentacion
                 // Los demás reportes utilizan la grilla original.
                 tabEstadisticas.Visible = false;
                 tabIngresos.Visible = false;
-                dgvReporte.Visible = true;
-                dgvReporte.BringToFront();
+                tabReporteSimple.Visible = true;
+                tabReporteSimple.BringToFront();
+                tabReporteSimple.SelectedTab = paginaDatosReporte;
 
                 DataTable tabla;
 
@@ -667,6 +1164,21 @@ namespace HotelTramonto.Presentacion
 
                 dgvReporte.DataSource = tabla;
                 ConfigurarEncabezados(dgvReporte);
+               
+                if (cmbReporte.SelectedIndex == 3)
+                {
+                    MostrarGraficoHabitaciones(tabla);
+                }
+
+                if (cmbReporte.SelectedIndex == 4)
+                {
+                    MostrarGraficoServicios(tabla);
+                }
+
+                if (cmbReporte.SelectedIndex == 0)
+                {
+                    MostrarGraficoOcupacion(tabla);
+                }
 
                 lblEstado.Text =
                     $"Reporte: {cmbReporte.SelectedItem} | " +
